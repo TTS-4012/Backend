@@ -19,6 +19,7 @@ func main() {
 		})
 	})
 	addr := fmt.Sprintf("0.0.0.0:%d", c.Port)
+	pkg.Log.Info("Running on address: ", addr)
 	if err := r.Run(addr); err != nil {
 		panic(err)
 	}
