@@ -1,9 +1,10 @@
-package pkg
+package configs
 
 import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -13,13 +14,29 @@ var (
 )
 
 type OContestConf struct {
-	Port int        `yaml:"Port"`
-	Log  SectionLog `yaml:"log"`
+	Port     int             `yaml:"Port"`
+	Postgres SectionPostgres `yaml:"postgres"`
+	JWT      SectionJWT      `yaml:"jwt"`
+	Log      SectionLog      `yaml:"log"`
 }
 
 type SectionLog struct {
 	Level        string `yaml:"level"`
 	ReportCaller bool   `yaml:"report_caller"`
+}
+
+type SectionPostgres struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
+}
+
+type SectionJWT struct {
+	Secret          string        `yaml:"secret"`
+	AccessDuration  time.Duration `yaml:"access_duration"`
+	RefreshDuration time.Duration `yaml:"refresh_duration"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
@@ -82,6 +99,4 @@ func getConfig() *OContestConf {
 
 func InitConf() {
 	Conf = getConfig()
-	initLog(Conf)
-	Log.Info("Config loaded successfully")
 }

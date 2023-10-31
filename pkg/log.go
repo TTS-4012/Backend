@@ -2,42 +2,30 @@ package pkg
 
 import (
 	"errors"
-	"io"
-	"os"
-	"sync"
-
 	"github.com/sirupsen/logrus"
+	"io"
+	"ocontest/pkg/configs"
+	"os"
 )
 
 type Logger struct {
 	*logrus.Logger
-	config *OContestConf
+	config configs.SectionLog
 }
 
 var (
-	logOnce sync.Once
-	Log     *Logger
+	Log *Logger
 )
 
-func initLog(config *OContestConf) {
-	logOnce.Do(func() {
-		Log = defaultLogger(config)
-	})
-}
-
-func NewLog(config *OContestConf) *Logger {
+func InitLog(config configs.SectionLog) {
 	l := stdoutInit()
 	logger := &Logger{l, config}
-	err := logger.SetLevel(config.Log.Level)
+	err := logger.SetLevel(config.Level)
 	if err != nil {
 		_ = logger.SetLevel("info")
 	}
-	logger.SetReportCaller(config.Log.ReportCaller)
-	return logger
-}
-
-func (l *Logger) GetLogger(loggerName string) *logrus.Entry {
-	return l.WithFields(logrus.Fields{"logger": loggerName})
+	logger.SetReportCaller(config.ReportCaller)
+	Log = logger
 }
 
 func (l *Logger) SetLevel(lvl string) error {
@@ -48,10 +36,6 @@ func (l *Logger) SetLevel(lvl string) error {
 	}
 	l.Logger.Level = level
 	return nil
-}
-
-func defaultLogger(config *OContestConf) *Logger {
-	return NewLog(config)
 }
 
 func stdoutInit() *logrus.Logger {
