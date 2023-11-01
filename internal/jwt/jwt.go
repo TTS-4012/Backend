@@ -38,6 +38,7 @@ func (t TokenGeneratorImp) genToken(fields map[string]interface{}) (string, erro
 
 }
 
+// TODO: should get sid and jid (session id and jwt id too)
 func (t TokenGeneratorImp) GenAccessToken(userID int) (string, error) {
 	return t.genToken(map[string]interface{}{
 		"userID": userID,

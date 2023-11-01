@@ -6,6 +6,7 @@ import (
 	"ocontest/internal/db"
 	"ocontest/internal/jwt"
 	"ocontest/pkg"
+	"ocontest/pkg/smtp"
 )
 
 type AuthHandler interface {
@@ -15,12 +16,14 @@ type AuthHandler interface {
 type AuthHandlerImp struct {
 	authRepo   db.AuthRepo
 	jwtHandler jwt.TokenGenerator
+	smtpSender smtp.Sender
 }
 
-func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator) AuthHandler {
+func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator, smtpSender smtp.Sender) AuthHandler {
 	return &AuthHandlerImp{
 		authRepo:   authRepo,
 		jwtHandler: jwtHandler,
+		smtpSender: smtpSender,
 	}
 }
 

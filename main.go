@@ -12,6 +12,7 @@ import (
 	"ocontest/internal/oc/auth"
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
+	"ocontest/pkg/smtp"
 )
 
 func main() {
@@ -32,6 +33,8 @@ func main() {
 	// connecting to dependencies
 	jwtHandler := jwt.NewGenerator(c.JWT)
 
+	smtpHandler := smtp.NewSMTPHandler(c.SMTP.From, c.SMTP.Password)
+
 	dbConn, err := db.NewConnectionPool(ctx, c.Postgres)
 	if err != nil {
 		log.Fatal("error on connecting to db", err)
@@ -44,7 +47,7 @@ func main() {
 	}
 
 	// initiating module handlers
-	authHandler := auth.NewAuthHandler(authRepo, jwtHandler)
+	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler)
 
 	// starting http server
 	api.AddRoutes(r, authHandler)
