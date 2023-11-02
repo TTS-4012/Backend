@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"ocontest/internal/oc/auth"
 	"ocontest/pkg"
+	"ocontest/pkg/structs"
 )
 
 type handlers struct {
@@ -28,7 +29,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 func (h *handlers) registerUser(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "registerUser")
 
-	var reqData pkg.RegisterUserRequest
+	var reqData structs.RegisterUserRequest
 	if err := c.ShouldBindJSON(&reqData); err != nil {
 		logger.Warn("Failed to read request body", err)
 		c.JSON(http.StatusBadRequest, gin.H{

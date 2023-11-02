@@ -2,55 +2,47 @@ package auth
 
 import (
 	"context"
-	"net/http"
 	"ocontest/internal/db"
 	"ocontest/internal/jwt"
 	"ocontest/pkg"
+	"ocontest/pkg/configs"
 	"ocontest/pkg/smtp"
+	"ocontest/pkg/structs"
 )
 
 type AuthHandler interface {
-	RegisterUser(ctx context.Context, request pkg.RegisterUserRequest) (pkg.RegisterUserResponse, int, error)
+	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int, error)
 }
 
 type AuthHandlerImp struct {
 	authRepo   db.AuthRepo
 	jwtHandler jwt.TokenGenerator
 	smtpSender smtp.Sender
+	configs    configs.OContestConf
 }
 
-func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator, smtpSender smtp.Sender) AuthHandler {
+func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator, smtpSender smtp.Sender, config configs.OContestConf) AuthHandler {
 	return &AuthHandlerImp{
 		authRepo:   authRepo,
 		jwtHandler: jwtHandler,
 		smtpSender: smtpSender,
+		configs:    config,
 	}
 }
 
-func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData pkg.RegisterUserRequest) (ans pkg.RegisterUserResponse, status int, err error) {
+func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.RegisterUserRequest) (ans structs.RegisterUserResponse, status int, err error) {
 	logger := pkg.Log.WithField("method", "RegisterUser")
-	userId, err := p.authRepo.InsertUser(ctx, reqData.Username, reqData.Password, reqData.Email)
-	if err != nil {
-		logger.Error("error on inserting to database", err)
-		status = http.StatusInternalServerError
-		return
-	}
-	accessToken, err := p.jwtHandler.GenAccessToken(userId)
-	if err != nil {
-		logger.Error("error on creating access token: ", err)
-		status = http.StatusInternalServerError
-		return
-	}
-	refreshToken, err := p.jwtHandler.GenRefreshToken(userId)
-	if err != nil {
-		logger.Error("error on creating refresh token: ", err)
-		status = http.StatusInternalServerError
-		return
+
+	user := structs.User{
+		Username:       reqData.Username,
+		HashedPassword: reqData.Password,
 	}
 
-	ans = pkg.RegisterUserResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+	validateLink := p.genValidateLink(user)
+	p.smtpSender.SendEmail(reqData.Email, "Welcome to OContest")
+	ans = structs.RegisterUserResponse{
+		Ok:      true,
+		Message: "Success",
 	}
 	return
 }

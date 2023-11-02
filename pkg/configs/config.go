@@ -14,11 +14,11 @@ var (
 )
 
 type OContestConf struct {
-	Port     int             `yaml:"Port"`
 	Postgres SectionPostgres `yaml:"postgres"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`
+	Server   SectionServer   `yaml:"server"`
 }
 
 type SectionLog struct {
@@ -43,6 +43,11 @@ type SectionJWT struct {
 type SectionSMTP struct {
 	From     string `yaml:"from"`
 	Password string `yaml:"password"`
+}
+
+type SectionServer struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 func getElements(path string, ref reflect.Type) []string {

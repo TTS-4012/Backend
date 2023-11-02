@@ -1,4 +1,5 @@
-package pkg
+// structs for api request and response
+package structs
 
 type RegisterUserRequest struct {
 	Username string `json:"username"`
@@ -7,6 +8,6 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Ok      bool
+	Message string
 }
