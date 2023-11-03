@@ -8,6 +8,7 @@ import (
 
 type AuthRepo interface {
 	InsertUser(ctx context.Context, user structs.User) (int64, error)
+	VerifyUser(ctx context.Context, userID int64) error
 }
 type AuthRepoImp struct {
 	conn *pgxpool.Pool
@@ -37,9 +38,17 @@ func (a *AuthRepoImp) Migrate(ctx context.Context) error {
 }
 func (a *AuthRepoImp) InsertUser(ctx context.Context, user structs.User) (int64, error) {
 	stmt := `
-	INSERT INTO users(username, password, email) VALUES($1, $2, $3) RETURNING id
+	INSERT INTO users(username, password, email) VALUES($1, $2, $3) RETURNING id 
 	`
 	var id int64
 	err := a.conn.QueryRow(ctx, stmt, user.Username, user.EncryptedPassword, user.Email).Scan(&id)
 	return id, err
+}
+
+func (a *AuthRepoImp) VerifyUser(ctx context.Context, userID int64) error {
+	stmt := `
+	UPDATE users SET is_verified = true WHERE id = $1
+	`
+	_, err := a.conn.Exec(ctx, stmt, userID)
+	return err
 }

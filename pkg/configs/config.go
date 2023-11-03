@@ -1,7 +1,6 @@
 package configs
 
 import (
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -19,7 +18,7 @@ type OContestConf struct {
 	SMTP                 SectionSMTP     `yaml:"smtp"`
 	Log                  SectionLog      `yaml:"log"`
 	Server               SectionServer   `yaml:"server"`
-	VerificationDuration time.Duration   `yaml:"verification_duration"`
+	VerificationDuration time.Duration   `yaml:"verificationduration"`
 	AESKey               string          `yaml:"AESKey"`
 }
 
@@ -85,24 +84,13 @@ func BindEnvVariables() {
 
 // Loads the config
 func getConfig() *OContestConf {
-	viper.SetConfigType("yaml")
-
-	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/ocontest/")
-	viper.AddConfigPath(".")
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Println("Error on reading config", err)
-	}
-
 	viper.AutomaticEnv()           // reads from env
 	viper.SetEnvPrefix("ocontest") // automatically turns to capitalized
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	conf := &OContestConf{}
 	BindEnvVariables()
-	err = viper.Unmarshal(conf)
+	err := viper.Unmarshal(conf)
 	if err != nil {
 		panic("Error on unmarshal " + err.Error())
 	}

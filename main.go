@@ -19,6 +19,9 @@ import (
 func main() {
 	configs.InitConf()
 	c := configs.Conf
+	if c.VerificationDuration == 0 {
+		panic("verification duration is not set")
+	}
 	pkg.InitLog(c.Log)
 	pkg.Log.Info("config and log modules initialized")
 

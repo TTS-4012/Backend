@@ -9,7 +9,7 @@ import (
 )
 
 type handlers struct {
-	processor auth.AuthHandler
+	authHandler auth.AuthHandler
 }
 
 func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
@@ -20,6 +20,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 		authGroup := v1.Group("/auth")
 		{
 			authGroup.POST("/register_user", h.registerUser)
+			authGroup.GET("/verify/:token", h.verifyEmail)
 			authGroup.POST("/login_user", h.loginUser)
 			authGroup.POST("/renew_token", h.renewToken)
 		}
@@ -37,11 +38,17 @@ func (h *handlers) registerUser(c *gin.Context) {
 		})
 	}
 
-	resp, status, err := h.processor.RegisterUser(c, reqData)
+	resp, status, err := h.authHandler.RegisterUser(c, reqData)
 	if err != nil {
 		pkg.Log.Error("Failed to register user", err)
 	}
 	c.JSON(status, resp)
+}
+
+func (h *handlers) verifyEmail(c *gin.Context) {
+	token := c.Param("token")
+	status := h.authHandler.VerifyEmail(c, token)
+	c.Status(status)
 }
 
 func (h *handlers) loginUser(c *gin.Context) {
