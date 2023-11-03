@@ -1,7 +1,7 @@
 package structs
 
 type User struct {
-	ID                int
+	ID                int64
 	Username          string
 	EncryptedPassword string
 	Email             string

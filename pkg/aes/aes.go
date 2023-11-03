@@ -3,16 +3,19 @@ package aes
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"fmt"
+	"encoding/base64"
 )
 
+var iv = []byte{34, 35, 35, 57, 68, 4, 35, 36, 7, 8, 35, 23, 35, 86, 35, 23}
+
 type AESHandler interface {
-	Encrypt(plaintext []byte) []byte
-	Decrypt(ciphertext []byte) []byte
+	Encrypt(plaintext string) (string, error)
+	Decrypt(ciphertext string) (string, error)
 }
 
 type AESHandlerImp struct {
-	cipher cipher.Block
+	b64encoding *base64.Encoding
+	cipher      cipher.Block
 }
 
 func NewAesHandler(key []byte) (AESHandler, error) {
@@ -20,41 +23,31 @@ func NewAesHandler(key []byte) (AESHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	ans := &AESHandlerImp{cipher: c}
+	ans := &AESHandlerImp{
+		cipher:      c,
+		b64encoding: base64.URLEncoding,
+	}
 	return ans, nil
 }
 
-func (a *AESHandlerImp) Encrypt(plaintext []byte) []byte {
+func (a *AESHandlerImp) Encrypt(text string) (string, error) {
 
-	// allocate space for ciphered data
-	out := make([]byte, len(plaintext))
+	cfb := cipher.NewCFBEncrypter(a.cipher, iv)
+	ciphertext := make([]byte, len(text))
+	cfb.XORKeyStream(ciphertext, []byte(text))
 
-	// encrypt
-	a.cipher.Encrypt(out, plaintext)
-
-	return out
+	return a.b64encoding.EncodeToString(ciphertext), nil
 }
 
-func (a *AESHandlerImp) Decrypt(encryptedtext []byte) []byte {
+func (a *AESHandlerImp) Decrypt(text string) (string, error) {
 
-	// allocate space for ciphered data
-	out := make([]byte, len(encryptedtext))
-
-	// encrypt
-	a.cipher.Decrypt(out, encryptedtext)
-
-	return out
-}
-
-func main() {
-	sec := "aaaaaaaaaaaaaaaa"
-	a, err := NewAesHandler([]byte(sec))
+	ciphertext, err := a.b64encoding.DecodeString(text)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	pt := "salam khoobie?jkjkjkjkjkjk"
-	enc := a.Encrypt([]byte(pt))
-	dec := string(a.Decrypt(enc))
-	fmt.Println(enc, dec)
 
+	cfb := cipher.NewCFBDecrypter(a.cipher, iv)
+	plaintext := make([]byte, len(ciphertext))
+	cfb.XORKeyStream(plaintext, ciphertext)
+	return string(plaintext), nil
 }

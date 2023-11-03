@@ -2,15 +2,14 @@ package jwt
 
 import (
 	"github.com/golang-jwt/jwt/v5"
-	"ocontest/pkg"
 	"ocontest/pkg/configs"
 	"time"
 )
 
 type TokenGenerator interface {
-	GenAccessToken(userID int) (string, error)
-	GenRefreshToken(userID int) (string, error)
+	GenToken(ID int64, jid string, expireTime time.Duration) (string, error)
 }
+
 type TokenGeneratorImp struct {
 	secret     []byte
 	accessExp  time.Duration
@@ -25,30 +24,15 @@ func NewGenerator(conf configs.SectionJWT) TokenGenerator {
 	}
 }
 
-func (t TokenGeneratorImp) genToken(fields map[string]interface{}) (string, error) {
+func (t TokenGeneratorImp) GenToken(userID int64, typ string, expireTime time.Duration) (string, error) {
 	mapClaims := jwt.MapClaims{}
-	for k, v := range fields {
-		mapClaims[k] = v
-	}
+
 	mapClaims["iat"] = time.Now().Unix()
+	mapClaims["userID"] = userID
+	mapClaims["typ"] = typ
+	mapClaims["exp"] = time.Now().Add(expireTime).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, mapClaims)
-	pkg.Log.Debug(t.secret)
 	return token.SignedString(t.secret)
 
-}
-
-// TODO: should get sid and jid (session id and jwt id too)
-func (t TokenGeneratorImp) GenAccessToken(userID int) (string, error) {
-	return t.genToken(map[string]interface{}{
-		"userID": userID,
-		"exp":    time.Now().Add(t.accessExp).Unix(),
-	})
-}
-
-func (t TokenGeneratorImp) GenRefreshToken(userID int) (string, error) {
-	return t.genToken(map[string]interface{}{
-		"userID": userID,
-		"exp":    time.Now().Add(t.refreshExp).Unix(),
-	})
 }

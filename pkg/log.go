@@ -24,7 +24,7 @@ func InitLog(config configs.SectionLog) {
 	if err != nil {
 		_ = logger.SetLevel("info")
 	}
-	logger.SetReportCaller(config.ReportCaller)
+	logger.SetReportCaller(true)
 	Log = logger
 }
 

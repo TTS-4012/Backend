@@ -14,11 +14,13 @@ var (
 )
 
 type OContestConf struct {
-	Postgres SectionPostgres `yaml:"postgres"`
-	JWT      SectionJWT      `yaml:"jwt"`
-	SMTP     SectionSMTP     `yaml:"smtp"`
-	Log      SectionLog      `yaml:"log"`
-	Server   SectionServer   `yaml:"server"`
+	Postgres             SectionPostgres `yaml:"postgres"`
+	JWT                  SectionJWT      `yaml:"jwt"`
+	SMTP                 SectionSMTP     `yaml:"smtp"`
+	Log                  SectionLog      `yaml:"log"`
+	Server               SectionServer   `yaml:"server"`
+	VerificationDuration time.Duration   `yaml:"verification_duration"`
+	AESKey               string          `yaml:"AESKey"`
 }
 
 type SectionLog struct {
