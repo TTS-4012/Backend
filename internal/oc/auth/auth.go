@@ -166,7 +166,6 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 }
 
 func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int) {
-	//TODO implement me
 	uid, typ, err := p.jwtHandler.ParseToken(oldRefreshToken)
 	if err != nil || typ != "refresh" {
 		return structs.RenewTokenResponse{

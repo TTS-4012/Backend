@@ -6,6 +6,7 @@ import (
 	"ocontest/internal/oc/auth"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+	"strings"
 )
 
 type handlers struct {
@@ -67,18 +68,25 @@ func (h *handlers) loginUser(c *gin.Context) {
 func (h *handlers) renewToken(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "renewToken")
 
-	oldRefreshToken, exists := c.Request.Header["Authorization"]
+	authHeader, exists := c.Request.Header["Authorization"]
 	if !exists {
 		logger.Error("no refresh token provided")
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"Ok":      false,
+			"Message": "no refresh token provided",
+		})
 		return
 	}
-	if len(oldRefreshToken) != 1 {
-		logger.Warning("multiple authorization values!", oldRefreshToken)
-		c.Status(http.StatusBadRequest)
+	if len(authHeader) != 1 {
+		logger.Warning("multiple authorization values!", authHeader)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Ok":      false,
+			"Message": "multiple authorization values!",
+		})
 		return
 	}
 
-	resp, status := h.authHandler.RenewToken(c, oldRefreshToken[0])
+	oldRefreshToken := strings.TrimSpace(strings.Replace(authHeader[0], "Bearer", "", 1))
+	resp, status := h.authHandler.RenewToken(c, oldRefreshToken)
 	c.JSON(status, resp)
 }
