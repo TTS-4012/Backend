@@ -56,7 +56,7 @@ func (a *AuthRepoImp) VerifyUser(ctx context.Context, userID int64) error {
 
 func (a *AuthRepoImp) GetByUsername(ctx context.Context, username string) (structs.User, error) {
 	stmt := `
-	SELECT id, username, password, email, is_verified FROM users WHERE username = $1
+	SELECT id, username, password, email, is_verified FROM users WHERE username = $1 
 	`
 	var user structs.User
 	err := a.conn.QueryRow(ctx, stmt, username).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)

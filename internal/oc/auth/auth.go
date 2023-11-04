@@ -2,8 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
@@ -47,32 +45,29 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 	if err != nil {
 		logger.Error("error on encrypting password", err)
 		status = 503
-		err = pkg.ErrBadRequest
+		ans.Message = "something went wrong, please try again later."
 		return
 	}
 
-	user := structs.User{
-		Username:          reqData.Username,
-		EncryptedPassword: encryptedPassword,
-		Email:             reqData.Email,
-		Verified:          false,
-	}
-	userID, err := p.authRepo.InsertUser(ctx, user)
+	var user structs.User
+	user, err = p.authRepo.GetByUsername(ctx, reqData.Username)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			logger.Warn("dup request", err)
-			status = 400
-			err = pkg.ErrBadRequest
+
+		user := structs.User{
+			Username:          reqData.Username,
+			EncryptedPassword: encryptedPassword,
+			Email:             reqData.Email,
+			Verified:          false,
+		}
+		userID, newErr := p.authRepo.InsertUser(ctx, user)
+		if newErr != nil {
+			logger.Errorf("couldn't insert user in database, error on get: %v, error on insert: %v", err, newErr)
+			status = 503
+			ans.Message = "something went wrong, please try again later."
 			return
 		}
-
-		logger.Error("error on inserting user", err)
-		status = 503
-		err = pkg.ErrInternalServerError
-		return
+		user.ID = userID
 	}
-	user.ID = userID
 
 	validateEmailMessage, err := p.genValidateEmailMessage(user)
 	if err != nil {
@@ -172,5 +167,24 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 
 func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int) {
 	//TODO implement me
-	panic("implement me")
+	uid, typ, err := p.jwtHandler.ParseToken(oldRefreshToken)
+	if err != nil || typ != "refresh" {
+		return structs.RenewTokenResponse{
+			Ok:      false,
+			Message: "current token is invalid",
+		}, http.StatusBadRequest
+	}
+	accessToken, refreshToken, err := p.genAuthToken(uid)
+	if err != nil {
+		return structs.RenewTokenResponse{
+			Ok:      false,
+			Message: "couldn't generate new token",
+		}, http.StatusInternalServerError
+	}
+	return structs.RenewTokenResponse{
+		Ok:           true,
+		Message:      "success",
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, http.StatusOK
 }

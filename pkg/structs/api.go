@@ -18,15 +18,15 @@ type LoginUserRequest struct {
 }
 
 type LoginUserResponse struct {
-	Ok           bool
-	Message      string
-	AccessToken  string
-	RefreshToken string
+	Ok           bool   `json:"ok"`
+	Message      string `json:"message"`
+	AccessToken  string `json:"accessToken,omitempty"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
 
 type RenewTokenResponse struct {
 	Ok           bool
 	Message      string
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string `json:"accessToken,omitempty"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
