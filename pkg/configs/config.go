@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -13,13 +14,13 @@ var (
 )
 
 type OContestConf struct {
-	Postgres             SectionPostgres `yaml:"postgres"`
-	JWT                  SectionJWT      `yaml:"jwt"`
-	SMTP                 SectionSMTP     `yaml:"smtp"`
-	Log                  SectionLog      `yaml:"log"`
-	Server               SectionServer   `yaml:"server"`
-	VerificationDuration time.Duration   `yaml:"verificationduration"`
-	AESKey               string          `yaml:"AESKey"`
+	Postgres SectionPostgres `yaml:"postgres"`
+	JWT      SectionJWT      `yaml:"jwt"`
+	SMTP     SectionSMTP     `yaml:"smtp"`
+	Log      SectionLog      `yaml:"log"`
+	Server   SectionServer   `yaml:"server"`
+	AESKey   string          `yaml:"AESKey"`
+	Auth     SectionAuth     `yaml:"auth"`
 }
 
 type SectionLog struct {
@@ -36,14 +37,22 @@ type SectionPostgres struct {
 }
 
 type SectionJWT struct {
-	Secret          string        `yaml:"secret"`
-	AccessDuration  time.Duration `yaml:"access_duration"`
-	RefreshDuration time.Duration `yaml:"refresh_duration"`
+	Secret string `yaml:"secret"`
 }
 
 type SectionSMTP struct {
 	From     string `yaml:"from"`
 	Password string `yaml:"password"`
+}
+
+type SectionAuth struct {
+	Duration SectionAuthDuration `yaml:"duration"`
+}
+
+type SectionAuthDuration struct {
+	AccessToken  time.Duration `yaml:"accesstoken"`
+	RefreshToken time.Duration `yaml:"refreshtoken"`
+	VerifyEmail  time.Duration `yaml:"verifyemail"`
 }
 
 type SectionServer struct {
@@ -100,4 +109,5 @@ func getConfig() *OContestConf {
 
 func InitConf() {
 	Conf = getConfig()
+	log.Println(Conf.Auth.Duration.VerifyEmail)
 }

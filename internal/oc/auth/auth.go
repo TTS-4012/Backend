@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/internal/jwt"
@@ -15,10 +16,10 @@ import (
 )
 
 type AuthHandler interface {
-	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int, error)
+	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
 	VerifyEmail(ctx context.Context, token string) int
-	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int, error)
-	RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int, error)
+	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int)
+	RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int)
 }
 
 type AuthHandlerImp struct {
@@ -39,7 +40,7 @@ func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator, smtpSen
 	}
 }
 
-func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.RegisterUserRequest) (ans structs.RegisterUserResponse, status int, err error) {
+func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.RegisterUserRequest) (ans structs.RegisterUserResponse, status int) {
 	logger := pkg.Log.WithField("method", "RegisterUser")
 
 	encryptedPassword, err := p.aesHandler.Encrypt(reqData.Password)
@@ -65,6 +66,7 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 			err = pkg.ErrBadRequest
 			return
 		}
+
 		logger.Error("error on inserting user", err)
 		status = 503
 		err = pkg.ErrInternalServerError
@@ -116,12 +118,59 @@ func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, token string) int {
 	}
 	return http.StatusOK
 }
-func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int, error) {
-	//TODO implement me
-	panic("implement me")
+func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "LoginUser",
+		"module": "auth",
+	})
+
+	userInDB, err := p.authRepo.GetByUsername(ctx, request.Username)
+	if err != nil {
+		logger.Error("error on getting user from db", err)
+		return structs.LoginUserResponse{
+			Ok:      false,
+			Message: "couldn't find user",
+		}, http.StatusInternalServerError
+	}
+	if !userInDB.Verified {
+		logger.Warning("unverify user login attempt", userInDB.Username)
+		return structs.LoginUserResponse{
+			Ok:      false,
+			Message: "user is not verified",
+		}, http.StatusForbidden
+	}
+	encPassword, err := p.aesHandler.Encrypt(request.Password)
+	if err != nil {
+		logger.Error("error on encrypting password")
+		return structs.LoginUserResponse{
+			Ok:      false,
+			Message: "something went wrong",
+		}, http.StatusInternalServerError
+	}
+	if encPassword != userInDB.EncryptedPassword {
+		logger.Warning("wrong password")
+		return structs.LoginUserResponse{
+			Ok:      false,
+			Message: "wrong password",
+		}, http.StatusForbidden
+	}
+	accessToken, refreshToken, err := p.genAuthToken(userInDB.ID)
+	if err != nil {
+		logger.Error("error on creating tokens", err)
+		return structs.LoginUserResponse{
+			Ok:      false,
+			Message: "something went wrong",
+		}, http.StatusInternalServerError
+	}
+	return structs.LoginUserResponse{
+		Ok:           true,
+		Message:      "success",
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, http.StatusOK
 }
 
-func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int, error) {
+func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int) {
 	//TODO implement me
 	panic("implement me")
 }

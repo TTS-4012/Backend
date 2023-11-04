@@ -19,9 +19,9 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 	{
 		authGroup := v1.Group("/auth")
 		{
-			authGroup.POST("/register_user", h.registerUser)
+			authGroup.POST("/register", h.registerUser)
 			authGroup.GET("/verify/:token", h.verifyEmail)
-			authGroup.POST("/login_user", h.loginUser)
+			authGroup.POST("/login", h.loginUser)
 			authGroup.POST("/renew_token", h.renewToken)
 		}
 	}
@@ -38,10 +38,7 @@ func (h *handlers) registerUser(c *gin.Context) {
 		})
 	}
 
-	resp, status, err := h.authHandler.RegisterUser(c, reqData)
-	if err != nil {
-		pkg.Log.Error("Failed to register user", err)
-	}
+	resp, status := h.authHandler.RegisterUser(c, reqData)
 	c.JSON(status, resp)
 }
 
@@ -63,10 +60,7 @@ func (h *handlers) loginUser(c *gin.Context) {
 		return
 	}
 
-	resp, status, err := h.authHandler.LoginUser(c, reqData)
-	if err != nil {
-		logger.Error("error on handling login", err)
-	}
+	resp, status := h.authHandler.LoginUser(c, reqData)
 	c.JSON(status, resp)
 }
 
@@ -85,9 +79,6 @@ func (h *handlers) renewToken(c *gin.Context) {
 		return
 	}
 
-	resp, status, err := h.authHandler.RenewToken(c, oldRefreshToken[0])
-	if err != nil {
-		logger.Error("error on handling login", err)
-	}
+	resp, status := h.authHandler.RenewToken(c, oldRefreshToken[0])
 	c.JSON(status, resp)
 }
