@@ -17,6 +17,8 @@ import (
 type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int, error)
 	VerifyEmail(ctx context.Context, token string) int
+	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int, error)
+	RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int, error)
 }
 
 type AuthHandlerImp struct {
@@ -113,4 +115,13 @@ func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, token string) int {
 		return http.StatusInternalServerError
 	}
 	return http.StatusOK
+}
+func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int, error) {
+	//TODO implement me
+	panic("implement me")
 }

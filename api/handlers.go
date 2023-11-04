@@ -52,9 +52,42 @@ func (h *handlers) verifyEmail(c *gin.Context) {
 }
 
 func (h *handlers) loginUser(c *gin.Context) {
-	panic("implement me")
+	logger := pkg.Log.WithField("handler", "loginUser")
+	var reqData structs.LoginUserRequest
+
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Error("error on binding request data json")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	resp, status, err := h.authHandler.LoginUser(c, reqData)
+	if err != nil {
+		logger.Error("error on handling login", err)
+	}
+	c.JSON(status, resp)
 }
 
 func (h *handlers) renewToken(c *gin.Context) {
-	panic("implement me")
+	logger := pkg.Log.WithField("handler", "renewToken")
+
+	oldRefreshToken, exists := c.Request.Header["Authorization"]
+	if !exists {
+		logger.Error("no refresh token provided")
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	if len(oldRefreshToken) != 1 {
+		logger.Warning("multiple authorization values!", oldRefreshToken)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	resp, status, err := h.authHandler.RenewToken(c, oldRefreshToken[0])
+	if err != nil {
+		logger.Error("error on handling login", err)
+	}
+	c.JSON(status, resp)
 }

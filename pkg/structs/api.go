@@ -11,3 +11,22 @@ type RegisterUserResponse struct {
 	Ok      bool
 	Message string
 }
+
+type LoginUserRequest struct {
+	Username string
+	Password string
+}
+
+type LoginUserResponse struct {
+	Ok           bool
+	Message      string
+	AccessToken  string
+	RefreshToken string
+}
+
+type RenewTokenResponse struct {
+	Ok           bool
+	Message      string
+	AccessToken  string
+	RefreshToken string
+}
