@@ -9,6 +9,7 @@ type RegisterUserRequest struct {
 
 type RegisterUserResponse struct {
 	Ok      bool
+	UserID  int64
 	Message string
 }
 
@@ -29,4 +30,9 @@ type RenewTokenResponse struct {
 	Message      string
 	AccessToken  string `json:"accessToken,omitempty"`
 	RefreshToken string `json:"refreshToken,omitempty"`
+}
+
+type RequestVerifyUser struct {
+	UserID int64  `json:"user_id"`
+	OTP    string `json:"otp"`
 }

@@ -2,31 +2,21 @@ package auth
 
 import (
 	"fmt"
-	"ocontest/pkg"
 	"ocontest/pkg/structs"
 )
 
 const verificationMessageTemplate = `
 Hello %v! Welcome to the ocontest
-please click the link below to verify your email 
-http://%v/v1/auth/verify/%v> 
+please enter the code below to verify your email address
+Code: %v
 ignore this email if you haven't tried to register to ocontest
 `
 
-func (a *AuthHandlerImp) genValidateEmailMessage(user structs.User) (link string, err error) {
-	token, err := a.jwtHandler.GenToken(user.ID, "verify", a.configs.Auth.Duration.VerifyEmail)
-	if err != nil {
-		pkg.Log.Error("error on generating email message, ", err)
-		return
-	}
-	token, err = a.aesHandler.Encrypt(token)
-	if err != nil {
-		return
-	}
+func (a *AuthHandlerImp) genValidateEmailMessage(user structs.User, otpCode string) string {
 	return fmt.Sprintf(verificationMessageTemplate,
 		user.Username,
-		a.configs.Server.Host+":"+a.configs.Server.Port,
-		token), nil
+		otpCode,
+	)
 
 }
 

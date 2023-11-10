@@ -2,10 +2,13 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/internal/jwt"
+	"ocontest/internal/otp"
 	"ocontest/pkg"
 	"ocontest/pkg/aes"
 	"ocontest/pkg/configs"
@@ -15,7 +18,7 @@ import (
 
 type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
-	VerifyEmail(ctx context.Context, token string) int
+	VerifyEmail(ctx context.Context, userID int64, otp string) (int, error)
 	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int)
 	RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int)
 }
@@ -26,15 +29,20 @@ type AuthHandlerImp struct {
 	smtpSender smtp.Sender
 	configs    *configs.OContestConf
 	aesHandler aes.AESHandler
+	otpStorage otp.OTPStorage
 }
 
-func NewAuthHandler(authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator, smtpSender smtp.Sender, config *configs.OContestConf, aesHandler aes.AESHandler) AuthHandler {
+func NewAuthHandler(
+	authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator,
+	smtpSender smtp.Sender, config *configs.OContestConf,
+	aesHandler aes.AESHandler, otpStorage otp.OTPStorage) AuthHandler {
 	return &AuthHandlerImp{
 		authRepo:   authRepo,
 		jwtHandler: jwtHandler,
 		smtpSender: smtpSender,
 		configs:    config,
 		aesHandler: aesHandler,
+		otpStorage: otpStorage,
 	}
 }
 
@@ -69,13 +77,15 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 		user.ID = userID
 	}
 
-	validateEmailMessage, err := p.genValidateEmailMessage(user)
+	otpCode, err := p.otpStorage.GenRegisterOTP(fmt.Sprintf("%d", user.ID))
 	if err != nil {
-		logger.Error("error on creating verify email message", err)
+		logger.Error("error on generating otp", err)
 		status = 503
-		err = pkg.ErrInternalServerError
+		ans.Message = "something went wrong, please try again later."
 		return
 	}
+
+	validateEmailMessage := p.genValidateEmailMessage(user, otpCode)
 	err = p.smtpSender.SendEmail(reqData.Email, "Welcome to OContest", validateEmailMessage)
 	if err != nil {
 		logger.Error("error on sending email", err)
@@ -86,33 +96,29 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 
 	ans = structs.RegisterUserResponse{
 		Ok:      true,
+		UserID:  user.ID,
 		Message: "Sent Verification email",
 	}
 	return
 }
 
-func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, token string) int {
-	token, err := p.aesHandler.Decrypt(token)
-	if err != nil {
-		pkg.Log.Error("error on decrypting token", err)
-		return http.StatusBadRequest
-	}
-	userID, typ, err := p.jwtHandler.ParseToken(token)
-	if typ != "verify" {
-		err = pkg.ErrBadRequest
-	}
-	if err != nil {
-		pkg.Log.Error("error on parsing jwt", err)
-		return http.StatusBadRequest
+func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token string) (int, error) {
+
+	userIDStr := fmt.Sprintf("%d", userID)
+	if err := p.otpStorage.CheckRegisterOTP(userIDStr, token); err != nil {
+		if errors.Is(err, pkg.ErrForbidden) {
+			return http.StatusForbidden, err
+		}
+		return http.StatusInternalServerError, err
 	}
 
-	err = p.authRepo.VerifyUser(ctx, userID)
-	if err != nil {
+	if err := p.authRepo.VerifyUser(ctx, userID); err != nil {
 		pkg.Log.Error("error on verifying user", err)
-		return http.StatusInternalServerError
+		return http.StatusInternalServerError, err
 	}
-	return http.StatusOK
+	return http.StatusOK, nil
 }
+
 func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "LoginUser",
@@ -128,7 +134,7 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 		}, http.StatusInternalServerError
 	}
 	if !userInDB.Verified {
-		logger.Warning("unverify user login attempt", userInDB.Username)
+		logger.Warning("unverified user login attempt", userInDB.Username)
 		return structs.LoginUserResponse{
 			Ok:      false,
 			Message: "user is not verified",

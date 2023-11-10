@@ -10,7 +10,9 @@ import (
 	"ocontest/internal/db"
 	"ocontest/internal/jwt"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/otp"
 	"ocontest/pkg"
+
 	"ocontest/pkg/aes"
 	"ocontest/pkg/configs"
 	"ocontest/pkg/smtp"
@@ -36,14 +38,16 @@ func main() {
 
 	smtpHandler := smtp.NewSMTPHandler(c.SMTP.From, c.SMTP.Password)
 
-	dbConn, err := db.NewConnectionPool(ctx, c.Postgres)
-	if err != nil {
-		log.Fatal("error on connecting to db", err)
-	}
-
 	aesHandler, err := aes.NewAesHandler([]byte(c.AESKey))
 	if err != nil {
 		log.Fatal("error on creating aes handler", err)
+	}
+
+	otpStorage := otp.NewOTPStorage()
+
+	dbConn, err := db.NewConnectionPool(ctx, c.Postgres)
+	if err != nil {
+		log.Fatal("error on connecting to db", err)
 	}
 
 	// make repo
@@ -53,7 +57,7 @@ func main() {
 	}
 
 	// initiating module handlers
-	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler)
+	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 
 	// starting http server
 	api.AddRoutes(r, authHandler)

@@ -44,8 +44,20 @@ func (h *handlers) registerUser(c *gin.Context) {
 }
 
 func (h *handlers) verifyEmail(c *gin.Context) {
-	token := c.Param("token")
-	status := h.authHandler.VerifyEmail(c, token)
+	logger := pkg.Log.WithField("handler", "verifyEmail")
+
+	var reqData structs.RequestVerifyUser
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+	}
+
+	status, err := h.authHandler.VerifyEmail(c, reqData.UserID, reqData.OTP)
+	if err != nil {
+		logger.Error("failed to verify ")
+	}
 	c.Status(status)
 }
 
