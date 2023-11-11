@@ -265,6 +265,18 @@ func (p *AuthHandlerImp) CheckLoginWithOTP(ctx context.Context, userID int64, ot
 }
 
 func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEditUser) int {
-	//TODO implement me
-	return http.StatusNotImplemented
+
+	logger := pkg.Log.WithField("method", "EditUser")
+	user := structs.User{
+		ID:                request.UserID,
+		Username:          request.Username,
+		Email:             request.Email,
+		EncryptedPassword: request.Password,
+	}
+	if err := a.authRepo.UpdateUser(ctx, user); err != nil {
+		logger.Error("error on update user in pg: ", err)
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusOK
 }

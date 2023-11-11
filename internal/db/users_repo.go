@@ -11,6 +11,7 @@ type AuthRepo interface {
 	VerifyUser(ctx context.Context, userID int64) error
 	GetByUsername(ctx context.Context, username string) (structs.User, error)
 	GetByID(ctx context.Context, userID int64) (structs.User, error)
+	UpdateUser(ctx context.Context, user structs.User) error
 }
 type AuthRepoImp struct {
 	conn *pgxpool.Pool
@@ -71,4 +72,37 @@ func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, 
 	var user structs.User
 	err := a.conn.QueryRow(ctx, stmt, userID).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
 	return user, err
+}
+
+// TODO: find a suitable query builder to do this shit. sorry for this shitty code you are gonna see, I had no other idea.
+func (a *AuthRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
+	args := make([]interface{}, 0)
+	args = append(args, user.ID)
+
+	stmt := `
+	UPDATE users SET
+	`
+
+	if user.Username != "" {
+		args = append(args, user.Username)
+		stmt += "username = $" + string(len(args))
+	}
+	if user.Email != "" {
+		args = append(args, user.Email)
+		if len(args) > 1 {
+			stmt += ","
+		}
+		stmt += "email = $" + string(len(args))
+	}
+	if user.EncryptedPassword != "" {
+		args = append(args, user.EncryptedPassword)
+		stmt += "password = $" + string(len(args))
+	}
+	stmt += " WHERE id = $1"
+	if len(args) == 0 {
+		return nil
+	}
+
+	_, err := a.conn.Exec(ctx, stmt, args...)
+	return err
 }
