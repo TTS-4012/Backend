@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/pkg/structs"
 )
@@ -85,18 +86,18 @@ func (a *AuthRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
 
 	if user.Username != "" {
 		args = append(args, user.Username)
-		stmt += "username = $" + string(len(args))
+		stmt += fmt.Sprintf("username = $%d", len(args))
 	}
 	if user.Email != "" {
 		args = append(args, user.Email)
 		if len(args) > 1 {
 			stmt += ","
 		}
-		stmt += "email = $" + string(len(args))
+		stmt += fmt.Sprintf("email = $%d", len(args))
 	}
 	if user.EncryptedPassword != "" {
 		args = append(args, user.EncryptedPassword)
-		stmt += "password = $" + string(len(args))
+		stmt += fmt.Sprintf("password = $%d", len(args))
 	}
 	stmt += " WHERE id = $1"
 	if len(args) == 0 {
