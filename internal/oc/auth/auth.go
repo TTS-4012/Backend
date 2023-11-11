@@ -153,7 +153,7 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 		return structs.LoginUserResponse{
 			Ok:      false,
 			Message: "wrong password",
-		}, http.StatusForbidden
+		}, http.StatusUnauthorized
 	}
 	accessToken, refreshToken, err := p.genAuthToken(userInDB.ID)
 	if err != nil {
@@ -177,7 +177,7 @@ func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string)
 		return structs.RenewTokenResponse{
 			Ok:      false,
 			Message: "current token is invalid",
-		}, http.StatusBadRequest
+		}, http.StatusUnauthorized
 	}
 	accessToken, refreshToken, err := p.genAuthToken(uid)
 	if err != nil {

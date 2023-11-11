@@ -8,9 +8,9 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	Ok      bool
-	UserID  int64
-	Message string
+	Ok      bool   `json: "ok"`
+	UserID  int64  `json: "user_id"`
+	Message string `json: "message"`
 }
 
 type LoginUserRequest struct {
@@ -21,15 +21,15 @@ type LoginUserRequest struct {
 type LoginUserResponse struct {
 	Ok           bool   `json:"ok"`
 	Message      string `json:"message"`
-	AccessToken  string `json:"accessToken,omitempty"`
-	RefreshToken string `json:"refreshToken,omitempty"`
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 type RenewTokenResponse struct {
 	Ok           bool
 	Message      string
-	AccessToken  string `json:"accessToken,omitempty"`
-	RefreshToken string `json:"refreshToken,omitempty"`
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 type RequestVerifyUser struct {
