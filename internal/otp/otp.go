@@ -8,9 +8,9 @@ import (
 
 type OTPStorage interface {
 	GenRegisterOTP(userID string) (string, error)
-	GenForgotPasswordOTP(userID string) (string, error)
+	GenLoginOTP(userID string) (string, error)
 	CheckRegisterOTP(userID, otp string) error
-	CheckForgotPasswordOTP(userID, otp string) error
+	CheckLoginOTP(userID, otp string) error
 }
 
 // TODO: use redis or memcache instead of map
@@ -42,8 +42,8 @@ func (o *OTPStorageMapImp) getRegisterOTPKey(userID string) string {
 	return fmt.Sprintf("register/%v", userID)
 }
 
-func (o *OTPStorageMapImp) getForgetPasswordOTPKey(userID string) string {
-	return fmt.Sprintf("forget/%v", userID)
+func (o *OTPStorageMapImp) getLoginOTPKey(userID string) string {
+	return fmt.Sprintf("login/%v", userID)
 }
 
 func (o *OTPStorageMapImp) GenRegisterOTP(userID string) (string, error) {
@@ -52,8 +52,8 @@ func (o *OTPStorageMapImp) GenRegisterOTP(userID string) (string, error) {
 	return v, o.set(k, v)
 }
 
-func (o *OTPStorageMapImp) GenForgotPasswordOTP(userID string) (string, error) {
-	k := o.getForgetPasswordOTPKey(userID)
+func (o *OTPStorageMapImp) GenLoginOTP(userID string) (string, error) {
+	k := o.getLoginOTPKey(userID)
 	v := fmt.Sprintf("%06d", rand.Intn(1000000))
 	return v, o.set(k, v)
 }
@@ -70,8 +70,8 @@ func (o *OTPStorageMapImp) CheckRegisterOTP(userID, otp string) error {
 	return nil
 }
 
-func (o *OTPStorageMapImp) CheckForgotPasswordOTP(userID, otp string) error {
-	k := o.getForgetPasswordOTPKey(userID)
+func (o *OTPStorageMapImp) CheckLoginOTP(userID, otp string) error {
+	k := o.getLoginOTPKey(userID)
 	ans, err := o.get(k)
 	if err != nil {
 		return err

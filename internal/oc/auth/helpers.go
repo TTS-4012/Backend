@@ -5,15 +5,37 @@ import (
 	"ocontest/pkg/structs"
 )
 
-const verificationMessageTemplate = `
+const registerMessageTemplate = `
 Hello %v! Welcome to the ocontest
 please enter the code below to verify your email address
 Code: %v
 ignore this email if you haven't tried to register to ocontest
 `
 
-func (a *AuthHandlerImp) genValidateEmailMessage(user structs.User, otpCode string) string {
-	return fmt.Sprintf(verificationMessageTemplate,
+const loginMessageTemplate = `
+Hello %v! Welcome to the ocontest
+please enter the code below to login to your account
+Code: %v
+`
+
+type Operation int
+
+const (
+	Register Operation = iota
+	Login
+)
+
+func (a *AuthHandlerImp) genEmailMessage(user structs.User, otpCode string, operation Operation) string {
+	var template string
+	switch operation {
+	case Register:
+		template = registerMessageTemplate
+	case Login:
+		template = loginMessageTemplate
+	default:
+		return ""
+	}
+	return fmt.Sprintf(template,
 		user.Username,
 		otpCode,
 	)

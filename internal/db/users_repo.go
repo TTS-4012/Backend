@@ -10,6 +10,7 @@ type AuthRepo interface {
 	InsertUser(ctx context.Context, user structs.User) (int64, error)
 	VerifyUser(ctx context.Context, userID int64) error
 	GetByUsername(ctx context.Context, username string) (structs.User, error)
+	GetByID(ctx context.Context, userID int64) (structs.User, error)
 }
 type AuthRepoImp struct {
 	conn *pgxpool.Pool
@@ -60,5 +61,14 @@ func (a *AuthRepoImp) GetByUsername(ctx context.Context, username string) (struc
 	`
 	var user structs.User
 	err := a.conn.QueryRow(ctx, stmt, username).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
+	return user, err
+}
+
+func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, error) {
+	stmt := `
+	SELECT id, username, password, email, is_verified FROM users WHERE id = $1 
+	`
+	var user structs.User
+	err := a.conn.QueryRow(ctx, stmt, userID).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
 	return user, err
 }

@@ -100,9 +100,8 @@ func (h *handlers) renewToken(c *gin.Context) {
 	c.JSON(status, resp)
 }
 
-func (h *handlers) otpLogin(c *gin.Context) {
-
-	logger := pkg.Log.WithField("handler", "otpLogin")
+func (h *handlers) requestOTPLogin(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "requestOTPLogin")
 
 	var reqData structs.RequestWithOTPCreds
 	if err := c.ShouldBindJSON(&reqData); err != nil {
@@ -112,7 +111,23 @@ func (h *handlers) otpLogin(c *gin.Context) {
 		})
 	}
 
-	resp, status := h.authHandler.OTPLogin(c, reqData.UserID, reqData.OTP)
+	status := h.authHandler.RequestLoginWithOTP(c, reqData.UserID)
+	c.Status(status)
+}
+
+func (h *handlers) checkOTPLogin(c *gin.Context) {
+
+	logger := pkg.Log.WithField("handler", "checkOTPLogin")
+
+	var reqData structs.RequestWithOTPCreds
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+	}
+
+	resp, status := h.authHandler.CheckLoginWithOTP(c, reqData.UserID, reqData.OTP)
 	c.JSON(status, resp)
 }
 

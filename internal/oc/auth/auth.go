@@ -21,7 +21,8 @@ type AuthHandler interface {
 	VerifyEmail(ctx context.Context, userID int64, otp string) int
 	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int)
 	RenewToken(ctx context.Context, oldRefreshToken string) (structs.AuthenticateResponse, int)
-	OTPLogin(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
+	RequestLoginWithOTP(ctx context.Context, userID int64) int
+	CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
 }
 
@@ -87,7 +88,7 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 		return
 	}
 
-	validateEmailMessage := p.genValidateEmailMessage(user, otpCode)
+	validateEmailMessage := p.genEmailMessage(user, otpCode, Register)
 	err = p.smtpSender.SendEmail(reqData.Email, "Welcome to OContest", validateEmailMessage)
 	if err != nil {
 		logger.Error("error on sending email", err)
@@ -198,9 +199,69 @@ func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string)
 		RefreshToken: refreshToken,
 	}, http.StatusOK
 }
-func (a *AuthHandlerImp) OTPLogin(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int) {
-	//TODO implement me
-	return structs.AuthenticateResponse{}, http.StatusNotImplemented
+
+func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, userID int64) (status int) {
+	logger := pkg.Log.WithField("method", "RequestLoginWithOTP")
+	userIDStr := fmt.Sprintf("%d", userID)
+
+	user, err := p.authRepo.GetByID(ctx, userID)
+	if err != nil {
+		logger.Error("error on request otp login: ", err)
+		return http.StatusInternalServerError
+	}
+	status = http.StatusInternalServerError
+	otpCode, err := p.otpStorage.GenLoginOTP(userIDStr)
+	if err != nil {
+		logger.Error("error on generating otp", err)
+		return
+	}
+	validateEmailMessage := p.genEmailMessage(user, otpCode, Login)
+	err = p.smtpSender.SendEmail(user.Email, "Your one time password", validateEmailMessage)
+	if err != nil {
+		logger.Error("error on sending email", err)
+		status = 503
+		err = pkg.ErrInternalServerError
+		return
+	}
+
+	return
+}
+
+func (p *AuthHandlerImp) CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (ans structs.AuthenticateResponse, status int) {
+
+	logger := pkg.Log.WithField("method", "VerifyEmail")
+	userIDStr := fmt.Sprintf("%d", userID)
+	status = http.StatusInternalServerError
+	if err := p.otpStorage.CheckLoginOTP(userIDStr, otpCode); err != nil {
+		if errors.Is(err, pkg.ErrForbidden) {
+			status = http.StatusForbidden
+			return
+		}
+		logger.Error("error on check register otp", err)
+		return
+	}
+
+	if err := p.authRepo.VerifyUser(ctx, userID); err != nil {
+		logger.Error("error on verifying user", err)
+		return
+	}
+
+	accessToken, refreshToken, err := p.genAuthToken(userID)
+	if err != nil {
+		ans = structs.AuthenticateResponse{
+			Ok:      false,
+			Message: "couldn't generate new token",
+		}
+		return
+	}
+
+	return structs.AuthenticateResponse{
+		Ok:           true,
+		Message:      "success",
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, http.StatusOK
+
 }
 
 func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEditUser) int {
