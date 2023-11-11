@@ -18,9 +18,11 @@ import (
 
 type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
-	VerifyEmail(ctx context.Context, userID int64, otp string) (int, error)
-	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int)
-	RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int)
+	VerifyEmail(ctx context.Context, userID int64, otp string) int
+	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int)
+	RenewToken(ctx context.Context, oldRefreshToken string) (structs.AuthenticateResponse, int)
+	OTPLogin(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
+	EditUser(ctx context.Context, request structs.RequestEditUser) int
 }
 
 type AuthHandlerImp struct {
@@ -102,24 +104,27 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 	return
 }
 
-func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token string) (int, error) {
+func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token string) int {
 
+	logger := pkg.Log.WithField("method", "VerifyEmail")
 	userIDStr := fmt.Sprintf("%d", userID)
 	if err := p.otpStorage.CheckRegisterOTP(userIDStr, token); err != nil {
 		if errors.Is(err, pkg.ErrForbidden) {
-			return http.StatusForbidden, err
+			return http.StatusForbidden
 		}
-		return http.StatusInternalServerError, err
+		logger.Error("error on check register otp", err)
+		return http.StatusInternalServerError
 	}
 
 	if err := p.authRepo.VerifyUser(ctx, userID); err != nil {
-		pkg.Log.Error("error on verifying user", err)
-		return http.StatusInternalServerError, err
+		logger.Error("error on verifying user", err)
+
+		return http.StatusInternalServerError
 	}
-	return http.StatusOK, nil
+	return http.StatusOK
 }
 
-func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.LoginUserResponse, int) {
+func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "LoginUser",
 		"module": "auth",
@@ -128,14 +133,14 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 	userInDB, err := p.authRepo.GetByUsername(ctx, request.Username)
 	if err != nil {
 		logger.Error("error on getting user from db", err)
-		return structs.LoginUserResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "couldn't find user",
 		}, http.StatusInternalServerError
 	}
 	if !userInDB.Verified {
 		logger.Warning("unverified user login attempt", userInDB.Username)
-		return structs.LoginUserResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "user is not verified",
 		}, http.StatusForbidden
@@ -143,14 +148,14 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 	encPassword, err := p.aesHandler.Encrypt(request.Password)
 	if err != nil {
 		logger.Error("error on encrypting password")
-		return structs.LoginUserResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "something went wrong",
 		}, http.StatusInternalServerError
 	}
 	if encPassword != userInDB.EncryptedPassword {
 		logger.Warning("wrong password")
-		return structs.LoginUserResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "wrong password",
 		}, http.StatusUnauthorized
@@ -158,12 +163,12 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 	accessToken, refreshToken, err := p.genAuthToken(userInDB.ID)
 	if err != nil {
 		logger.Error("error on creating tokens", err)
-		return structs.LoginUserResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "something went wrong",
 		}, http.StatusInternalServerError
 	}
-	return structs.LoginUserResponse{
+	return structs.AuthenticateResponse{
 		Ok:           true,
 		Message:      "success",
 		AccessToken:  accessToken,
@@ -171,25 +176,34 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 	}, http.StatusOK
 }
 
-func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.RenewTokenResponse, int) {
+func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.AuthenticateResponse, int) {
 	uid, typ, err := p.jwtHandler.ParseToken(oldRefreshToken)
 	if err != nil || typ != "refresh" {
-		return structs.RenewTokenResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "current token is invalid",
 		}, http.StatusUnauthorized
 	}
 	accessToken, refreshToken, err := p.genAuthToken(uid)
 	if err != nil {
-		return structs.RenewTokenResponse{
+		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "couldn't generate new token",
 		}, http.StatusInternalServerError
 	}
-	return structs.RenewTokenResponse{
+	return structs.AuthenticateResponse{
 		Ok:           true,
 		Message:      "success",
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, http.StatusOK
+}
+func (a *AuthHandlerImp) OTPLogin(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int) {
+	//TODO implement me
+	return structs.AuthenticateResponse{}, http.StatusNotImplemented
+}
+
+func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEditUser) int {
+	//TODO implement me
+	return http.StatusNotImplemented
 }

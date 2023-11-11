@@ -18,21 +18,21 @@ type LoginUserRequest struct {
 	Password string
 }
 
-type LoginUserResponse struct {
+type AuthenticateResponse struct {
 	Ok           bool   `json:"ok"`
 	Message      string `json:"message"`
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
-type RenewTokenResponse struct {
-	Ok           bool
-	Message      string
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-}
-
-type RequestVerifyUser struct {
+type RequestWithOTPCreds struct {
 	UserID int64  `json:"user_id"`
 	OTP    string `json:"otp"`
+}
+
+type RequestEditUser struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }

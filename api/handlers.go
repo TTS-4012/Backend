@@ -46,7 +46,7 @@ func (h *handlers) registerUser(c *gin.Context) {
 func (h *handlers) verifyEmail(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "verifyEmail")
 
-	var reqData structs.RequestVerifyUser
+	var reqData structs.RequestWithOTPCreds
 	if err := c.ShouldBindJSON(&reqData); err != nil {
 		logger.Warn("Failed to read request body", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -54,10 +54,7 @@ func (h *handlers) verifyEmail(c *gin.Context) {
 		})
 	}
 
-	status, err := h.authHandler.VerifyEmail(c, reqData.UserID, reqData.OTP)
-	if err != nil {
-		logger.Error("failed to verify ")
-	}
+	status := h.authHandler.VerifyEmail(c, reqData.UserID, reqData.OTP)
 	c.Status(status)
 }
 
@@ -101,4 +98,35 @@ func (h *handlers) renewToken(c *gin.Context) {
 	oldRefreshToken := strings.TrimSpace(strings.Replace(authHeader[0], "Bearer", "", 1))
 	resp, status := h.authHandler.RenewToken(c, oldRefreshToken)
 	c.JSON(status, resp)
+}
+
+func (h *handlers) otpLogin(c *gin.Context) {
+
+	logger := pkg.Log.WithField("handler", "otpLogin")
+
+	var reqData structs.RequestWithOTPCreds
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+	}
+
+	resp, status := h.authHandler.OTPLogin(c, reqData.UserID, reqData.OTP)
+	c.JSON(status, resp)
+}
+
+func (h *handlers) editUser(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "editUser")
+
+	var reqData structs.RequestEditUser
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+	}
+
+	status := h.authHandler.EditUser(c, reqData)
+	c.Status(status)
 }
