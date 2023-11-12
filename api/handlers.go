@@ -77,24 +77,24 @@ func (h *handlers) loginUser(c *gin.Context) {
 func (h *handlers) renewToken(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "renewToken")
 
-	userID, err := c.Get(UserIDKey)
-	if err != nil{
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
 		logger.Error("error on getting user_id from context")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": pkg.ErrInternalServerError,
 		})
 		return
 	}
-	tokenType, err := c.Get(TokenTypeKey)
-	if err != nil{
+	tokenType, exists := c.Get(TokenTypeKey)
+	if !exists {
 		logger.Error("error on getting token type from context")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": pkg.ErrInternalServerError,
 		})
 		return
+	}
 
-
-	full_refresh := c.GetHeader("full-refresh") // if this header is set to true, then the refresh token will be renewed too
+	full_refresh := c.GetHeader("full-refresh") == "true" // if this header is set to true, then the refresh token will be renewed too
 
 	resp, status := h.authHandler.RenewToken(c, userID.(int64), tokenType.(string), full_refresh)
 	c.JSON(status, resp)
