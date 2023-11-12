@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    user: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env_file:
+      - /home/morteza/infra/env.prod
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  traefik:
+    image: "traefik:v2.10"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  ocontest:
+    image: "mmalekinejad/ocontest:0.0.27"
+    container_name: "ocontest"
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.whoami.rule=Host(`api.ocontest.ir`)"
+    - "traefik.http.routers.whoami.entrypoints=web"
+    env_file:
+      - /home/morteza/infra/env.prod
+
+
+volumes:
+  db-data:
+    driver: local # Define the driver and options under the volume name
+    driver_opts:
+      type: none
+      device: /home/morteza/infra/volumes/pg
+      o: bind
