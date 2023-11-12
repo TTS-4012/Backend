@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+version="0.0.1"
+CGO_ENABLED=0 go build -o "./ocontest:$version"  main.go
+docker build . -f deploy/Dockerfile -t ocontest:$version
+docker push ocontest:$version
