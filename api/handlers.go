@@ -15,6 +15,13 @@ type handlers struct {
 func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 	h := handlers{authHandler}
 
+	r.Use(h.Cors)
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
+
 	v1 := r.Group("/v1")
 	{
 		authGroup := v1.Group("/auth")
@@ -37,6 +44,7 @@ func (h *handlers) registerUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": pkg.ErrBadRequest.Error(),
 		})
+		return
 	}
 
 	resp, status := h.authHandler.RegisterUser(c, reqData)
@@ -52,6 +60,7 @@ func (h *handlers) verifyEmail(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": pkg.ErrBadRequest.Error(),
 		})
+		return
 	}
 
 	status := h.authHandler.VerifyEmail(c, reqData.UserID, reqData.OTP)
@@ -109,6 +118,7 @@ func (h *handlers) requestOTPLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": pkg.ErrBadRequest.Error(),
 		})
+		return
 	}
 
 	status := h.authHandler.RequestLoginWithOTP(c, reqData.UserID)
@@ -125,6 +135,7 @@ func (h *handlers) checkOTPLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": pkg.ErrBadRequest.Error(),
 		})
+		return
 	}
 
 	resp, status := h.authHandler.CheckLoginWithOTP(c, reqData.UserID, reqData.OTP)
@@ -140,6 +151,7 @@ func (h *handlers) editUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": pkg.ErrBadRequest.Error(),
 		})
+		return
 	}
 
 	status := h.authHandler.EditUser(c, reqData)
