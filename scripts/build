@@ -1,5 +1,9 @@
 #!/usr/bin/bash
-version="0.0.1"
+commit_numbers=$( git log --oneline | wc -l )
+version="0.0.$commit_numbers"
+echo "version: $version"
+echo "commit_numbers: $commit_numbers
+echo "pwd: $(pwd)""
 CGO_ENABLED=0 go build -o "./ocontest:$version"  main.go
 docker build . -f deploy/Dockerfile -t ocontest:$version
 docker push ocontest:$version
