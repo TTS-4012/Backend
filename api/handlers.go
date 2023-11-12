@@ -23,7 +23,8 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 			authGroup.POST("/register", h.registerUser)
 			authGroup.POST("/verify", h.verifyEmail)
 			authGroup.POST("/login", h.loginUser)
-			authGroup.POST("/renew_token", h.renewToken)
+			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
+			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
 		}
 	}
 }

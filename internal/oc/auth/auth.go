@@ -24,6 +24,7 @@ type AuthHandler interface {
 	RequestLoginWithOTP(ctx context.Context, userID int64) int
 	CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
+	ParseAuthToken(ctx context.Context, token string) (int64, string, error)
 }
 
 type AuthHandlerImp struct {
@@ -279,4 +280,8 @@ func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEd
 	}
 
 	return http.StatusOK
+}
+
+func (a *AuthHandlerImp) ParseAuthToken(_ context.Context, token string) (int64, string, error) {
+	return a.jwtHandler.ParseToken(token)
 }
