@@ -1,6 +1,5 @@
 FROM golang:1.21.3
-
-ARG version="0"
-COPY ./ocontest-"$version" /bin/ocontest
-
+WORKDIR /src
+COPY . .
+RUN go build -o /bin/ocontest ./main.go
 CMD ["/bin/ocontest"]

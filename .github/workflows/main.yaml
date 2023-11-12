@@ -17,22 +17,33 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  test:
+  build:
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
 
+    outputs:
+      version: ${{ steps.detect_version.outputs.version }}      
     # Steps represent a sequence of tasks that will be executed as part of the job
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-        with: 
+        with:
           fetch-depth: 0
-        
       - uses: actions/setup-go@v4
         with:
           go-version: '^1.21.3' # The Go version to download (if necessary) and use.
+          
+      - name: version
+        id: detect_version
+        run:  echo "version=0.0.$( git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
 
       # Runs go fmt
       - name: build
         run: ./scripts/build
+        env:
+          VERSION: ${{steps.detect_version.outputs.version}}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
+
+          
