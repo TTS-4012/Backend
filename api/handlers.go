@@ -6,7 +6,6 @@ import (
 	"ocontest/internal/oc/auth"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
-	"strings"
 )
 
 type handlers struct {
@@ -78,26 +77,26 @@ func (h *handlers) loginUser(c *gin.Context) {
 func (h *handlers) renewToken(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "renewToken")
 
-	authHeader, exists := c.Request.Header["Authorization"]
-	if !exists {
-		logger.Error("no refresh token provided")
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"Ok":      false,
-			"Message": "no refresh token provided",
+	userID, err := c.Get(UserIDKey)
+	if err != nil{
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError,
 		})
 		return
 	}
-	if len(authHeader) != 1 {
-		logger.Warning("multiple authorization values!", authHeader)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"Ok":      false,
-			"Message": "multiple authorization values!",
+	tokenType, err := c.Get(TokenTypeKey)
+	if err != nil{
+		logger.Error("error on getting token type from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError,
 		})
 		return
-	}
 
-	oldRefreshToken := strings.TrimSpace(strings.Replace(authHeader[0], "Bearer", "", 1))
-	resp, status := h.authHandler.RenewToken(c, oldRefreshToken)
+
+	full_refresh := c.GetHeader("full-refresh") // if this header is set to true, then the refresh token will be renewed too
+
+	resp, status := h.authHandler.RenewToken(c, userID.(int64), tokenType.(string), full_refresh)
 	c.JSON(status, resp)
 }
 

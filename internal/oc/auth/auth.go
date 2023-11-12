@@ -20,7 +20,7 @@ type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
 	VerifyEmail(ctx context.Context, userID int64, otp string) int
 	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int)
-	RenewToken(ctx context.Context, oldRefreshToken string) (structs.AuthenticateResponse, int)
+	RenewToken(ctx context.Context, userID int64, token_type string, fullRefresh bool) (structs.AuthenticateResponse, int)
 	RequestLoginWithOTP(ctx context.Context, userID int64) int
 	CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
@@ -178,20 +178,23 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 	}, http.StatusOK
 }
 
-func (p *AuthHandlerImp) RenewToken(ctx context.Context, oldRefreshToken string) (structs.AuthenticateResponse, int) {
-	uid, typ, err := p.jwtHandler.ParseToken(oldRefreshToken)
-	if err != nil || typ != "refresh" {
+func (p *AuthHandlerImp) RenewToken(ctx context.Context, userID int64, tokenType string, fullRefresh bool) (structs.AuthenticateResponse, int) {
+	if tokenType != "refresh" {
 		return structs.AuthenticateResponse{
 			Ok:      false,
-			Message: "current token is invalid",
-		}, http.StatusUnauthorized
+			Message: "invalid token type",
+		}, http.StatusBadRequest
 	}
-	accessToken, refreshToken, err := p.genAuthToken(uid)
+
+	accessToken, refreshToken, err := p.genAuthToken(userID)
 	if err != nil {
 		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "couldn't generate new token",
 		}, http.StatusInternalServerError
+	}
+	if !fullRefresh {
+		refreshToken = ""
 	}
 	return structs.AuthenticateResponse{
 		Ok:           true,

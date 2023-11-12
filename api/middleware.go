@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+const UserIDKey = "user_id"
+const TokenTypeKey = "token_type"
+
 func (h *handlers) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := pkg.Log.WithField("middleware", "Auth")
@@ -20,8 +23,8 @@ func (h *handlers) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", userId)
-		c.Set("token_type", typ)
+		c.Set(UserIDKey, userId)
+		c.Set(TokenTypeKey, typ)
 
 		c.Next()
 	}
