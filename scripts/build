@@ -8,3 +8,5 @@ ls
 docker login docker.io --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
 docker build -t "mmalekinejad/ocontest:$VERSION" -f deploy/Dockerfile --build-arg version=$VERSION .
 docker push "mmalekinejad/ocontest:$VERSION"
+
+echo "pushed image: mmalekinejad/ocontest:$VERSION"
