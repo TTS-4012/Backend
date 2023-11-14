@@ -64,13 +64,13 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 	var user structs.User
 	user, err = p.authRepo.GetByUsername(ctx, reqData.Username)
 	if err != nil {
-
-		user := structs.User{
+		user = structs.User{
 			Username:          reqData.Username,
 			EncryptedPassword: encryptedPassword,
 			Email:             reqData.Email,
 			Verified:          false,
 		}
+
 		userID, newErr := p.authRepo.InsertUser(ctx, user)
 		if newErr != nil {
 			logger.Errorf("couldn't insert user in database, error on get: %v, error on insert: %v", err, newErr)
