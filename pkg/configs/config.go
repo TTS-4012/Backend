@@ -1,9 +1,10 @@
-package pkg
+package configs
 
 import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -13,13 +14,50 @@ var (
 )
 
 type OContestConf struct {
-	Port int        `yaml:"Port"`
-	Log  SectionLog `yaml:"log"`
+	Postgres SectionPostgres `yaml:"postgres"`
+	JWT      SectionJWT      `yaml:"jwt"`
+	SMTP     SectionSMTP     `yaml:"smtp"`
+	Log      SectionLog      `yaml:"log"`
+	Server   SectionServer   `yaml:"server"`
+	AESKey   string          `yaml:"AESKey"`
+	Auth     SectionAuth     `yaml:"auth"`
 }
 
 type SectionLog struct {
 	Level        string `yaml:"level"`
 	ReportCaller bool   `yaml:"report_caller"`
+}
+
+type SectionPostgres struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
+}
+
+type SectionJWT struct {
+	Secret string `yaml:"secret"`
+}
+
+type SectionSMTP struct {
+	From     string `yaml:"from"`
+	Password string `yaml:"password"`
+}
+
+type SectionAuth struct {
+	Duration SectionAuthDuration `yaml:"duration"`
+}
+
+type SectionAuthDuration struct {
+	AccessToken  time.Duration `yaml:"accesstoken"`
+	RefreshToken time.Duration `yaml:"refreshtoken"`
+	VerifyEmail  time.Duration `yaml:"verifyemail"`
+}
+
+type SectionServer struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
@@ -55,24 +93,13 @@ func BindEnvVariables() {
 
 // Loads the config
 func getConfig() *OContestConf {
-	viper.SetConfigType("yaml")
-
-	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/ocontest/")
-	viper.AddConfigPath(".")
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Println("Error on reading config", err)
-	}
-
 	viper.AutomaticEnv()           // reads from env
 	viper.SetEnvPrefix("ocontest") // automatically turns to capitalized
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	conf := &OContestConf{}
 	BindEnvVariables()
-	err = viper.Unmarshal(conf)
+	err := viper.Unmarshal(conf)
 	if err != nil {
 		panic("Error on unmarshal " + err.Error())
 	}
@@ -82,6 +109,5 @@ func getConfig() *OContestConf {
 
 func InitConf() {
 	Conf = getConfig()
-	initLog(Conf)
-	Log.Info("Config loaded successfully")
+	log.Println(Conf.Auth.Duration.VerifyEmail)
 }

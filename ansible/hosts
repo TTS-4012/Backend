@@ -1,0 +1,1 @@
+production ansible_ssh_host=ocontest.ir ansible_ssh_port=22 ansible_ssh_user=morteza ansible_ssh_private_key_file=./private_key 

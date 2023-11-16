@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Ocontest Auth Api
+  description: |-
+    
+  version: 1.0.0
+servers:
+  - url: https://ocontest.ir/v1
+
+paths:
+  /auth/register:
+    post:
+      summary: Register User
+      description: Insert new user to DB. send an OTP email to be verified
+      requestBody:
+        description: Create a new pet in the store
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: ali
+                email:
+                  type: string
+                  example: john@email.com
+                password:
+                  type: string
+                  example: '12345'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  user_id:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: 'user created successfully'
+        '405':
+          description: Invalid input
+  /auth/verify:
+    post:
+      summary: Verify Email
+      description: check if the email belongs to the user by checking the sent OTP with the OTP in stored server.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  example: 1
+                otp:
+                  type: string
+                  example: '12345'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '403':
+          description: Invalid OTP
+        '503':
+          description: Internal Server Error
+  /auth/login:
+    post:
+      summary: Login
+      description: check given user pass and then return an access token and a refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: ali
+                password:
+                  type: string
+                  example: '12345'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'success'
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '405':
+          description: Invalid input
+  /auth/renew_token:
+    post:
+      summary: Renew Tokens
+      description: Insert new user to DB. send an OTP email to be verified
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+          description: |-
+            it must be in format: 'Bearer token' and token must be the refresh token not the access token
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'success'
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '400':
+          description: multiple or no tokens provided
+        '403':
+          description: Authorization header has not been provided
+        '503':
+          description: Internal Server Error
+  /auth/edit_user:
+    post:
+      summary: edit users
+      description: edit an existing user.
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+          description: |-
+            it must be in format: 'Bearer token' and token must be the refresh token not the access token
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  example: ali
+                username:
+                  type: string
+                  example: 'ali'
+                email:
+                  type: string
+                  example: '12345'
+                password:
+                  type: string
+                  example: '12345'
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'success'
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '403':
+          description: Authorization header has not been provided
+        '503':
+          description: Internal Server Error
