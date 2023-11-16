@@ -8,9 +8,9 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	Ok      bool   `json: "ok"`
-	UserID  int64  `json: "user_id"`
-	Message string `json: "message"`
+	Ok      bool   `json:"ok"`
+	UserID  int64  `json:"user_id"`
+	Message string `json:"message"`
 }
 
 type LoginUserRequest struct {

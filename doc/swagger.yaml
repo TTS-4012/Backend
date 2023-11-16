@@ -145,3 +145,56 @@ paths:
           description: Authorization header has not been provided
         '503':
           description: Internal Server Error
+  /auth/edit_user:
+    post:
+      summary: edit users
+      description: edit an existing user.
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+          description: |-
+            it must be in format: 'Bearer token' and token must be the refresh token not the access token
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  example: ali
+                username:
+                  type: string
+                  example: 'ali'
+                email:
+                  type: string
+                  example: '12345'
+                password:
+                  type: string
+                  example: '12345'
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'success'
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '403':
+          description: Authorization header has not been provided
+        '503':
+          description: Internal Server Error
