@@ -39,6 +39,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		{
 			authGroup.POST("/register", h.registerUser)
 			authGroup.POST("/verify", h.verifyEmail)
+			authGroup.POST("/otp", h.GetOTPForLogin)
 			authGroup.POST("/login", h.loginUser)
 			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
 			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
@@ -71,7 +72,7 @@ func (h *handlers) registerUser(c *gin.Context) {
 func (h *handlers) verifyEmail(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "verifyEmail")
 
-	var reqData structs.RequestWithOTPCreds
+	var reqData structs.RequestVerifyEmail
 	if err := c.ShouldBindJSON(&reqData); err != nil {
 		logger.Warn("Failed to read request body", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -86,7 +87,7 @@ func (h *handlers) verifyEmail(c *gin.Context) {
 
 func (h *handlers) loginUser(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "loginUser")
-	var reqData structs.LoginUserRequest
+	var reqData structs.RequestLogin
 
 	if err := c.ShouldBindJSON(&reqData); err != nil {
 		logger.Error("error on binding request data json")
@@ -96,7 +97,14 @@ func (h *handlers) loginUser(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.authHandler.LoginUser(c, reqData)
+	var resp structs.AuthenticateResponse
+	var status int
+	switch reqData.GrantType {
+	case "password":
+		resp, status = h.authHandler.LoginWithPassword(c, reqData.UserName, reqData.Password)
+	case "otp":
+		resp, status = h.authHandler.LoginWithOTP(c, reqData.UserID, reqData.OTP)
+	}
 	c.JSON(status, resp)
 }
 
@@ -126,10 +134,10 @@ func (h *handlers) renewToken(c *gin.Context) {
 	c.JSON(status, resp)
 }
 
-func (h *handlers) requestOTPLogin(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "requestOTPLogin")
+func (h *handlers) GetOTPForLogin(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "GetOTPForLogin")
 
-	var reqData structs.RequestWithOTPCreds
+	var reqData structs.RequestGetOTPLogin
 	if err := c.ShouldBindJSON(&reqData); err != nil {
 		logger.Warn("Failed to read request body", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -140,23 +148,6 @@ func (h *handlers) requestOTPLogin(c *gin.Context) {
 
 	status := h.authHandler.RequestLoginWithOTP(c, reqData.UserID)
 	c.Status(status)
-}
-
-func (h *handlers) checkOTPLogin(c *gin.Context) {
-
-	logger := pkg.Log.WithField("handler", "checkOTPLogin")
-
-	var reqData structs.RequestWithOTPCreds
-	if err := c.ShouldBindJSON(&reqData); err != nil {
-		logger.Warn("Failed to read request body", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": pkg.ErrBadRequest.Error(),
-		})
-		return
-	}
-
-	resp, status := h.authHandler.CheckLoginWithOTP(c, reqData.UserID, reqData.OTP)
-	c.JSON(status, resp)
 }
 
 func (h *handlers) editUser(c *gin.Context) {

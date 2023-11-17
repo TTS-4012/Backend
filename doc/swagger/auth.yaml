@@ -80,14 +80,35 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: ali
-                password:
-                  type: string
-                  example: '12345'
+              oneOf:
+                - type: object
+                  description: login with username and password
+                  properties:
+                    grant_type:
+                      type: string
+                      example: "password"
+                      description: "It 'must' be password if you want to use user pass login"
+                    username:
+                      type: string
+                      example: ali
+                    password:
+                      type: string
+                      example: '12345'
+                - type: object
+                  description: login with otp
+                  properties:
+                    grant_type:
+                      type: string
+                      example: "otp"
+                      description: "It 'must' be otp if you want to use otp login"
+                    user_id:
+                      type: integer
+                      example: 1
+                    otp:
+                      type: string
+                      example: '12345'
+
+
         required: true
       responses:
         '200':

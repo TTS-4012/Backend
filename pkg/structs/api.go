@@ -1,6 +1,7 @@
 // structs for api request and response
 package structs
 
+// AUTH
 type RegisterUserRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -13,9 +14,9 @@ type RegisterUserResponse struct {
 	Message string `json:"message"`
 }
 
-type LoginUserRequest struct {
-	Username string
-	Password string
+type RequestVerifyEmail struct {
+	UserID int64  `json:"user_id"`
+	OTP    string `json:"otp"`
 }
 
 type AuthenticateResponse struct {
@@ -25,9 +26,16 @@ type AuthenticateResponse struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
-type RequestWithOTPCreds struct {
-	UserID int64  `json:"user_id"`
-	OTP    string `json:"otp"`
+type RequestLogin struct {
+	UserID    int64  `yaml:"user_id"`
+	UserName  string `yaml:"user_name"`
+	Password  string `yaml:"password"`
+	OTP       string `yaml:"otp"`
+	GrantType string `yaml:"grant_type"`
+}
+
+type RequestGetOTPLogin struct {
+	UserID int64 `json:"user_id"`
 }
 
 type RequestEditUser struct {
@@ -37,6 +45,7 @@ type RequestEditUser struct {
 	Email    string `json:"email"`
 }
 
+// PROBLEMS
 type RequestCreateProblem struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`

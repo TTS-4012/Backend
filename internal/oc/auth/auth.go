@@ -19,10 +19,10 @@ import (
 type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
 	VerifyEmail(ctx context.Context, userID int64, otp string) int
-	LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int)
+	LoginWithPassword(ctx context.Context, username, password string) (structs.AuthenticateResponse, int)
 	RenewToken(ctx context.Context, userID int64, token_type string, fullRefresh bool) (structs.AuthenticateResponse, int)
 	RequestLoginWithOTP(ctx context.Context, userID int64) int
-	CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
+	LoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
 	ParseAuthToken(ctx context.Context, token string) (int64, string, error)
 }
@@ -126,13 +126,13 @@ func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token st
 	return http.StatusOK
 }
 
-func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUserRequest) (structs.AuthenticateResponse, int) {
+func (p *AuthHandlerImp) LoginWithPassword(ctx context.Context, username, password string) (structs.AuthenticateResponse, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "LoginUser",
+		"method": "LoginWithPassword",
 		"module": "auth",
 	})
 
-	userInDB, err := p.authRepo.GetByUsername(ctx, request.Username)
+	userInDB, err := p.authRepo.GetByUsername(ctx, username)
 	if err != nil {
 		logger.Error("error on getting user from db", err)
 		return structs.AuthenticateResponse{
@@ -147,7 +147,7 @@ func (p *AuthHandlerImp) LoginUser(ctx context.Context, request structs.LoginUse
 			Message: "user is not verified",
 		}, http.StatusForbidden
 	}
-	encPassword, err := p.aesHandler.Encrypt(request.Password)
+	encPassword, err := p.aesHandler.Encrypt(password)
 	if err != nil {
 		logger.Error("error on encrypting password")
 		return structs.AuthenticateResponse{
@@ -231,7 +231,7 @@ func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, userID int64) 
 	return
 }
 
-func (p *AuthHandlerImp) CheckLoginWithOTP(ctx context.Context, userID int64, otpCode string) (ans structs.AuthenticateResponse, status int) {
+func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, userID int64, otpCode string) (ans structs.AuthenticateResponse, status int) {
 
 	logger := pkg.Log.WithField("method", "VerifyEmail")
 	userIDStr := fmt.Sprintf("%d", userID)
