@@ -38,6 +38,12 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
 			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
 		}
+		problemGroup := v1.Group("/problems")
+		{
+			problemGroup.POST("/", h.CreateProblem)
+			problemGroup.GET("/:id", h.GetProblem)
+			problemGroup.GET("/", h.ListProblems)
+		}
 	}
 }
 
@@ -162,4 +168,16 @@ func (h *handlers) editUser(c *gin.Context) {
 
 	status := h.authHandler.EditUser(c, reqData)
 	c.Status(status)
+}
+
+func (h *handlers) CreateProblem(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}
+
+func (h *handlers) GetProblem(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}
+
+func (h *handlers) ListProblems(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
 }
