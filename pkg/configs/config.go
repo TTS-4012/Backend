@@ -36,6 +36,12 @@ type SectionPostgres struct {
 	Database string `yaml:"database"`
 }
 
+type SectionMongo struct {
+	Address    string `yaml:"address"`
+	Database   string `yaml:"database"`
+	Collection string `yaml:"collection"`
+}
+
 type SectionJWT struct {
 	Secret string `yaml:"secret"`
 }

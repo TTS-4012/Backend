@@ -7,3 +7,8 @@ type User struct {
 	Email             string
 	Verified          bool
 }
+
+type ProblemDescription struct {
+	ID          string
+	Description string
+}
