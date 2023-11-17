@@ -1,7 +1,6 @@
 package configs
 
 import (
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -15,6 +14,7 @@ var (
 
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
+	Mongo    SectionMongo    `yaml:"mongo"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`
@@ -115,5 +115,4 @@ func getConfig() *OContestConf {
 
 func InitConf() {
 	Conf = getConfig()
-	log.Println(Conf.Auth.Duration.VerifyEmail)
 }

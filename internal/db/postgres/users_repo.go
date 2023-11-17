@@ -4,21 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"ocontest/internal/db"
 	"ocontest/pkg/structs"
 )
 
-type AuthRepo interface {
-	InsertUser(ctx context.Context, user structs.User) (int64, error)
-	VerifyUser(ctx context.Context, userID int64) error
-	GetByUsername(ctx context.Context, username string) (structs.User, error)
-	GetByID(ctx context.Context, userID int64) (structs.User, error)
-	UpdateUser(ctx context.Context, user structs.User) error
-}
 type AuthRepoImp struct {
 	conn *pgxpool.Pool
 }
 
-func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (AuthRepo, error) {
+func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (db.AuthRepo, error) {
 	ans := &AuthRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }

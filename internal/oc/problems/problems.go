@@ -2,6 +2,7 @@ package problems
 
 import (
 	"context"
+	"ocontest/internal/db"
 	"ocontest/pkg/structs"
 )
 
@@ -12,15 +13,15 @@ type ProblemsHandler interface {
 }
 
 type ProblemsHandlerImp struct {
+	problemMetadataRepo     db.ProblemsMetadataRepo
+	problemsDescriptionRepo db.ProblemDescriptionsRepo
 }
 
-func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func NewProblemsHandler() ProblemsHandler {
-	return &ProblemsHandlerImp{}
+func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptionRepo db.ProblemDescriptionsRepo) ProblemsHandler {
+	return &ProblemsHandlerImp{
+		problemMetadataRepo:     problemsRepo,
+		problemsDescriptionRepo: problemsDescriptionRepo,
+	}
 }
 
 func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int) {
@@ -29,6 +30,11 @@ func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.Reque
 }
 
 func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int) (structs.ResponseGetProblem, int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {
 	//TODO implement me
 	panic("implement me")
 }

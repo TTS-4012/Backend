@@ -3,7 +3,6 @@ package smtp
 import (
 	"fmt"
 	"net/smtp"
-	"ocontest/pkg"
 )
 
 const smtpHost = "smtp.gmail.com"
@@ -22,7 +21,6 @@ func NewSMTPHandler(from, password string) Sender {
 	var ans SenderImp
 	ans.from = from
 	ans.auth = smtp.PlainAuth("", from, password, smtpHost)
-	pkg.Log.Debug(from, password)
 	return ans
 }
 func (s SenderImp) SendEmail(to, subject, body string) error {

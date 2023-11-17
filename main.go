@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"ocontest/api"
+	"ocontest/internal/db/mongodb"
 	"ocontest/internal/db/postgres"
 	"ocontest/internal/jwt"
 	"ocontest/internal/oc/auth"
@@ -48,12 +49,20 @@ func main() {
 	// make repo
 	authRepo, err := postgres.NewAuthRepo(ctx, dbConn)
 	if err != nil {
-		log.Fatal("error on creating auth repo", err)
+		log.Fatal("error on creating auth repo: ", err)
+	}
+	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating problems metadata repo: ", err)
 	}
 
+	problemsDescriptionRepo, err := mongodb.NewProblemDescriptionRepo(c.Mongo)
+	if err != nil {
+		log.Fatal("error on creating problem description repo: ", err)
+	}
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
-	problemsHandler := problems.NewProblemsHandler()
+	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
 
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler)

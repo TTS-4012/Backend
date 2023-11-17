@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
 	"ocontest/pkg/structs"
@@ -14,18 +15,13 @@ import (
 )
 
 // Replace the placeholder with your Atlas connection string
-const timeout = time.Second * 30
-
-type ProblemDescriptionsRepo interface {
-	Save(description string) (string, error)
-	Get(id string) (string, error)
-}
+const timeout = time.Second
 
 type ProblemDescriptionRepoImp struct {
 	collection *mongo.Collection
 }
 
-func NewProblemDescriptionRepo(config configs.SectionMongo) (ProblemDescriptionsRepo, error) {
+func NewProblemDescriptionRepo(config configs.SectionMongo) (db.ProblemDescriptionsRepo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -39,7 +35,7 @@ func NewProblemDescriptionRepo(config configs.SectionMongo) (ProblemDescriptions
 
 	return &ProblemDescriptionRepoImp{
 		collection: client.Database(config.Database).Collection(config.Collection),
-	}, nil
+	}, client.Ping(ctx, nil)
 }
 
 func (p ProblemDescriptionRepoImp) Save(description string) (string, error) {
