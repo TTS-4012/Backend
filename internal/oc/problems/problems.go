@@ -2,6 +2,8 @@ package problems
 
 import (
 	"context"
+	"errors"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/pkg"
@@ -10,7 +12,7 @@ import (
 
 type ProblemsHandler interface {
 	CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int)
-	GetProblem(ctx context.Context, problemID int) (structs.ResponseGetProblem, int)
+	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
 	ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int)
 }
 
@@ -49,9 +51,35 @@ func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.Reque
 	return
 }
 
-func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int) (structs.ResponseGetProblem, int) {
-	//TODO implement me
-	panic("implement me")
+func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetProblem",
+		"module": "Problems",
+	})
+
+	problem, err := p.problemMetadataRepo.GetProblem(ctx, problemID)
+	if err != nil {
+		logger.Error("error on getting problem from problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return structs.ResponseGetProblem{}, status
+	}
+
+	doc, err := p.problemsDescriptionRepo.Get(problem.DocumentID)
+	if err != nil {
+		logger.Error("error on getting problem from problem decription repo: ", err)
+		return structs.ResponseGetProblem{}, http.StatusInternalServerError
+	}
+
+	return structs.ResponseGetProblem{
+		ProblemID:   problemID,
+		Title:       problem.Title,
+		SolveCount:  problem.SolvedCount,
+		Hardness:    problem.Hardness,
+		Description: doc,
+	}, http.StatusOK
 }
 
 func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {

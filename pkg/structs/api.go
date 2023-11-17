@@ -70,9 +70,9 @@ type ResponseListProblemsItem struct {
 }
 
 type ResponseGetProblem struct {
-	ProblemID   int    `json:"problem_Id"`
+	ProblemID   int64  `json:"problem_Id"`
 	Title       string `json:"title"`
-	SolveCount  int    `json:"solve_count"`
-	Hardness    int    `json:"hardness"`
+	SolveCount  int64  `json:"solve_count"`
+	Hardness    int64  `json:"hardness"`
 	Description string `json:"description"`
 }

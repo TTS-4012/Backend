@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+	"strconv"
 )
 
 func (h *handlers) CreateProblem(c *gin.Context) {
@@ -24,7 +25,21 @@ func (h *handlers) CreateProblem(c *gin.Context) {
 }
 
 func (h *handlers) GetProblem(c *gin.Context) {
-	h.problemsHandler.GetProblem(c, 0)
+	//logger := pkg.Log.WithField("handler", "getProblem")
+
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+	resp, status := h.problemsHandler.GetProblem(c, problemID)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
 }
 
 func (h *handlers) ListProblems(c *gin.Context) {

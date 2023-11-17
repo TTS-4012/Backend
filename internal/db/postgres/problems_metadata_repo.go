@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/internal/db"
 	"ocontest/pkg"
@@ -29,9 +31,9 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
 	stmt := `
 	CREATE TABLE IF NOT EXISTS problems(
 	    id SERIAL PRIMARY KEY ,
-	    created_by int,
-		title varchar(70),
-	    document_id varchar(70),
+	    created_by int NOT NULL ,
+		title varchar(70) NOT NULL ,
+	    document_id varchar(70) NOT NULL ,
 	    solve_count int DEFAULT 0,
 		hardness int DEFAULT NULL,
 	    created_at TIMESTAMP DEFAULT NOW(),
@@ -56,11 +58,14 @@ func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem str
 
 func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (structs.Problem, error) {
 	stmt := `
-	SELECT created_by, title, document_id, solve_count, hardness FROM problems WHERE id = $1
+	SELECT created_by, title, document_id, solve_count, coalesce(hardness, -1) FROM problems WHERE id = $1
 	`
 	var problem structs.Problem
 	err := a.conn.QueryRow(ctx, stmt, id).Scan(
 		&problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
 	return problem, err
 }
 
