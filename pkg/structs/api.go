@@ -36,3 +36,34 @@ type RequestEditUser struct {
 	Password string `json:"password"`
 	Email    string `json:"email"`
 }
+
+type RequestCreateProblem struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+type ResponseCreateProblem struct {
+	ProblemID int `json:"problem_Id"`
+}
+
+type RequestListProblems struct {
+	OrderedBy  string `json:"ordered_by"`
+	Descending bool   `json:"descending"`
+	Limit      int    `json:"limit"`
+	Offset     int    `json:"offset"`
+}
+
+type ResponseListProblemsItem struct {
+	ProblemID  int    `json:"problem_Id"`
+	Title      string `json:"title"`
+	SolveCount int    `json:"solve_count"`
+	Hardness   int    `json:"hardness"`
+}
+
+type ResponseGetProblem struct {
+	ProblemID   int    `json:"problem_Id"`
+	Title       string `json:"title"`
+	SolveCount  int    `json:"solve_count"`
+	Hardness    int    `json:"hardness"`
+	Description string `json:"description"`
+}

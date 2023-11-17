@@ -4,16 +4,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/oc/problems"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
 )
 
 type handlers struct {
-	authHandler auth.AuthHandler
+	authHandler     auth.AuthHandler
+	problemsHandler problems.ProblemsHandler
 }
 
-func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
-	h := handlers{authHandler}
+func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler) {
+	h := handlers{
+		authHandler:     authHandler,
+		problemsHandler: problemHandler,
+	}
 
 	r.Use(h.Cors)
 	r.GET("/ping", func(c *gin.Context) {
@@ -38,7 +43,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler) {
 			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
 			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
 		}
-		problemGroup := v1.Group("/problems")
+		problemGroup := v1.Group("/problems", h.AuthMiddleware())
 		{
 			problemGroup.POST("/", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
@@ -171,13 +176,13 @@ func (h *handlers) editUser(c *gin.Context) {
 }
 
 func (h *handlers) CreateProblem(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	h.problemsHandler.CreateProblem(c, structs.RequestCreateProblem{})
 }
 
 func (h *handlers) GetProblem(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	h.problemsHandler.GetProblem(c, 0)
 }
 
 func (h *handlers) ListProblems(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	h.problemsHandler.ListProblem(c, structs.RequestListProblems{})
 }

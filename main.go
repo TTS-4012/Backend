@@ -6,9 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"ocontest/api"
-	"ocontest/internal/db"
+	"ocontest/internal/db/postgres"
 	"ocontest/internal/jwt"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/oc/problems"
 	"ocontest/internal/otp"
 	"ocontest/pkg"
 
@@ -39,22 +40,23 @@ func main() {
 
 	otpStorage := otp.NewOTPStorage()
 
-	dbConn, err := db.NewConnectionPool(ctx, c.Postgres)
+	dbConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
 	if err != nil {
 		log.Fatal("error on connecting to db", err)
 	}
 
 	// make repo
-	authRepo, err := db.NewAuthRepo(ctx, dbConn)
+	authRepo, err := postgres.NewAuthRepo(ctx, dbConn)
 	if err != nil {
 		log.Fatal("error on creating auth repo", err)
 	}
 
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
+	problemsHandler := problems.NewProblemsHandler()
 
 	// starting http server
-	api.AddRoutes(r, authHandler)
+	api.AddRoutes(r, authHandler, problemsHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)
