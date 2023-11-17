@@ -1,13 +1,12 @@
 # This is a basic workflow to help you get started with Actions
 
-name: build & deploy
+name: test
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-  # just for test, remove it later
   pull_request:
     branches: [ "main" ]
 
@@ -17,33 +16,34 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  test:
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
 
-    outputs:
-      version: ${{ steps.detect_version.outputs.version }}      
     # Steps represent a sequence of tasks that will be executed as part of the job
-
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - uses: actions/setup-go@v4
         with:
           go-version: '^1.21.3' # The Go version to download (if necessary) and use.
-          
-      - name: version
-        id: detect_version
-        run:  echo "version=0.0.$( git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
+
+
+      - name: postgres
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '14'  # See https://hub.docker.com/_/postgres for available versions
+
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-version: 7
 
       # Runs go fmt
-      - name: build
-        run: ./scripts/build
-        env:
-          VERSION: ${{steps.detect_version.outputs.version}}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: formatting
+        run: go fmt ./...
 
-
-          
+      # Runs tests
+      - name: test
+        run: go test ./...
