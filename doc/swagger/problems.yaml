@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: Ocontest Auth Api
+  description: |-
+    
+  version: 1.0.0
+servers:
+  - url: https://ocontest.ir/v1
+
+paths:
+  /problems:
+    post:
+      summary: Add Problem
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+
+      requestBody:
+        content:
+          application/json:
+            description: the text of problem (it is json because it is in format of editorjs)
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "A Hard Problem"
+                descriptions:
+                  type: string
+                  example: "This is a hard problem, you should print \"Hello \"World "
+            # since schema is not unique, can't provide it.
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  problem_id:
+                    type: integer
+                    example: 1
+        '403':
+          description: UnAuthorized
+        '503':
+          description: Internal Server Error
+    get:
+      summary: List Problems
+      description: return every property of problems execpt their markdown description.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+
+        - in: query
+          name: ordered_by
+          description: parameter which problems are ordered by
+          schema:
+            type: string
+            enum:
+              - solve_count
+              - problem_id
+              - hardness
+          required: false
+
+        - in: query
+          name: decending
+          description: search execution order
+          schema:
+            type: boolean
+          required: false
+
+        - in: query
+          name: limit
+          description: maximum number of problems returned
+          schema:
+            type: integer
+          required: false
+
+        - in: query
+          name: offset
+          description: number of problems to skip
+          schema:
+            type: integer
+          required: false
+
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/problem_overview'
+
+        '403':
+          description: UnAuthorized
+        '503':
+          description: Internal Server Error
+
+  /problems/(problem_id):
+    get:
+      summary: Get A Problem
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/problem_overview'
+                  - type: object
+                    properties:
+
+                      description:
+                        type: string
+                        example: "This is a hard problem, you should print \"Hello \"World "
+
+        '403':
+          description: UnAuthorized
+        '503':
+          description: Internal Server Error
+
+components:
+  schemas:
+    problem_overview:
+      properties:
+        problem_id:
+          type: integer
+          example: 10
+        title:
+          type: string
+          example: "A Hard Problem"
+        solve_count:
+          type: integer
+          example: 10
+        hardness:
+          type: integer
+          example: 1200
