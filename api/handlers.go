@@ -176,7 +176,19 @@ func (h *handlers) editUser(c *gin.Context) {
 }
 
 func (h *handlers) CreateProblem(c *gin.Context) {
-	h.problemsHandler.CreateProblem(c, structs.RequestCreateProblem{})
+	logger := pkg.Log.WithField("handler", "createProblem")
+
+	var reqData structs.RequestCreateProblem
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	resp, status := h.problemsHandler.CreateProblem(c, reqData)
+	c.JSON(status, resp)
 }
 
 func (h *handlers) GetProblem(c *gin.Context) {

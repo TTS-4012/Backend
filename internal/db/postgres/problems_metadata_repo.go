@@ -47,7 +47,7 @@ func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem str
 	stmt := `
 	INSERT INTO problems(
 		created_by, title, document_id) 
-		VALUES($1, $2, $3, $4, $5) RETURNING id
+		VALUES($1, $2, $3) RETURNING id
 	`
 	var id int64
 	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID).Scan(&id)

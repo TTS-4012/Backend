@@ -37,9 +37,8 @@ type SectionPostgres struct {
 }
 
 type SectionMongo struct {
-	Address    string `yaml:"address"`
-	Database   string `yaml:"database"`
-	Collection string `yaml:"collection"`
+	Address  string `yaml:"address"`
+	Database string `yaml:"database"`
 }
 
 type SectionJWT struct {

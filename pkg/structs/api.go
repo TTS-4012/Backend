@@ -43,7 +43,7 @@ type RequestCreateProblem struct {
 }
 
 type ResponseCreateProblem struct {
-	ProblemID int `json:"problem_Id"`
+	ProblemID int64 `json:"problem_Id"`
 }
 
 type RequestListProblems struct {
