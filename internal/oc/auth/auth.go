@@ -134,7 +134,7 @@ func (p *AuthHandlerImp) LoginWithPassword(ctx context.Context, username, passwo
 
 	userInDB, err := p.authRepo.GetByUsername(ctx, username)
 	if err != nil {
-		logger.Error("error on getting user from db", err)
+		logger.Errorf("error on getting user from db. error: %v username: %v", err, username)
 		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "couldn't find user",
@@ -237,7 +237,7 @@ func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, userID int64, otpCode
 	userIDStr := fmt.Sprintf("%d", userID)
 	status = http.StatusInternalServerError
 	if err := p.otpStorage.CheckLoginOTP(userIDStr, otpCode); err != nil {
-		if errors.Is(err, pkg.ErrForbidden) {
+		if errors.Is(err, pkg.ErrForbidden) || errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusForbidden
 			return
 		}

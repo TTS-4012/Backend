@@ -27,11 +27,11 @@ type AuthenticateResponse struct {
 }
 
 type RequestLogin struct {
-	UserID    int64  `yaml:"user_id"`
-	UserName  string `yaml:"user_name"`
-	Password  string `yaml:"password"`
-	OTP       string `yaml:"otp"`
-	GrantType string `yaml:"grant_type"`
+	GrantType string `json:"grant_type"`
+	UserID    int64  `json:"user_id"`
+	UserName  string `json:"username"`
+	Password  string `json:"password"`
+	OTP       string `json:"otp"`
 }
 
 type RequestGetOTPLogin struct {
@@ -63,10 +63,10 @@ type RequestListProblems struct {
 }
 
 type ResponseListProblemsItem struct {
-	ProblemID  int    `json:"problem_Id"`
+	ProblemID  int64  `json:"problem_id"`
 	Title      string `json:"title"`
-	SolveCount int    `json:"solve_count"`
-	Hardness   int    `json:"hardness"`
+	SolveCount int64  `json:"solve_count"`
+	Hardness   int64  `json:"hardness"`
 }
 
 type ResponseGetProblem struct {

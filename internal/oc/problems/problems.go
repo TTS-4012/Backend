@@ -83,6 +83,24 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 }
 
 func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {
-	//TODO implement me
-	panic("implement me")
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListProblem",
+		"module": "Problems",
+	})
+	problems, err := p.problemMetadataRepo.ListProblems(ctx, req.OrderedBy, req.Descending, req.Limit, req.Offset)
+	if err != nil {
+		logger.Error("error on listing problems: ", err)
+		return nil, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseListProblemsItem, 0)
+	for _, p := range problems {
+		ans = append(ans, structs.ResponseListProblemsItem{
+			ProblemID:  p.ID,
+			Title:      p.Title,
+			SolveCount: p.SolvedCount,
+			Hardness:   p.Hardness,
+		})
+	}
+	return ans, http.StatusOK
 }

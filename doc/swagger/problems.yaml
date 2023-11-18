@@ -67,6 +67,7 @@ paths:
               - solve_count
               - problem_id
               - hardness
+            default: problem_id
           required: false
 
         - in: query

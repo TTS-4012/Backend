@@ -71,7 +71,7 @@ func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (str
 
 func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn string, descending bool, limit, offset int) ([]structs.Problem, error) {
 	stmt := `
-	SELECT created_by, title, document_id, solve_count, hardness FROM problems ORDER BY
+	SELECT id, created_by, title, document_id, solve_count, COALESCE(hardness, -1) FROM problems ORDER BY
 	`
 	colName, exists := SearchableColumns[searchColumn]
 	if !exists {
@@ -98,7 +98,7 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	for rows.Next() {
 
 		var problem structs.Problem
-		err = rows.Scan(&problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
+		err = rows.Scan(&problem.ID, &problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
 		if err != nil {
 			return nil, err
 		}
