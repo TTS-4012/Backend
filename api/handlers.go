@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"ocontest/internal/oc/auth"
 	"ocontest/internal/oc/problems"
+
+	"github.com/gin-gonic/gin"
 )
 
 type handlers struct {
@@ -47,6 +48,11 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.POST("/", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("/", h.ListProblems)
+		}
+		fileGroup := v1.Group("/files")
+		{
+			fileGroup.GET("/:name", h.DownloadFile)
+			fileGroup.POST("/", h.UploadFile)
 		}
 	}
 }
