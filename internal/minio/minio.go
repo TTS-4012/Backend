@@ -2,16 +2,19 @@ package minio
 
 import (
 	"context"
+	"mime/multipart"
+	"net/http"
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
+	"ocontest/pkg/structs"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 type FilesHandler interface {
-	UploadFile()
-	DownloadFile()
+	UploadFile(ctx context.Context, file *multipart.FileHeader) (structs.ResponseUploadFile, int)
+	DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int)
 }
 
 type FilesHandlerImp struct {
@@ -57,16 +60,20 @@ func CreateNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 			return err
 		}
 	} else {
-		logger.Warn("Successfully created ", bucketName)
+		logger.Info("Successfully created bucket ", bucketName)
 	}
 
 	return nil
 }
 
-func (f FilesHandlerImp) UploadFile() {
+func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHeader) (structs.ResponseUploadFile, int) {
 	//TODO
+
+	return structs.ResponseUploadFile{}, http.StatusNotImplemented
 }
 
-func (f FilesHandlerImp) DownloadFile() {
+func (f FilesHandlerImp) DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int) {
 	//TODO
+
+	return structs.ResponseDownloadFile{}, http.StatusNotImplemented
 }

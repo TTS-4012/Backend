@@ -76,3 +76,14 @@ type ResponseGetProblem struct {
 	Hardness    int64  `json:"hardness"`
 	Description string `json:"description"`
 }
+
+// FILE
+type ResponseUploadFile struct {
+	FileName string `json:"file_name"`
+}
+
+type ResponseDownloadFile struct {
+	ContentDisposition string `header:"Content-Disposition"`
+	ContentType        string `json:"ContentType"`
+	Data               []byte `json:"data"`
+}
