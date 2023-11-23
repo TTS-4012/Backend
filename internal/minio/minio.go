@@ -2,6 +2,8 @@ package minio
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"ocontest/pkg"
@@ -93,7 +95,32 @@ func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHea
 }
 
 func (f FilesHandlerImp) DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int) {
-	//TODO
+	logger := pkg.Log.WithField("method", "DownloadFile")
 
-	return structs.ResponseDownloadFile{}, http.StatusNotImplemented
+	file, err := f.minioClient.GetObject(ctx, f.bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		logger.Error("Failed to get object", err)
+		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		logger.Error("Failed to get object info", err)
+		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+	}
+
+	bytefile := make([]byte, info.Size)
+	_, err = file.Read(bytefile)
+	if err != io.EOF {
+		logger.Error("Failed to read file", err)
+		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+	}
+
+	logger.Info("Successfully downloaded ", objectName, " of size ", info.Size)
+	return structs.ResponseDownloadFile{
+		ContentDisposition: fmt.Sprintf("attachment; filename=%s", objectName),
+		ContentType:        info.ContentType,
+		Data:               bytefile,
+	}, http.StatusOK
 }
