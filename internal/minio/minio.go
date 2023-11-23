@@ -67,9 +67,29 @@ func CreateNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 }
 
 func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHeader) (structs.ResponseUploadFile, int) {
-	//TODO
+	logger := pkg.Log.WithField("method", "UploadFile")
 
-	return structs.ResponseUploadFile{}, http.StatusNotImplemented
+	buffer, err := file.Open()
+	if err != nil {
+		logger.Error("Failed to open file", err)
+		return structs.ResponseUploadFile{}, http.StatusInternalServerError
+	}
+	defer buffer.Close()
+
+	objectName := file.Filename
+	fileBuffer := buffer
+	contentType := file.Header["Content-Type"][0]
+	fileSize := file.Size
+	info, err := f.minioClient.PutObject(ctx, f.bucket, objectName, fileBuffer, fileSize, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		logger.Error("Failed to store object", err)
+		return structs.ResponseUploadFile{}, http.StatusInternalServerError
+	}
+
+	logger.Info("Successfully uploaded ", objectName, " of size ", info.Size)
+	return structs.ResponseUploadFile{
+		FileName: objectName,
+	}, http.StatusOK
 }
 
 func (f FilesHandlerImp) DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int) {
