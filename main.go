@@ -3,16 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"ocontest/api"
 	"ocontest/internal/db/mongodb"
 	"ocontest/internal/db/postgres"
 	"ocontest/internal/jwt"
+	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
 	"ocontest/internal/oc/problems"
 	"ocontest/internal/otp"
 	"ocontest/pkg"
+
+	"github.com/gin-gonic/gin"
 
 	"ocontest/pkg/aes"
 	"ocontest/pkg/configs"
@@ -46,6 +48,14 @@ func main() {
 		log.Fatal("error on connecting to db", err)
 	}
 
+	minioClient, err := minio.GetNewClient(ctx, c.MinIO)
+	if err != nil {
+		log.Fatal("error on getting new minio client", err)
+	}
+	err = minio.CreateNewBucket(ctx, c.MinIO, minioClient)
+	if err != nil {
+		log.Fatal("error on creating new minio bucket", err)
+	}
 	// make repo
 	authRepo, err := postgres.NewAuthRepo(ctx, dbConn)
 	if err != nil {
@@ -63,9 +73,9 @@ func main() {
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-
+	filesHandler := minio.NewFilesHandler(minioClient, c.MinIO.Bucket)
 	// starting http server
-	api.AddRoutes(r, authHandler, problemsHandler)
+	api.AddRoutes(r, authHandler, problemsHandler, filesHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)

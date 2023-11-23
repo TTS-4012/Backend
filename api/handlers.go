@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
 	"ocontest/internal/oc/problems"
 
@@ -11,12 +12,14 @@ import (
 type handlers struct {
 	authHandler     auth.AuthHandler
 	problemsHandler problems.ProblemsHandler
+	filesHandler    minio.FilesHandler
 }
 
-func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler) {
+func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, filesHandler minio.FilesHandler) {
 	h := handlers{
 		authHandler:     authHandler,
 		problemsHandler: problemHandler,
+		filesHandler:    filesHandler,
 	}
 
 	r.Use(h.Cors)
