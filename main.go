@@ -52,10 +52,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error on getting new minio client", err)
 	}
-	err = minio.CreateNewBucket(ctx, c.MinIO, minioClient)
-	if err != nil {
-		log.Fatal("error on creating new minio bucket", err)
-	}
+
 	// make repo
 	authRepo, err := postgres.NewAuthRepo(ctx, dbConn)
 	if err != nil {
@@ -73,7 +70,8 @@ func main() {
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-	filesHandler := minio.NewFilesHandler(minioClient, c.MinIO.Bucket)
+	filesHandler := minio.NewFilesHandler(ctx, c.MinIO, minioClient)
+
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, filesHandler)
 

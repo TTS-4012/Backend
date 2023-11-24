@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"ocontest/pkg"
@@ -24,10 +25,15 @@ type FilesHandlerImp struct {
 	bucket      string
 }
 
-func NewFilesHandler(minioClient *minio.Client, bucket string) FilesHandler {
+func NewFilesHandler(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) FilesHandler {
+	err := createNewBucket(ctx, conf, minioClient)
+	if err != nil {
+		log.Fatal("error on creating new minio bucket", err)
+	}
+
 	return FilesHandlerImp{
 		minioClient: minioClient,
-		bucket:      bucket,
+		bucket:      conf.Bucket,
 	}
 }
 
@@ -48,7 +54,7 @@ func GetNewClient(ctx context.Context, conf configs.SectionMinIO) (*minio.Client
 	return minioClient, nil
 }
 
-func CreateNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) error {
+func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) error {
 	logger := pkg.Log.WithField("method", "CreateNewBucket")
 	bucketName := conf.Bucket
 	location := conf.Region
