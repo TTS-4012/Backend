@@ -55,9 +55,9 @@ func (h *handlers) loginUser(c *gin.Context) {
 	var status int
 	switch reqData.GrantType {
 	case "password":
-		resp, status = h.authHandler.LoginWithPassword(c, reqData.UserName, reqData.Password)
+		resp, status = h.authHandler.LoginWithPassword(c, reqData.Email, reqData.Password)
 	case "otp":
-		resp, status = h.authHandler.LoginWithOTP(c, reqData.UserID, reqData.OTP)
+		resp, status = h.authHandler.LoginWithOTP(c, reqData.Email, reqData.OTP)
 	default:
 		logger.Warning("invalid grant type! reqData: ", reqData)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -106,7 +106,7 @@ func (h *handlers) GetOTPForLogin(c *gin.Context) {
 		return
 	}
 
-	status := h.authHandler.RequestLoginWithOTP(c, reqData.UserID)
+	status := h.authHandler.RequestLoginWithOTP(c, reqData.Email)
 	c.Status(status)
 }
 

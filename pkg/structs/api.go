@@ -27,15 +27,14 @@ type AuthenticateResponse struct {
 }
 
 type RequestLogin struct {
-	GrantType string `json:"grant_type"`
-	UserID    int64  `json:"user_id"`
-	UserName  string `json:"username"`
+	GrantType string `json:"grant_type"` // base on grant type, we need either password or otp
+	Email     string `json:"email"`
 	Password  string `json:"password"`
 	OTP       string `json:"otp"`
 }
 
 type RequestGetOTPLogin struct {
-	UserID int64 `json:"user_id"`
+	Email string `json:"email"`
 }
 
 type RequestEditUser struct {
