@@ -41,11 +41,11 @@ func GetNewClient(ctx context.Context, conf configs.SectionMinIO) (*minio.Client
 	endpoint := conf.Endpoint
 	accessKeyID := conf.AccessKey
 	secretAccessKey := conf.SecretKey
-	useSSL := false
+	useTLS := conf.Secure
 
 	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
+		Secure: useTLS,
 	})
 	if err != nil {
 		return nil, err

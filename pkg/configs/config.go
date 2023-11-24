@@ -72,6 +72,7 @@ type SectionMinIO struct {
 	SecretKey string `yaml:"secretkey"`
 	Bucket    string `yaml:"bucket"`
 	Region    string `yaml:"region"`
+	Secure    bool   `yaml:"secure"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
