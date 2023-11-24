@@ -10,16 +10,16 @@ import (
 )
 
 type handlers struct {
-	authHandler     auth.AuthHandler
-	problemsHandler problems.ProblemsHandler
-	filesHandler    minio.FilesHandler
+	authHandler        auth.AuthHandler
+	problemsHandler    problems.ProblemsHandler
+	submissionsHandler minio.SubmissionsHandler
 }
 
-func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, filesHandler minio.FilesHandler) {
+func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler minio.SubmissionsHandler) {
 	h := handlers{
-		authHandler:     authHandler,
-		problemsHandler: problemHandler,
-		filesHandler:    filesHandler,
+		authHandler:        authHandler,
+		problemsHandler:    problemHandler,
+		submissionsHandler: submissionsHandler,
 	}
 
 	r.Use(h.Cors)
@@ -52,10 +52,10 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("/", h.ListProblems)
 		}
-		fileGroup := v1.Group("/files")
+		submissionGroup := v1.Group("/submission", h.AuthMiddleware())
 		{
-			fileGroup.GET("/:name", h.DownloadFile)
-			fileGroup.POST("/", h.UploadFile)
+			submissionGroup.GET("/:id", h.DownloadSubmission)
+			submissionGroup.POST("/", h.UploadSubmission)
 		}
 	}
 }

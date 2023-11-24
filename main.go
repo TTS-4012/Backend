@@ -70,10 +70,10 @@ func main() {
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-	filesHandler := minio.NewFilesHandler(ctx, c.MinIO, minioClient)
+	submissionsHandler := minio.NewSubmissionsHandler(ctx, c.MinIO, minioClient)
 
 	// starting http server
-	api.AddRoutes(r, authHandler, problemsHandler, filesHandler)
+	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)

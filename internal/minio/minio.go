@@ -15,8 +15,8 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-type FilesHandler interface {
-	UploadFile(ctx context.Context, file *multipart.FileHeader) (structs.ResponseUploadFile, int)
+type SubmissionsHandler interface {
+	UploadFile(ctx context.Context, file *multipart.FileHeader, objectName string) (structs.ResponseUploadFile, int)
 	DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int)
 }
 
@@ -25,7 +25,7 @@ type FilesHandlerImp struct {
 	bucket      string
 }
 
-func NewFilesHandler(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) FilesHandler {
+func NewSubmissionsHandler(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) SubmissionsHandler {
 	err := createNewBucket(ctx, conf, minioClient)
 	if err != nil {
 		log.Fatal("error on creating new minio bucket", err)
@@ -55,7 +55,7 @@ func GetNewClient(ctx context.Context, conf configs.SectionMinIO) (*minio.Client
 }
 
 func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) error {
-	logger := pkg.Log.WithField("method", "CreateNewBucket")
+	logger := pkg.Log.WithField("method", "createNewBucket")
 	bucketName := conf.Bucket
 	location := conf.Region
 
@@ -74,7 +74,7 @@ func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 	return nil
 }
 
-func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHeader) (structs.ResponseUploadFile, int) {
+func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHeader, objectName string) (structs.ResponseUploadFile, int) {
 	logger := pkg.Log.WithField("method", "UploadFile")
 
 	buffer, err := file.Open()
@@ -84,7 +84,6 @@ func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHea
 	}
 	defer buffer.Close()
 
-	objectName := file.Filename
 	fileBuffer := buffer
 	contentType := file.Header["Content-Type"][0]
 	fileSize := file.Size
