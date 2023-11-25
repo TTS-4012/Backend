@@ -227,6 +227,7 @@ func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, email string) 
 		return
 	}
 
+	status = http.StatusOK
 	return
 }
 
