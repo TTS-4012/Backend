@@ -11,6 +11,7 @@ import (
 	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
 	"ocontest/internal/oc/problems"
+	"ocontest/internal/oc/submissions"
 	"ocontest/internal/otp"
 	"ocontest/pkg"
 
@@ -48,7 +49,7 @@ func main() {
 		log.Fatal("error on connecting to db", err)
 	}
 
-	minioClient, err := minio.GetNewClient(ctx, c.MinIO)
+	minioClient, err := minio.NewMinioHandler(ctx, c.MinIO)
 	if err != nil {
 		log.Fatal("error on getting new minio client", err)
 	}
@@ -67,10 +68,15 @@ func main() {
 	if err != nil {
 		log.Fatal("error on creating problem description repo: ", err)
 	}
+
+	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating submission metadata repo: ", err)
+	}
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-	submissionsHandler := minio.NewSubmissionsHandler(ctx, c.MinIO, minioClient)
+	submissionsHandler := submissions.NewSubmissionHandler(submissionsRepo, minioClient)
 
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)

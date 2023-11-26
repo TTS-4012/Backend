@@ -23,11 +23,12 @@ type Problem struct {
 }
 
 type SubmissionMetadata struct {
-	ID        int64
-	ProblemID int64
-	UserID    int64
-	FileName  string
-	Score     int
-	Status    string // either 'new', 'processing', 'processed'
-	Language  string // just 'python' for now
+	ID        int64  `json:"id"`
+	ProblemID int64  `json:"problem_id"`
+	UserID    int64  `json:"user_id"`
+	FileName  string `json:"file_name"`
+	Score     int    `json:"score"`
+	Status    string `json:"status"`   // either 'new', 'processing', 'processed'
+	Language  string `json:"language"` // just 'python' for now
+	Public    bool   `json:"public"`
 }

@@ -1,43 +1,27 @@
 package minio
 
 import (
+	"bytes"
 	"context"
-	"fmt"
-	"io"
-	"log"
-	"mime/multipart"
-	"net/http"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
-	"ocontest/pkg/structs"
-
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/sirupsen/logrus"
+	"io"
+	"ocontest/pkg"
+	"ocontest/pkg/configs"
 )
 
-type SubmissionsHandler interface {
-	UploadFile(ctx context.Context, file *multipart.FileHeader, objectName string) (structs.ResponseUploadFile, int)
-	DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int)
+type MinioHandler interface {
+	UploadFile(ctx context.Context, file []byte, objectName, contentType string) error
+	DownloadFile(ctx context.Context, objectName string) ([]byte, string, error)
 }
 
-type FilesHandlerImp struct {
+type MinioHandlerImp struct {
 	minioClient *minio.Client
 	bucket      string
 }
 
-func NewSubmissionsHandler(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) SubmissionsHandler {
-	err := createNewBucket(ctx, conf, minioClient)
-	if err != nil {
-		log.Fatal("error on creating new minio bucket", err)
-	}
-
-	return FilesHandlerImp{
-		minioClient: minioClient,
-		bucket:      conf.Bucket,
-	}
-}
-
-func GetNewClient(ctx context.Context, conf configs.SectionMinIO) (*minio.Client, error) {
+func NewMinioHandler(ctx context.Context, conf configs.SectionMinIO) (MinioHandler, error) {
 	endpoint := conf.Endpoint
 	accessKeyID := conf.AccessKey
 	secretAccessKey := conf.SecretKey
@@ -51,7 +35,15 @@ func GetNewClient(ctx context.Context, conf configs.SectionMinIO) (*minio.Client
 		return nil, err
 	}
 
-	return minioClient, nil
+	err = createNewBucket(ctx, conf, minioClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return MinioHandlerImp{
+		minioClient: minioClient,
+		bucket:      conf.Bucket,
+	}, nil
 }
 
 func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) error {
@@ -74,58 +66,45 @@ func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 	return nil
 }
 
-func (f FilesHandlerImp) UploadFile(ctx context.Context, file *multipart.FileHeader, objectName string) (structs.ResponseUploadFile, int) {
-	logger := pkg.Log.WithField("method", "UploadFile")
+func (f MinioHandlerImp) UploadFile(ctx context.Context, file []byte, objectName, contentType string) error {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"module": "minio",
+		"method": "upload",
+	})
 
-	buffer, err := file.Open()
+	fileSize := int64(len(file))
+	fileReader := bytes.NewReader(file)
+	_, err := f.minioClient.PutObject(ctx, f.bucket, objectName, fileReader, fileSize, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		logger.Error("Failed to open file", err)
-		return structs.ResponseUploadFile{}, http.StatusInternalServerError
+		logger.Error("Failed to store object, err: ", err)
 	}
-	defer buffer.Close()
+	return err
 
-	fileBuffer := buffer
-	contentType := file.Header["Content-Type"][0]
-	fileSize := file.Size
-	info, err := f.minioClient.PutObject(ctx, f.bucket, objectName, fileBuffer, fileSize, minio.PutObjectOptions{ContentType: contentType})
-	if err != nil {
-		logger.Error("Failed to store object", err)
-		return structs.ResponseUploadFile{}, http.StatusInternalServerError
-	}
-
-	logger.Info("Successfully uploaded ", objectName, " of size ", info.Size)
-	return structs.ResponseUploadFile{
-		FileName: objectName,
-	}, http.StatusOK
 }
 
-func (f FilesHandlerImp) DownloadFile(ctx context.Context, objectName string) (structs.ResponseDownloadFile, int) {
-	logger := pkg.Log.WithField("method", "DownloadFile")
+func (f MinioHandlerImp) DownloadFile(ctx context.Context, objectName string) ([]byte, string, error) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"module": "minio",
+		"method": "download",
+	})
 
 	file, err := f.minioClient.GetObject(ctx, f.bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
-		logger.Error("Failed to get object", err)
-		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+		logger.Error("Failed to get object, error: ", err)
+		return nil, "", err
 	}
 	defer file.Close()
-
 	info, err := file.Stat()
 	if err != nil {
-		logger.Error("Failed to get object info", err)
-		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+		logger.Error("error on stat file: ", err)
+		return nil, "", err
 	}
 
-	bytefile := make([]byte, info.Size)
-	_, err = file.Read(bytefile)
-	if err != io.EOF {
-		logger.Error("Failed to read file", err)
-		return structs.ResponseDownloadFile{}, http.StatusInternalServerError
+	bytefile, err := io.ReadAll(file)
+	if err != nil {
+		logger.Error("error on decoding byte file, error: ", err)
+		return nil, "", err
 	}
 
-	logger.Info("Successfully downloaded ", objectName, " of size ", info.Size)
-	return structs.ResponseDownloadFile{
-		ContentDisposition: fmt.Sprintf("attachment; filename=%s", objectName),
-		ContentType:        info.ContentType,
-		Data:               bytefile,
-	}, http.StatusOK
+	return bytefile, info.ContentType, nil
 }

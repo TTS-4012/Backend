@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *handlers) UploadSubmission(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "UploadSubmission")
+func (h *handlers) Submit(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "Submit")
 
 	userID, exists := c.Get(UserIDKey)
 	if !exists {
@@ -29,15 +29,11 @@ func (h *handlers) UploadSubmission(c *gin.Context) {
 		return
 	}
 
-	//TODO: get submission id instead of "1"
-	objectName := strconv.FormatInt(userID.(int64), 10) + "-" + "1"
-
-	resp, status := h.submissionsHandler.UploadFile(c, file, objectName)
-	c.JSON(status, resp)
+	h.submissionsHandler.Submit(c, userID)
 }
 
-func (h *handlers) DownloadSubmission(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "DownloadSubmission")
+func (h *handlers) GetSubmission(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "GetSubmission")
 
 	userID, exists := c.Get(UserIDKey)
 	if !exists {

@@ -31,6 +31,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 		score int DEFAULT 0,
 		status submission_status DEFAULT 'unprocessed',
 		language submission_language,
+		public boolean DEFAULT FALSE,
 	    created_at TIMESTAMP DEFAULT NOW()
 	)`}
 
@@ -53,11 +54,11 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, score, status, language FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, score, status, language, public FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.Status, &ans.Language)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.Status, &ans.Language, &ans.Public)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound

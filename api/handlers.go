@@ -2,9 +2,9 @@ package api
 
 import (
 	"net/http"
-	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
 	"ocontest/internal/oc/problems"
+	"ocontest/internal/oc/submissions"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,10 +12,10 @@ import (
 type handlers struct {
 	authHandler        auth.AuthHandler
 	problemsHandler    problems.ProblemsHandler
-	submissionsHandler minio.SubmissionsHandler
+	submissionsHandler submissions.Handler
 }
 
-func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler minio.SubmissionsHandler) {
+func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler submissions.Handler) {
 	h := handlers{
 		authHandler:        authHandler,
 		problemsHandler:    problemHandler,
@@ -54,8 +54,8 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		}
 		submissionGroup := v1.Group("/submission", h.AuthMiddleware())
 		{
-			submissionGroup.GET("/:id", h.DownloadSubmission)
-			submissionGroup.POST("/", h.UploadSubmission)
+			submissionGroup.GET("/:id", h.GetSubmission)
+			submissionGroup.POST("/", h.Submit)
 		}
 	}
 }

@@ -79,11 +79,10 @@ type ResponseGetProblem struct {
 
 // FILE
 type ResponseUploadFile struct {
-	FileName string `json:"file_name"`
+	SubmissionID int64 `json:"submission_id"`
 }
 
-type ResponseDownloadFile struct {
-	ContentDisposition string `header:"Content-Disposition"`
-	ContentType        string `json:"ContentType"`
-	Data               []byte `json:"data"`
+type ResponseGetSubmission struct {
+	Metadata SubmissionMetadata
+	RawCode  []byte `json:"data"`
 }
