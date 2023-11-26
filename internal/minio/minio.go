@@ -3,12 +3,13 @@ package minio
 import (
 	"bytes"
 	"context"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/sirupsen/logrus"
 	"io"
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/sirupsen/logrus"
 )
 
 type MinioHandler interface {
@@ -47,7 +48,11 @@ func NewMinioHandler(ctx context.Context, conf configs.SectionMinIO) (MinioHandl
 }
 
 func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient *minio.Client) error {
-	logger := pkg.Log.WithField("method", "createNewBucket")
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"module": "minio",
+		"method": "new bucket",
+	})
+
 	bucketName := conf.Bucket
 	location := conf.Region
 
@@ -55,7 +60,7 @@ func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 	if err != nil {
 		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
 		if errBucketExists == nil && exists {
-			logger.Warn("We already own ", bucketName)
+			logger.Warn("We already own the bucket ", bucketName)
 		} else {
 			return err
 		}
@@ -76,7 +81,7 @@ func (f MinioHandlerImp) UploadFile(ctx context.Context, file []byte, objectName
 	fileReader := bytes.NewReader(file)
 	_, err := f.minioClient.PutObject(ctx, f.bucket, objectName, fileReader, fileSize, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		logger.Error("Failed to store object, err: ", err)
+		logger.Error("Failed to store object, error: ", err)
 	}
 	return err
 
@@ -94,9 +99,10 @@ func (f MinioHandlerImp) DownloadFile(ctx context.Context, objectName string) ([
 		return nil, "", err
 	}
 	defer file.Close()
+
 	info, err := file.Stat()
 	if err != nil {
-		logger.Error("error on stat file: ", err)
+		logger.Error("error on stat file, error: ", err)
 		return nil, "", err
 	}
 

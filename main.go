@@ -76,7 +76,7 @@ func main() {
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-	submissionsHandler := submissions.NewSubmissionHandler(submissionsRepo, minioClient)
+	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient)
 
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)

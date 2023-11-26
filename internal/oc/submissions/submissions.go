@@ -2,56 +2,65 @@ package submissions
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/internal/minio"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Handler interface {
-	Submit(ctx context.Context, userID, problemID int64, code []byte, contentType string) (submissionID int64, status int)
+	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 }
 
-type SubmissionHandlerImp struct {
+type SubmissionsHandlerImp struct {
 	Handler
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 }
 
-func NewSubmissionHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler) Handler {
-	return &SubmissionHandlerImp{
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler) Handler {
+	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
 	}
 }
 
-func (s *SubmissionHandlerImp) Submit(ctx context.Context, userID, problemID int64, code []byte, contentType string) (submissionID int64, status int) {
-	logger := pkg.Log.WithField("handler", "Submit")
+func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "Submit",
+		"module": "Submission",
+	})
 
 	status = http.StatusInternalServerError
 
 	submission := structs.SubmissionMetadata{
-		UserID:    userID,
-		ProblemID: problemID,
+		UserID:    request.UserID,
+		ProblemID: request.ProblemID,
+		FileName:  request.FileName,
+		Language:  request.Language,
 	}
+
 	submissionID, err := s.submissionMetadataRepo.Insert(ctx, submission)
 	if err != nil {
 		logger.Error("error on insert to submission repo: ", err)
 		return
 	}
 
-	objectName := getObjectName(userID, problemID, submissionID)
-	err = s.minioHandler.UploadFile(ctx, code, objectName, contentType)
+	objectName := getObjectName(request.UserID, request.ProblemID, submissionID)
+	err = s.minioHandler.UploadFile(ctx, request.Code, objectName, request.ContentType)
 	if err != nil {
+		logger.Error("error on uploading file from minio: ", err)
 		return submissionID, http.StatusInternalServerError
 	}
+
 	return submissionID, http.StatusOK
 }
 
-func (s *SubmissionHandlerImp) Get(ctx context.Context, userID, submissionID int64) (ans structs.ResponseGetSubmission, contentType string, status int) {
+func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID int64) (ans structs.ResponseGetSubmission, contentType string, status int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "Get",
 		"module": "Submission",
@@ -75,6 +84,7 @@ func (s *SubmissionHandlerImp) Get(ctx context.Context, userID, submissionID int
 		logger.Error("error on get file from minio: ", err)
 		return
 	}
+
 	status = http.StatusOK
 	ans = structs.ResponseGetSubmission{
 		Metadata: submissionMetadata,
