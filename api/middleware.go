@@ -9,11 +9,6 @@ import (
 const UserIDKey = "user_id"
 const TokenTypeKey = "token_type"
 
-func (h *handlers) Cors(c *gin.Context) {
-	c.Header("access-control-allow-origin", "*")
-	c.Next()
-}
-
 func (h *handlers) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logger := pkg.Log.WithField("middleware", "Auth")

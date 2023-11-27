@@ -18,14 +18,13 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		problemsHandler: problemHandler,
 	}
 
-	r.Use(h.Cors)
+	r.Use(h.corsHandler)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
 
-	r.Use(h.corsHandler)
 	r.OPTIONS("/*cors", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
@@ -43,6 +42,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		}
 		problemGroup := v1.Group("/problems", h.AuthMiddleware())
 		{
+			problemGroup.Use(h.AuthMiddleware())
 			problemGroup.POST("/", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("/", h.ListProblems)
