@@ -77,3 +77,7 @@ func (h *handlers) ListProblems(c *gin.Context) {
 		c.Status(status)
 	}
 }
+
+func (h *handlers) DeleteProblem(c *gin.Context) {
+	c.Status(http.StatusOK)
+}

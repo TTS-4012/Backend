@@ -47,6 +47,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.POST("/", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("/", h.ListProblems)
+			problemGroup.DELETE("/:id", h.DeleteProblem)
 		}
 	}
 }
