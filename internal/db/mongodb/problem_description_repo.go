@@ -69,3 +69,7 @@ func (p ProblemDescriptionRepoImp) Get(id string) (string, error) {
 	}
 	return result.Description, nil
 }
+
+func (p ProblemDescriptionRepoImp) Delete(id string) error {
+	return nil
+}
