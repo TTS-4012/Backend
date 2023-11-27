@@ -69,6 +69,9 @@ func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID in
 	status = http.StatusInternalServerError
 	submissionMetadata, err := s.submissionMetadataRepo.Get(ctx, submissionID)
 	if err != nil {
+		if err == pkg.ErrNotFound {
+			status = http.StatusNotFound
+		}
 		logger.Error("error on get submission, error: ", err)
 		return
 	}
