@@ -14,6 +14,7 @@ type ProblemsHandler interface {
 	CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int)
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
 	ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int)
+	DeleteProblem(ctx context.Context, problemId int64) int
 }
 
 type ProblemsHandlerImp struct {
@@ -103,4 +104,9 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 		})
 	}
 	return ans, http.StatusOK
+}
+
+func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemId int64) int {
+	_, _ = ctx, problemId
+	return 0
 }
