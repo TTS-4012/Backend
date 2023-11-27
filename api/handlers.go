@@ -25,12 +25,11 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		})
 	})
 
+	r.Use(h.corsHandler)
 	r.OPTIONS("/*cors", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, full-refresh")
 		c.Status(http.StatusOK)
 	})
+
 	v1 := r.Group("/v1")
 	{
 		authGroup := v1.Group("/auth")

@@ -32,7 +32,7 @@ func main() {
 	// connecting to dependencies
 	jwtHandler := jwt.NewGenerator(c.JWT)
 
-	smtpHandler := smtp.NewSMTPHandler(c.SMTP.From, c.SMTP.Password)
+	smtpHandler := smtp.NewSMTPHandler(c.SMTP)
 
 	aesHandler, err := aes.NewAesHandler([]byte(c.AESKey))
 	if err != nil {

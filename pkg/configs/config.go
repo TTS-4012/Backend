@@ -48,6 +48,7 @@ type SectionJWT struct {
 type SectionSMTP struct {
 	From     string `yaml:"from"`
 	Password string `yaml:"password"`
+	Enabled  bool   `yaml:"enabled"`
 }
 
 type SectionAuth struct {
