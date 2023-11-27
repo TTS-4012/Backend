@@ -21,3 +21,15 @@ type Problem struct {
 	SolvedCount int64
 	Hardness    int64
 }
+
+type Testcase struct {
+	Input  string `json:"input"`
+	Answer string `json:"answer"`
+}
+
+type JudgeSubmissions struct {
+	ID         string     `json:"id"`
+	Code       []byte     `json:"code"`
+	Testcases  []Testcase `json:"testcases"`
+	TestStates []string   `json:"testStates"`
+}

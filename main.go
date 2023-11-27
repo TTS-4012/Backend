@@ -60,6 +60,13 @@ func main() {
 	if err != nil {
 		log.Fatal("error on creating problem description repo: ", err)
 	}
+
+	//TODO: implement judge handler
+	//_, err = broker.NewJudgeQueue(c.Nats)
+	//if err != nil {
+	//	log.Fatal("error on making judge queue: ", err)
+	//}
+
 	// initiating module handlers
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
