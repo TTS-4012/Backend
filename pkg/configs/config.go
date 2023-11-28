@@ -76,6 +76,7 @@ type SectionServer struct {
 }
 
 type SectionMinIO struct {
+	Enabled   bool   `yaml:"enabled"`
 	Endpoint  string `yaml:"endpoint"`
 	AccessKey string `yaml:"accesskey"`
 	SecretKey string `yaml:"secretkey"`
