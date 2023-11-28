@@ -77,7 +77,7 @@ type ResponseGetProblem struct {
 }
 
 type RequestUpdateProblem struct {
-	Id          int64  `json:"id"`
+	Id          int64
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }

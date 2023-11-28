@@ -78,6 +78,32 @@ func (h *handlers) ListProblems(c *gin.Context) {
 	}
 }
 
+func (h *handlers) UpdateProblem(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "updateProblem")
+
+	var reqData structs.RequestUpdateProblem
+	var err error
+	reqData.Id, err = strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.problemsHandler.UpdateProblem(c, reqData)
+	c.Status(status)
+}
+
 func (h *handlers) DeleteProblem(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "deleteProblem")
 
