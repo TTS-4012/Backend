@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,6 +25,24 @@ const (
 	VerdictXX
 	VerdictCE
 )
+
+func (v Verdict) String() string {
+	switch v {
+	case VerdictOK:
+		return "OK"
+	case VerdictTL:
+		return "TL"
+	case VerdictML:
+		return "ML"
+	case VerdictRE:
+		return "RE"
+	case VerdictXX:
+		return "XX"
+	case VerdictCE:
+		return "CE"
+	}
+	return fmt.Sprintf("?? %d", v)
+}
 
 type Runner interface {
 	TimeLimit(duration time.Duration) Runner
@@ -58,6 +77,7 @@ func (s *Dummy) Init(logger *log.Logger) error {
 
 	s.workingDir = s.tmpdir
 	s.logger = logger
+	os.Chdir(s.tmpdir)
 	return nil
 }
 
@@ -65,8 +85,7 @@ func (s Dummy) Pwd() string {
 	return s.tmpdir
 }
 
-func (s *Dummy) CreateFile(name string, r io.Reader) error {
-	filename := filepath.Join(s.tmpdir, name)
+func (s *Dummy) CreateFile(filename string, r io.Reader) error {
 	s.logger.Print("Creating file ", filename)
 
 	f, err := os.Create(filename)
@@ -93,8 +112,7 @@ func (s Dummy) GetFile(name string) (io.Reader, error) {
 	return bytes.NewBuffer(f), nil
 }
 
-func (s Dummy) MakeExecutable(name string) error {
-	filename := filepath.Join(s.Pwd(), name)
+func (s Dummy) MakeExecutable(filename string) error {
 
 	err := os.Chmod(filename, 0777)
 	s.logger.Print("Making executable: ", filename, " error: ", err)
@@ -130,27 +148,23 @@ func (s *Dummy) Stdout(writer io.Writer) Runner {
 	return s
 }
 
-func (s *Dummy) Run(prg string, needStatus bool) (language.Status, error) {
-	cmd := exec.Command("runner_test")
+func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
+	cmd := exec.Command("python3", prg)
 	cmd.Stdin = s.stdin
 	cmd.Stdout = s.stdout
 	cmd.Stderr = s.stderr
 	cmd.Dir = s.workingDir
-	cmd.Env = append(s.env, "PATH="+os.Getenv("PATH")+":"+s.tmpdir)
+	//cmd.Env = append(s.env, "PATH="+os.Getenv("PATH")+":"+s.tmpdir)
 
 	var (
-		st               language.Status
 		errKill, errWait error
 		finish           = make(chan bool, 1)
 		wg               sync.WaitGroup
 	)
 
-	st.Verdict = language.VerdictOK
-
 	start := time.NewTimer(s.tl)
 	if err := cmd.Start(); err != nil {
-		st.Verdict = language.VerdictXX
-		return st, err
+		return VerdictXX, err
 	}
 	defer start.Stop()
 
@@ -158,34 +172,54 @@ func (s *Dummy) Run(prg string, needStatus bool) (language.Status, error) {
 	go func() {
 		defer wg.Done()
 		errWait = cmd.Wait()
+		fmt.Println("RUN", errWait)
 		finish <- true
 	}()
 
+	v := VerdictOK
 	select {
 	case <-start.C:
-		st.Verdict = language.VerdictTL
+		v = VerdictTL
 		if errKill = cmd.Process.Kill(); errKill != nil {
-			st.Verdict = language.VerdictXX
+			v = VerdictXX
 		}
 	case <-finish:
 	}
 
 	wg.Wait()
 
-	if errWait != nil && (strings.HasPrefix(errWait.Error(), "exit status") || strings.HasPrefix(errWait.Error(), "signal:")) {
-		if st.Verdict == language.VerdictOK {
-			st.Verdict = language.VerdictRE
+	//if errWait != nil && (strings.HasPrefix(errWait.Error(), "exit status") || strings.HasPrefix(errWait.Error(), "signal:")) {
+	if _, ok := errWait.(*exec.ExitError); ok {
+		if v == VerdictOK {
+			v = VerdictRE
 		}
 		errWait = nil
 	}
 
 	if errWait != nil {
-		return st, errWait
+		return v, errWait
 	}
 
-	return st, errKill
+	return v, errKill
 }
 
 func (s *Dummy) Cleanup() error {
 	return os.RemoveAll(s.tmpdir)
+}
+
+func main() {
+	// runner for python
+	d := NewDummy()
+	d.Init(log.New(os.Stdout, "", 0))
+	d.TimeLimit(time.Second)
+	d.Stdout(os.Stdout)
+	d.Stderr(os.Stderr)
+	d.CreateFile("runner_test.py", strings.NewReader(`print("Hello World")`))
+	d.MakeExecutable("runner_test.py")
+
+	v, err := d.Run("runner_test.py", false)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Verdict", v.String())
 }
