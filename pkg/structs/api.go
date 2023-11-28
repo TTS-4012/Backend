@@ -75,3 +75,13 @@ type ResponseGetProblem struct {
 	Hardness    int64  `json:"hardness"`
 	Description string `json:"description"`
 }
+
+// FILE
+type ResponseUploadFile struct {
+	SubmissionID int64 `json:"submission_id"`
+}
+
+type ResponseGetSubmission struct {
+	Metadata SubmissionMetadata
+	RawCode  []byte `json:"data"`
+}

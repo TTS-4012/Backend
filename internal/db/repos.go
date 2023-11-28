@@ -26,3 +26,7 @@ type ProblemDescriptionsRepo interface {
 	Get(id string) (string, error)
 	Delete(id string) error
 }
+type SubmissionMetadataRepo interface {
+	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
+	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
+}

@@ -21,6 +21,7 @@ type OContestConf struct {
 	Server   SectionServer   `yaml:"server"`
 	AESKey   string          `yaml:"AESKey"`
 	Auth     SectionAuth     `yaml:"auth"`
+	MinIO    SectionMinIO    `yaml:"minio"`
 }
 
 type SectionLog struct {
@@ -63,6 +64,15 @@ type SectionAuthDuration struct {
 type SectionServer struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
+}
+
+type SectionMinIO struct {
+	Endpoint  string `yaml:"endpoint"`
+	AccessKey string `yaml:"accesskey"`
+	SecretKey string `yaml:"secretkey"`
+	Bucket    string `yaml:"bucket"`
+	Region    string `yaml:"region"`
+	Secure    bool   `yaml:"secure"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
