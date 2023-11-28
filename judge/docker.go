@@ -2,15 +2,20 @@ package main
 
 import (
 	"context"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
 
+type Worker struct {
+	containerID string
+}
+type JudgeHandler struct {
+}
+
 func main() {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		panic(err)
 	}
@@ -29,4 +34,5 @@ func main() {
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
+
 }
