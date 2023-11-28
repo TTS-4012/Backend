@@ -76,6 +76,12 @@ type ResponseGetProblem struct {
 	Description string `json:"description"`
 }
 
+type RequestUpdateProblem struct {
+	Id          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 // FILE
 type ResponseUploadFile struct {
 	SubmissionID int64 `json:"submission_id"`
