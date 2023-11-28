@@ -106,7 +106,27 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 	return ans, http.StatusOK
 }
 
-func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemId int64) int {
-	_, _ = ctx, problemId
-	return 0
+func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "DeleteProblem",
+		"module": "Problems",
+	})
+
+	documentID, err := p.problemMetadataRepo.DeleteProblem(ctx, problemID)
+	if err != nil {
+		logger.Error("error on getting problem from problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+
+	err = p.problemsDescriptionRepo.Delete(documentID)
+	if err != nil {
+		logger.Error("error on getting problem from problem decription repo: ", err)
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusAccepted
 }
