@@ -70,6 +70,10 @@ func (p ProblemDescriptionRepoImp) Get(id string) (string, error) {
 	return result.Description, nil
 }
 
+func (p ProblemDescriptionRepoImp) Update(id, description string) error {
+	return nil
+}
+
 func (p ProblemDescriptionRepoImp) Delete(id string) error {
 	fid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
