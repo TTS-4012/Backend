@@ -19,10 +19,10 @@ import (
 type AuthHandler interface {
 	RegisterUser(ctx context.Context, request structs.RegisterUserRequest) (structs.RegisterUserResponse, int)
 	VerifyEmail(ctx context.Context, userID int64, otp string) int
-	LoginWithPassword(ctx context.Context, username, password string) (structs.AuthenticateResponse, int)
+	LoginWithPassword(ctx context.Context, email, password string) (structs.AuthenticateResponse, int)
 	RenewToken(ctx context.Context, userID int64, token_type string, fullRefresh bool) (structs.AuthenticateResponse, int)
-	RequestLoginWithOTP(ctx context.Context, userID int64) int
-	LoginWithOTP(ctx context.Context, userID int64, otpCode string) (structs.AuthenticateResponse, int)
+	RequestLoginWithOTP(ctx context.Context, userID string) int
+	LoginWithOTP(ctx context.Context, email, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
 	ParseAuthToken(ctx context.Context, token string) (int64, string, error)
 }
@@ -126,15 +126,15 @@ func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token st
 	return http.StatusOK
 }
 
-func (p *AuthHandlerImp) LoginWithPassword(ctx context.Context, username, password string) (structs.AuthenticateResponse, int) {
+func (p *AuthHandlerImp) LoginWithPassword(ctx context.Context, email, password string) (structs.AuthenticateResponse, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "LoginWithPassword",
 		"module": "auth",
 	})
 
-	userInDB, err := p.authRepo.GetByUsername(ctx, username)
+	userInDB, err := p.authRepo.GetByEmail(ctx, email)
 	if err != nil {
-		logger.Errorf("error on getting user from db. error: %v username: %v", err, username)
+		logger.Errorf("error on getting user from db. error: %v", err)
 		return structs.AuthenticateResponse{
 			Ok:      false,
 			Message: "couldn't find user",
@@ -204,17 +204,16 @@ func (p *AuthHandlerImp) RenewToken(ctx context.Context, userID int64, tokenType
 	}, http.StatusOK
 }
 
-func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, userID int64) (status int) {
+func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, email string) (status int) {
 	logger := pkg.Log.WithField("method", "RequestLoginWithOTP")
-	userIDStr := fmt.Sprintf("%d", userID)
 
-	user, err := p.authRepo.GetByID(ctx, userID)
+	user, err := p.authRepo.GetByEmail(ctx, email)
 	if err != nil {
 		logger.Error("error on request otp login: ", err)
 		return http.StatusInternalServerError
 	}
 	status = http.StatusInternalServerError
-	otpCode, err := p.otpStorage.GenLoginOTP(userIDStr)
+	otpCode, err := p.otpStorage.GenLoginOTP(fmt.Sprintf("%d", user.ID))
 	if err != nil {
 		logger.Error("error on generating otp", err)
 		return
@@ -228,14 +227,20 @@ func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, userID int64) 
 		return
 	}
 
+	status = http.StatusOK
 	return
 }
 
-func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, userID int64, otpCode string) (ans structs.AuthenticateResponse, status int) {
+func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, email, otpCode string) (ans structs.AuthenticateResponse, status int) {
 
 	logger := pkg.Log.WithField("method", "VerifyEmail")
-	userIDStr := fmt.Sprintf("%d", userID)
+	user, err := p.authRepo.GetByEmail(ctx, email)
 	status = http.StatusInternalServerError
+	if err != nil {
+		logger.Error("error on getting user from db: ", err)
+		return
+	}
+	userIDStr := fmt.Sprintf("%d", user.ID)
 	if err := p.otpStorage.CheckLoginOTP(userIDStr, otpCode); err != nil {
 		if errors.Is(err, pkg.ErrForbidden) || errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusForbidden
@@ -245,12 +250,12 @@ func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, userID int64, otpCode
 		return
 	}
 
-	if err := p.authRepo.VerifyUser(ctx, userID); err != nil {
+	if err := p.authRepo.VerifyUser(ctx, user.ID); err != nil {
 		logger.Error("error on verifying user", err)
 		return
 	}
 
-	accessToken, refreshToken, err := p.genAuthToken(userID)
+	accessToken, refreshToken, err := p.genAuthToken(user.ID)
 	if err != nil {
 		ans = structs.AuthenticateResponse{
 			Ok:      false,

@@ -32,3 +32,15 @@ type SubmissionMetadata struct {
 	Language  string `json:"language"` // just 'python' for now
 	Public    bool   `json:"public"`
 }
+
+type Testcase struct {
+	Input  string `json:"input"`
+	Answer string `json:"answer"`
+}
+
+type JudgeSubmissions struct {
+	ID         string     `json:"id"`
+	Code       []byte     `json:"code"`
+	Testcases  []Testcase `json:"testcases"`
+	TestStates []string   `json:"testStates"`
+}

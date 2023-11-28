@@ -69,6 +69,15 @@ func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, 
 	return user, err
 }
 
+func (a *AuthRepoImp) GetByEmail(ctx context.Context, email string) (structs.User, error) {
+	stmt := `
+	SELECT id, username, password, email, is_verified FROM users WHERE email = $1 
+	`
+	var user structs.User
+	err := a.conn.QueryRow(ctx, stmt, email).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
+	return user, err
+}
+
 // TODO: find a suitable query builder to do this shit. sorry for this shitty code you are gonna see, I had no other idea.
 func (a *AuthRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
 	args := make([]interface{}, 0)

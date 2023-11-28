@@ -88,7 +88,7 @@ paths:
                       type: string
                       example: "password"
                       description: "It 'must' be password if you want to use user pass login"
-                    username:
+                    email:
                       type: string
                       example: ali
                     password:
@@ -101,12 +101,53 @@ paths:
                       type: string
                       example: "otp"
                       description: "It 'must' be otp if you want to use otp login"
-                    user_id:
+                    email:
                       type: integer
                       example: 1
                     otp:
                       type: string
                       example: '12345'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'success'
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+
+
+  /auth/otp:
+    post:
+      summary: Send OTP for Login
+      description: send an OTP for login (and not register)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: a request to send login otp
+              properties:
+                grant_type:
+                  type: string
+                  example: "otp"
+                  description: "It 'must' be otp if you want to use otp login"
+                email:
+                  type: string
+                  example: example@example.com
+                otp:
+                  type: string
+                  example: '12345'
 
 
         required: true

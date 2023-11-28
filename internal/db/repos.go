@@ -10,6 +10,7 @@ type AuthRepo interface {
 	VerifyUser(ctx context.Context, userID int64) error
 	GetByUsername(ctx context.Context, username string) (structs.User, error)
 	GetByID(ctx context.Context, userID int64) (structs.User, error)
+	GetByEmail(ctx context.Context, email string) (structs.User, error)
 	UpdateUser(ctx context.Context, user structs.User) error
 }
 
