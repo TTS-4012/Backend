@@ -1,24 +1,18 @@
-package db
+package postgres
 
 import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"ocontest/internal/db"
 	"ocontest/pkg/structs"
 )
 
-type AuthRepo interface {
-	InsertUser(ctx context.Context, user structs.User) (int64, error)
-	VerifyUser(ctx context.Context, userID int64) error
-	GetByUsername(ctx context.Context, username string) (structs.User, error)
-	GetByID(ctx context.Context, userID int64) (structs.User, error)
-	UpdateUser(ctx context.Context, user structs.User) error
-}
 type AuthRepoImp struct {
 	conn *pgxpool.Pool
 }
 
-func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (AuthRepo, error) {
+func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (db.AuthRepo, error) {
 	ans := &AuthRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }
@@ -72,6 +66,15 @@ func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, 
 	`
 	var user structs.User
 	err := a.conn.QueryRow(ctx, stmt, userID).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
+	return user, err
+}
+
+func (a *AuthRepoImp) GetByEmail(ctx context.Context, email string) (structs.User, error) {
+	stmt := `
+	SELECT id, username, password, email, is_verified FROM users WHERE email = $1 
+	`
+	var user structs.User
+	err := a.conn.QueryRow(ctx, stmt, email).Scan(&user.ID, &user.Username, &user.EncryptedPassword, &user.Email, &user.Verified)
 	return user, err
 }
 

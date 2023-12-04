@@ -1,0 +1,5 @@
+{
+    "go.toolsEnvVars": {
+        "GOROOT": "/home/mpc/sdk/go1.21.3"
+    }
+}
