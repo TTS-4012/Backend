@@ -50,7 +50,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return
 	}
 
-	objectName := getObjectName(request.UserID, request.ProblemID, submissionID)
+	objectName := s.minioHandler.GenCodeObjectname(request.UserID, request.ProblemID, submissionID)
 	err = s.minioHandler.UploadFile(ctx, request.Code, objectName, request.ContentType)
 	if err != nil {
 		logger.Error("error on uploading file from minio: ", err)

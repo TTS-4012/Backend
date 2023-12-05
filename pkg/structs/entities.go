@@ -11,6 +11,7 @@ type User struct {
 type ProblemDescription struct {
 	ID          string
 	Description string
+	Testcases   []string
 }
 
 type Problem struct {
@@ -38,9 +39,13 @@ type Testcase struct {
 	Answer string `json:"answer"`
 }
 
-type JudgeSubmissions struct {
-	ID         string     `json:"id"`
-	Code       []byte     `json:"code"`
-	Testcases  []Testcase `json:"testcases"`
-	TestStates []string   `json:"testStates"`
+type JudgeRequest struct {
+	Code      []byte     `json:"code"`
+	Testcases []string `json:"testcases"`
+}
+
+type JudgeResponse struct {
+	ServerError error    `json:"server_error"` // for example, a database failure
+	UserError   error    `json:"user_error"`   // for example, a compile error on user code
+	TestStates  []string `json:"testStates"`
 }

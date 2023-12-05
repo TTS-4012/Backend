@@ -3,6 +3,7 @@ package minio
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
@@ -15,6 +16,7 @@ import (
 type MinioHandler interface {
 	UploadFile(ctx context.Context, file []byte, objectName, contentType string) error
 	DownloadFile(ctx context.Context, objectName string) ([]byte, string, error)
+	GenCodeObjectname(userID, problemID, submissionID int64) string
 }
 
 type MinioHandlerImp struct {
@@ -116,4 +118,8 @@ func (f MinioHandlerImp) DownloadFile(ctx context.Context, objectName string) ([
 	}
 
 	return bytefile, info.ContentType, nil
+}
+
+func (f MinioHandlerImp) GenCodeObjectname(userID, problemID, submissionID int64) string {
+	return fmt.Sprintf("%d/%d/%d", problemID, userID, submissionID)
 }

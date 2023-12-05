@@ -31,13 +31,15 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
 	stmt := `
 	CREATE TABLE IF NOT EXISTS problems(
 	    id SERIAL PRIMARY KEY ,
+	    contest_id bigint,
 	    created_by int NOT NULL ,
 		title varchar(70) NOT NULL ,
 	    document_id varchar(70) NOT NULL ,
 	    solve_count int DEFAULT 0,
 		hardness int DEFAULT NULL,
 	    created_at TIMESTAMP DEFAULT NOW(),
-	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id)
+	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id),
+		CONSTRAINT fk_contests_id FOREIGN KEY(id) REFERENCES contests(id)
 	)
 	`
 

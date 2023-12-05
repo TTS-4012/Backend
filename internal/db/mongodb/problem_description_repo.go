@@ -2,7 +2,7 @@ package mongodb
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -39,11 +39,11 @@ func NewProblemDescriptionRepo(config configs.SectionMongo) (db.ProblemDescripti
 	}, client.Ping(ctx, nil)
 }
 
-func (p ProblemDescriptionRepoImp) Save(description string) (string, error) {
+func (p ProblemDescriptionRepoImp) Save(description string, testCases []string) (string, error) {
 	document := bson.D{
 		{"description", description},
+		{"testcases", testCases},
 	}
-	// insert into collection testc
 
 	res, err := p.collection.InsertOne(context.Background(), document)
 	if err != nil {
@@ -53,19 +53,34 @@ func (p ProblemDescriptionRepoImp) Save(description string) (string, error) {
 
 }
 
-func (p ProblemDescriptionRepoImp) Get(id string) (string, error) {
+func (p ProblemDescriptionRepoImp) Get(id string) (structs.ProblemDescription, error) {
 	fid, err := primitive.ObjectIDFromHex(id)
+	var ans structs.ProblemDescription
 	if err != nil {
-		return "", err
+		return ans, err
 	}
 
-	var result structs.ProblemDescription
-	err = p.collection.FindOne(context.Background(), bson.D{{"_id", fid}}, nil).Decode(&result)
+	err = p.collection.FindOne(context.Background(), bson.D{{"_id", fid}}, nil).Decode(&ans)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return "", pkg.ErrNotFound
+			return ans, pkg.ErrNotFound
 		}
-		return "", err
+		return ans, err
 	}
-	return result.Description, nil
+	return ans, nil
+}
+
+func (p ProblemDescriptionRepoImp) AddTestcase(ctx context.Context, id string, testCase string) error {
+
+	fid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.Wrap(err, "couldn't gen id from hex")
+	}
+
+	change := bson.M{"$push": bson.M{"testcases": testCase}}
+
+	_, err = p.collection.UpdateOne(ctx, bson.D{{
+		"_id", fid,
+	}}, change, nil)
+	return err
 }
