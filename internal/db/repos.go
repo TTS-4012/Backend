@@ -20,6 +20,12 @@ type ProblemsMetadataRepo interface {
 	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int) ([]structs.Problem, error)
 }
 
+type ContestsMetadataRepo interface {
+	InsertContest(ctx context.Context, contest structs.Contest) (int64, error)
+	GetContest(ctx context.Context, id int64) (structs.Contest, error)
+	ListContests(ctx context.Context) ([]structs.Contest, error)
+}
+
 type ProblemDescriptionsRepo interface {
 	Save(description string) (string, error)
 	Get(id string) (string, error)
