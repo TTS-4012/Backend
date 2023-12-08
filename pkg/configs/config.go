@@ -1,7 +1,6 @@
 package configs
 
 import (
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -15,12 +14,15 @@ var (
 
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
+	Mongo    SectionMongo    `yaml:"mongo"`
+	Nats     SectionNats     `yaml:"nats"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`
 	Server   SectionServer   `yaml:"server"`
 	AESKey   string          `yaml:"AESKey"`
 	Auth     SectionAuth     `yaml:"auth"`
+	MinIO    SectionMinIO    `yaml:"minio"`
 }
 
 type SectionLog struct {
@@ -36,6 +38,18 @@ type SectionPostgres struct {
 	Database string `yaml:"database"`
 }
 
+type SectionMongo struct {
+	Address  string `yaml:"address"`
+	Database string `yaml:"database"`
+}
+
+type SectionNats struct {
+	Url               string `yaml:"url"`
+	Subject           string `yaml:"subject"`
+	Queue             string `yaml:"queue"`
+	SubscribeChanSize int    `yaml:"subscribe_chan_size"`
+}
+
 type SectionJWT struct {
 	Secret string `yaml:"secret"`
 }
@@ -43,6 +57,7 @@ type SectionJWT struct {
 type SectionSMTP struct {
 	From     string `yaml:"from"`
 	Password string `yaml:"password"`
+	Enabled  bool   `yaml:"enabled"`
 }
 
 type SectionAuth struct {
@@ -58,6 +73,16 @@ type SectionAuthDuration struct {
 type SectionServer struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
+}
+
+type SectionMinIO struct {
+	Enabled   bool   `yaml:"enabled"`
+	Endpoint  string `yaml:"endpoint"`
+	AccessKey string `yaml:"accesskey"`
+	SecretKey string `yaml:"secretkey"`
+	Bucket    string `yaml:"bucket"`
+	Region    string `yaml:"region"`
+	Secure    bool   `yaml:"secure"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
@@ -109,5 +134,4 @@ func getConfig() *OContestConf {
 
 func InitConf() {
 	Conf = getConfig()
-	log.Println(Conf.Auth.Duration.VerifyEmail)
 }
