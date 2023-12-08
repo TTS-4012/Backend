@@ -40,7 +40,32 @@ func NewContestsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.Contes
 }
 
 func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest structs.Contest) (int64, error) {
-	return 0, nil
+	insertContestStmt := `
+		INSERT INTO contests(
+			created_by, title) 
+		VALUES($1, $2) RETURNING id
+	`
+
+	var contestID int64
+	err := c.conn.QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title).Scan(&contestID)
+	if err != nil {
+		return 0, err
+	}
+
+	insertContestProblemsStmt := `
+		INSERT INTO contest_problems(
+			contest_id, problem_id) 
+		VALUES($1, $2)
+	`
+
+	for _, problem := range contest.Problems {
+		_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problem.ID)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return contestID, nil
 }
 
 func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (structs.Contest, error) {
