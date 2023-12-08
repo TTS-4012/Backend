@@ -12,7 +12,26 @@ type ContestsMetadataRepoImp struct {
 }
 
 func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
-	return nil
+	stmt := `
+	CREATE TABLE IF NOT EXISTS contests (
+		id SERIAL PRIMARY KEY,
+		created_by int NOT NULL,
+		title varchar(70) NOT NULL,
+		created_at TIMESTAMP DEFAULT NOW(),
+		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
+	);
+	
+	CREATE TABLE IF NOT EXISTS contest_problems (
+		contest_id int NOT NULL,
+		problem_id int NOT NULL,
+		CONSTRAINT pk_contest_problems PRIMARY KEY (contest_id, problem_id),
+		CONSTRAINT fk_contest FOREIGN KEY(contest_id) REFERENCES contests(id),
+		CONSTRAINT fk_problem FOREIGN KEY(problem_id) REFERENCES problems(id)
+	)
+	`
+
+	_, err := c.conn.Exec(ctx, stmt)
+	return err
 }
 
 func NewContestsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.ContestsMetadataRepo, error) {
