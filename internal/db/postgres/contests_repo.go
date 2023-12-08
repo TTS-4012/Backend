@@ -153,3 +153,14 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 	}
 	return ans, err
 }
+
+func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) error {
+	stmt := `
+	DELETE FROM contests WHERE id = $1
+	`
+	_, err := c.conn.Exec(ctx, stmt, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
+}
