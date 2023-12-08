@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/internal/db"
@@ -118,6 +119,37 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context) ([]structs.Contest, error) {
-	return nil, nil
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error) {
+	stmt := `
+	SELECT id, created_by, title, FROM contests ORDER BY id
+	`
+	if descending {
+		stmt += " DEC"
+	}
+	if limit != 0 {
+		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
+	}
+	if offset != 0 {
+		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
+	}
+
+	rows, err := c.conn.Query(ctx, stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	ans := make([]structs.Contest, 0)
+	for rows.Next() {
+
+		var contest structs.Contest
+		err = rows.Scan(
+			&contest.ID,
+			&contest.CreatedBy,
+			&contest.Title)
+		if err != nil {
+			return nil, err
+		}
+		ans = append(ans, contest)
+	}
+	return ans, err
 }
