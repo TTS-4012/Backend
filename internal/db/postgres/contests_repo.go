@@ -2,8 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/internal/db"
+	"ocontest/pkg"
 	"ocontest/pkg/structs"
 )
 
@@ -69,8 +72,52 @@ func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest str
 }
 
 func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (structs.Contest, error) {
-	return structs.Contest{}, nil
+	selectContestStmt := `
+		SELECT created_by, title FROM contests WHERE id = $1
+	`
+
+	var contest structs.Contest
+	err := c.conn.QueryRow(ctx, selectContestStmt, id).
+		Scan(&contest.CreatedBy, &contest.Title)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return structs.Contest{}, pkg.ErrNotFound
+	} else if err != nil {
+		return structs.Contest{}, err
+	}
+
+	selectContestProblemsStmt := `
+		SELECT problem_id FROM contest_problems WHERE contest_id = $1
+	`
+
+	rows, err := c.conn.Query(ctx, selectContestProblemsStmt, id)
+	if err != nil {
+		return structs.Contest{}, err
+	}
+	defer rows.Close()
+
+	problemsRespo, err := NewProblemsMetadataRepo(ctx, c.conn)
+	if err != nil {
+		return structs.Contest{}, err
+	}
+
+	for rows.Next() {
+		var problemID int64
+		err := rows.Scan(&problemID)
+		if err != nil {
+			return structs.Contest{}, err
+		}
+
+		problem, err := problemsRespo.GetProblem(ctx, problemID)
+		if err != nil {
+			return structs.Contest{}, err
+		}
+
+		contest.Problems = append(contest.Problems, problem)
+	}
+
+	return contest, nil
 }
+
 func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context) ([]structs.Contest, error) {
 	return nil, nil
 }
