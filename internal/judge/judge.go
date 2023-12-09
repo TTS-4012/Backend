@@ -11,7 +11,7 @@ import (
 )
 
 type Judge interface {
-	Do(ctx context.Context,  submissionID int64) (err error)
+	Dispatch(ctx context.Context, submissionID int64) (err error)
 }
 
 type JudgeImp struct {
@@ -20,24 +20,28 @@ type JudgeImp struct {
 	minioHandler            minio.MinioHandler
 	problemsDescriptionRepo db.ProblemDescriptionsRepo
 	problemsMetadataRepo    db.ProblemsMetadataRepo
+	judgeRepo               db.JudgeRepo
 }
 
-func NewJudge(c configs.SectionJudge) (Judge, error) {
+func NewJudge(c configs.SectionJudge, submissionMetadataRepo db.SubmissionMetadataRepo,
+	minioHandler minio.MinioHandler, problemDescriptionRepo db.ProblemDescriptionsRepo,
+	problemMetadataRepo db.ProblemsMetadataRepo, judgeRepo db.JudgeRepo) (Judge, error) {
 	queue, err := NewJudgeQueue(c.Nats)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create judge queue for judge")
 	}
 
 	return JudgeImp{
-		queue: queue,
+		queue:                   queue,
+		submissionMetadataRepo:  submissionMetadataRepo,
+		minioHandler:            minioHandler,
+		problemsDescriptionRepo: problemDescriptionRepo,
+		problemsMetadataRepo:    problemMetadataRepo,
+		judgeRepo:               judgeRepo,
 	}, nil
 }
 
-func (j JudgeImp) processTestResponse (submission structs.SubmissionMetadata, resp structs.JudgeResponse) (structs.SubmissionMetadata){
-	panic("not implemented yet")
-}
-
-func (j JudgeImp) Do(ctx context.Context, submissionID int64) (err error) {
+func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) {
 	submission, err := j.submissionMetadataRepo.Get(ctx, submissionID)
 	if err != nil {
 		return
@@ -60,20 +64,29 @@ func (j JudgeImp) Do(ctx context.Context, submissionID int64) (err error) {
 	}
 
 	req := structs.JudgeRequest{
-		Code: code,
+		Code:      code,
 		Testcases: problemDescription.Testcases,
 	}
 
 	resp, err := j.queue.Send(req)
-	if err == nil && resp.ServerError != nil{
+	if err == nil && resp.ServerError != nil {
 		err = resp.ServerError
 	}
 
-	if err != nil{
+	if err != nil {
 		err = errors.Wrap(err, "error on send to queue")
 		return
 	}
-	submission = j.processTestResponse(submission, resp)
 
-	panic("not implemented yet!")
+	docID, err := j.judgeRepo.Insert(ctx, resp)
+	if err != nil {
+		return errors.Wrap(err, "couldn't insert judge result to judge repo")
+	}
+
+	err = j.submissionMetadataRepo.AddJudgeResult(ctx, submissionID, docID)
+	if err != nil {
+		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
+	}
+
+	return nil
 }

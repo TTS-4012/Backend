@@ -21,10 +21,15 @@ type ProblemsMetadataRepo interface {
 }
 
 type ProblemDescriptionsRepo interface {
-	Save(description string, testCases []string) (structs.ProblemDescription, error)
+	Save(description string, testCases []string) (string, error)
 	Get(id string) (structs.ProblemDescription, error)
 }
 type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
+	AddJudgeResult(ctx context.Context, submissionID int64, judgeResultID string) error
+}
+type JudgeRepo interface {
+	Insert(ctx context.Context, response structs.JudgeResponse) (string, error)
+	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
 }

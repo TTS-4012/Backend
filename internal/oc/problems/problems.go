@@ -30,7 +30,7 @@ func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptio
 
 func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (ans structs.ResponseCreateProblem, status int) {
 	logger := pkg.Log.WithField("method", "create_problem")
-	docID, err := p.problemsDescriptionRepo.Save(req.Description)
+	docID, err := p.problemsDescriptionRepo.Save(req.Description, nil)
 	if err != nil {
 		logger.Error("error on inserting problem description: ", err)
 		status = http.StatusInternalServerError
@@ -78,7 +78,7 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 		Title:       problem.Title,
 		SolveCount:  problem.SolvedCount,
 		Hardness:    problem.Hardness,
-		Description: doc,
+		Description: doc.Description,
 	}, http.StatusOK
 }
 
