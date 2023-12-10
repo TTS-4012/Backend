@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"ocontest/internal/db"
+	"ocontest/internal/judge"
 	"ocontest/internal/minio"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
@@ -20,12 +21,14 @@ type SubmissionsHandlerImp struct {
 	Handler
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
+	judge                  judge.Judge
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler) Handler {
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
+		judge:                  judgeHandler,
 	}
 }
 
@@ -57,6 +60,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return submissionID, http.StatusInternalServerError
 	}
 
+	go s.judge.Dispatch(ctx, submissionID)
 	return submissionID, http.StatusOK
 }
 
