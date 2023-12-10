@@ -100,3 +100,9 @@ type RequestCreateContest struct {
 type ResponseCreateContest struct {
 	ContestID int64 `json:"contest_Id"`
 }
+
+type ResponseGetContest struct {
+	ContestID int64     `json:"contest_Id"`
+	Title     string    `json:"title"`
+	Problems  []Problem `json:"problems"`
+}
