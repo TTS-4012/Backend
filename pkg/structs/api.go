@@ -90,3 +90,8 @@ type ResponseGetSubmission struct {
 	Metadata SubmissionMetadata
 	RawCode  []byte `json:"data"`
 }
+
+type ResponseGetSubmissionResults struct {
+	TestStates []TestState `json:"test_states"`
+	Message    string      `json:"message"`
+}

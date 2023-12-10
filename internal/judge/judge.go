@@ -12,6 +12,7 @@ import (
 
 type Judge interface {
 	Dispatch(ctx context.Context, submissionID int64) (err error)
+	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
 }
 
 type JudgeImp struct {
@@ -69,8 +70,8 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	}
 
 	resp, err := j.queue.Send(req)
-	if err == nil && resp.ServerError != nil {
-		err = resp.ServerError
+	if err == nil && resp.ServerError != "" {
+		err = errors.New(resp.ServerError)
 	}
 
 	if err != nil {
@@ -89,4 +90,9 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	}
 
 	return nil
+}
+
+func (j JudgeImp) GetResults(ctx context.Context, id string) (structs.JudgeResponse, error) {
+	//TODO implement me
+	return j.judgeRepo.GetResults(ctx, id)
 }

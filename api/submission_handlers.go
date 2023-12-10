@@ -95,3 +95,29 @@ func (h *handlers) GetSubmission(c *gin.Context) {
 		c.Status(status)
 	}
 }
+
+func (h *handlers) GetSubmissionResult(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "GetSubmissionResult")
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	submissionID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting id from request: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	resp, status := h.submissionsHandler.GetResults(c, submissionID)
+
+	c.JSON(status, resp)
+}

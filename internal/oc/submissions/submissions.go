@@ -15,10 +15,10 @@ import (
 type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
+	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
 }
 
 type SubmissionsHandlerImp struct {
-	Handler
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	judge                  judge.Judge
@@ -99,4 +99,38 @@ func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID in
 	}
 
 	return
+}
+
+func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int64) (ans structs.ResponseGetSubmissionResults, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetResult",
+		"module": "Submissions",
+	})
+
+	submission, err := s.submissionMetadataRepo.Get(ctx, submissionID)
+	if err != nil {
+		logger.Error("error on getting submission from db:", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	testResultID := submission.JudgeResultID
+	testResults, err := s.judge.GetResults(ctx, testResultID)
+	if err != nil {
+		logger.Error("error on getting test results from judge: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	if testResults.ServerError != "" {
+		return structs.ResponseGetSubmissionResults{
+			TestStates: nil,
+			Message:    "Something Went Wrong!, please try again later...",
+		}, http.StatusInternalServerError
+	}
+	return structs.ResponseGetSubmissionResults{
+		TestStates: testResults.TestStates,
+		Message:    testResults.UserError,
+	}, http.StatusOK
+
 }

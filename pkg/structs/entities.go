@@ -54,7 +54,7 @@ const (
 )
 
 type JudgeResponse struct {
-	ServerError error       `json:"server_error"` // for example, a database failure
-	UserError   error       `json:"user_error"`   // for example, a compile error on user code
+	ServerError string      `json:"server_error"` // for example, a database failure
+	UserError   string      `json:"user_error"`   // for example, a compile error on user code
 	TestStates  []TestState `json:"testStates"`   // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }
