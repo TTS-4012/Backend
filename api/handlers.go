@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/oc/contests"
 	"ocontest/internal/oc/problems"
 	"ocontest/internal/oc/submissions"
 
@@ -12,6 +13,7 @@ import (
 type handlers struct {
 	authHandler        auth.AuthHandler
 	problemsHandler    problems.ProblemsHandler
+	contestHandler     contests.ContestsHandler
 	submissionsHandler submissions.Handler
 }
 
@@ -49,6 +51,14 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.POST("", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("", h.ListProblems)
+		}
+		contestGroup := v1.Group("/contests", h.AuthMiddleware())
+		{
+			contestGroup.POST("", h.CreateContest)
+			contestGroup.GET("/:id", h.GetContest)
+			contestGroup.GET("", h.ListContests)
+			contestGroup.PUT("/:id", h.UpdateContest)
+			contestGroup.DELETE("/:id", h.DeleteContest)
 		}
 		submissionGroup := v1.Group("/submissions", h.AuthMiddleware())
 		{
