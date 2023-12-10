@@ -14,7 +14,7 @@ import (
 type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
 	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
-	ListContests()
+	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
 	UpdateContest()
 	DeleteContest()
 }
@@ -70,6 +70,26 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 	}, http.StatusOK
 }
 
-func (c ContestsHandlerImp) ListContests()  {}
+func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListContests",
+		"module": "Contests",
+	})
+	contests, err := c.ContestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset)
+	if err != nil {
+		logger.Error("error on listing contests: ", err)
+		return nil, http.StatusInternalServerError
+	}
+
+	res := make([]structs.ResponseListContestsItem, 0)
+	for _, contest := range contests {
+		res = append(res, structs.ResponseListContestsItem{
+			ContestID: contest.ID,
+			Title:     contest.Title,
+		})
+	}
+	return res, http.StatusOK
+}
+
 func (c ContestsHandlerImp) UpdateContest() {}
 func (c ContestsHandlerImp) DeleteContest() {}

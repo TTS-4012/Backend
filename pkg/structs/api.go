@@ -106,3 +106,14 @@ type ResponseGetContest struct {
 	Title     string    `json:"title"`
 	Problems  []Problem `json:"problems"`
 }
+
+type RequestListContests struct {
+	Descending bool `json:"descending"`
+	Limit      int  `json:"limit"`
+	Offset     int  `json:"offset"`
+}
+
+type ResponseListContestsItem struct {
+	ContestID int64  `json:"contest_Id"`
+	Title     string `json:"title"`
+}
