@@ -90,3 +90,13 @@ type ResponseGetSubmission struct {
 	Metadata SubmissionMetadata
 	RawCode  []byte `json:"data"`
 }
+
+// Contests
+
+type RequestCreateContest struct {
+	Title string `json:"title"`
+}
+
+type ResponseCreateContest struct {
+	ContestID int64 `json:"contest_Id"`
+}
