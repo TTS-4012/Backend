@@ -22,7 +22,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		submissionsHandler: submissionsHandler,
 	}
 
-	r.Use(h.Cors)
+	r.Use(h.corsHandler)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
@@ -30,11 +30,9 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 	})
 
 	r.OPTIONS("/*cors", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, full-refresh")
 		c.Status(http.StatusOK)
 	})
+
 	v1 := r.Group("/v1")
 	{
 		authGroup := v1.Group("/auth")
@@ -48,13 +46,13 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		}
 		problemGroup := v1.Group("/problems", h.AuthMiddleware())
 		{
-			problemGroup.POST("/", h.CreateProblem)
+			problemGroup.POST("", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
-			problemGroup.GET("/", h.ListProblems)
+			problemGroup.GET("", h.ListProblems)
 			problemGroup.PUT("/:id", h.UpdateProblem)
 			problemGroup.DELETE("/:id", h.DeleteProblem)
 		}
-		submissionGroup := v1.Group("/submission", h.AuthMiddleware())
+		submissionGroup := v1.Group("/submissions", h.AuthMiddleware())
 		{
 			submissionGroup.GET("/:id", h.GetSubmission)
 			submissionGroup.POST("/", h.Submit)

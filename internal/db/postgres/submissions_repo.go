@@ -3,11 +3,12 @@ package postgres
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SubmissionRepoImp struct {
@@ -18,21 +19,22 @@ func NewSubmissionRepo(ctx context.Context, conn *pgxpool.Pool) (db.SubmissionMe
 	ans := &SubmissionRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }
+
 func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 	stmts := []string{
 		"CREATE TYPE submission_status AS ENUM('unprocessed', 'processing', 'processed')",
 		"CREATE TYPE submission_language AS ENUM('python')",
 		`
-	CREATE TABLE IF NOT EXISTS submissions(
-	    id SERIAL PRIMARY KEY ,
-	    problem_id bigint,
-	    user_id bigint,
-	    file_name varchar(50),
-		score int DEFAULT 0,
-		status submission_status DEFAULT 'unprocessed',
-		language submission_language,
-		public boolean DEFAULT FALSE,
-	    created_at TIMESTAMP DEFAULT NOW()
+		CREATE TABLE IF NOT EXISTS submissions(
+			id SERIAL PRIMARY KEY,
+			problem_id bigint,
+			user_id bigint,
+			file_name varchar(50),
+			score int DEFAULT 0,
+			status submission_status DEFAULT 'unprocessed',
+			language submission_language,
+			public boolean DEFAULT FALSE,
+			created_at TIMESTAMP DEFAULT NOW()
 	)`}
 
 	var err error
@@ -42,6 +44,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 
 	return err
 }
+
 func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error) {
 	stmt := `
 	INSERT INTO submissions(problem_id, user_id, file_name, language) VALUES($1, $2, $3, $4)

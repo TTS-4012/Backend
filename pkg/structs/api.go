@@ -82,9 +82,14 @@ type RequestUpdateProblem struct {
 	Description string `json:"description"`
 }
 
-// FILE
-type ResponseUploadFile struct {
-	SubmissionID int64 `json:"submission_id"`
+// SUBMISSIONS
+type RequestSubmit struct {
+	UserID      int64
+	ProblemID   int64
+	Code        []byte
+	FileName    string
+	ContentType string
+	Language    string
 }
 
 type ResponseGetSubmission struct {

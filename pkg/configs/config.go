@@ -15,6 +15,7 @@ var (
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
 	Mongo    SectionMongo    `yaml:"mongo"`
+	Nats     SectionNats     `yaml:"nats"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`
@@ -42,6 +43,13 @@ type SectionMongo struct {
 	Database string `yaml:"database"`
 }
 
+type SectionNats struct {
+	Url               string `yaml:"url"`
+	Subject           string `yaml:"subject"`
+	Queue             string `yaml:"queue"`
+	SubscribeChanSize int    `yaml:"subscribe_chan_size"`
+}
+
 type SectionJWT struct {
 	Secret string `yaml:"secret"`
 }
@@ -49,6 +57,7 @@ type SectionJWT struct {
 type SectionSMTP struct {
 	From     string `yaml:"from"`
 	Password string `yaml:"password"`
+	Enabled  bool   `yaml:"enabled"`
 }
 
 type SectionAuth struct {
@@ -67,6 +76,7 @@ type SectionServer struct {
 }
 
 type SectionMinIO struct {
+	Enabled   bool   `yaml:"enabled"`
 	Endpoint  string `yaml:"endpoint"`
 	AccessKey string `yaml:"accesskey"`
 	SecretKey string `yaml:"secretkey"`
