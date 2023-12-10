@@ -42,7 +42,37 @@ func (h *handlers) GetContest(c *gin.Context) {
 	}
 }
 
-func (h *handlers) ListContests(c *gin.Context) {}
+func (h *handlers) ListContests(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "listContests")
+	var reqData structs.RequestListContests
+
+	reqData.Descending = c.Query("descending") == "true"
+
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+
+	var errLimit, errOffset error
+	if limitStr != "" {
+		reqData.Limit, errLimit = strconv.Atoi(limitStr)
+	}
+	if offsetStr != "" {
+		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
+	}
+	if errLimit != nil || errOffset != nil {
+		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid limit or offset, limit and offset should be integers",
+		})
+		return
+	}
+
+	resp, status := h.contestHandler.ListContests(c, reqData)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
+}
 
 func (h *handlers) UpdateContest(c *gin.Context) {}
 
