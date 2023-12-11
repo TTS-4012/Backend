@@ -37,8 +37,8 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			created_at TIMESTAMP DEFAULT NOW(),
 
 			primary key (id, problem_id, user_id),
-	    	CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
-	    	CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id)
+			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
+			CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id)
 	)`}
 
 	var err error
@@ -51,7 +51,9 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 
 func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error) {
 	stmt := `
-	INSERT INTO submissions(problem_id, user_id, file_name, language) VALUES($1, $2, $3, $4)
+	INSERT INTO submissions(
+		problem_id, user_id, file_name, language) 
+		VALUES($1, $2, $3, $4) RETURNING id
 	`
 
 	var id int64
