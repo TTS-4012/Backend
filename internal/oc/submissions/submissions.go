@@ -126,11 +126,13 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 		return structs.ResponseGetSubmissionResults{
 			TestStates: nil,
 			Message:    "Something Went Wrong!, please try again later...",
+			Score:      0,
 		}, http.StatusInternalServerError
 	}
 	return structs.ResponseGetSubmissionResults{
 		TestStates: testResults.TestStates,
 		Message:    testResults.UserError,
+		Score:      calcScore(testResults.TestStates, testResults.UserError),
 	}, http.StatusOK
 
 }
