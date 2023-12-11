@@ -59,6 +59,12 @@ type RequestListProblems struct {
 	Descending bool   `json:"descending"`
 	Limit      int    `json:"limit"`
 	Offset     int    `json:"offset"`
+	GetCount   bool   `json:"get_count"`
+}
+
+type ResponseListProblems struct {
+	TotalCount int                        `json:"total_count,omitempty"`
+	Problems   []ResponseListProblemsItem `json:"problems"`
 }
 
 type ResponseListProblemsItem struct {

@@ -1,11 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (h *handlers) CreateProblem(c *gin.Context) {
@@ -52,6 +53,8 @@ func (h *handlers) ListProblems(c *gin.Context) {
 		reqData.OrderedBy = "problem_id"
 	}
 	reqData.Descending = c.Query("descending") == "true"
+
+	reqData.GetCount = c.Query("get_count") == "true"
 
 	limitStr := c.Query("limit")
 	offsetStr := c.Query("offset")

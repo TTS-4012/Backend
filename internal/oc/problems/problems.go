@@ -3,17 +3,18 @@ package problems
 import (
 	"context"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ProblemsHandler interface {
 	CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int)
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
-	ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int)
+	ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int)
 }
 
 type ProblemsHandlerImp struct {
@@ -82,15 +83,15 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 	}, http.StatusOK
 }
 
-func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {
+func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListProblem",
 		"module": "Problems",
 	})
-	problems, err := p.problemMetadataRepo.ListProblems(ctx, req.OrderedBy, req.Descending, req.Limit, req.Offset)
+	problems, total_count, err := p.problemMetadataRepo.ListProblems(ctx, req.OrderedBy, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
 		logger.Error("error on listing problems: ", err)
-		return nil, http.StatusInternalServerError
+		return structs.ResponseListProblems{}, http.StatusInternalServerError
 	}
 
 	ans := make([]structs.ResponseListProblemsItem, 0)
@@ -102,5 +103,8 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 			Hardness:   p.Hardness,
 		})
 	}
-	return ans, http.StatusOK
+	return structs.ResponseListProblems{
+		TotalCount: total_count,
+		Problems:   ans,
+	}, http.StatusOK
 }
