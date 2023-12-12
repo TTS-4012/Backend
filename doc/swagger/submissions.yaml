@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Ocontest Submissions Api
+  description: |-
+    
+  version: 1.0.0
+servers:
+  - url: https://ocontest.ir/v1
+
+path:
+  /problems/(problem_id)/submit:
+    post:
+      summary: Submit code for a problem
+      description: Upload a file and create a new submission
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: header
+          name: File_Name
+          description: name of the sent file
+          type: string
+          required: true
+
+
+      requestBody:
+        decription: Raw binary content of the file
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: string
+              format: binary
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submission_id:
+                    type: integer
+                    example: 1
+
+        '400':
+          description: Bad Request
+        '401':
+          description: UnAuthorized
+        '500':
+          description: Internal Server Error
+
+
+  /submissions/(submission_id):
+    get:
+      summary: Get submission code
+      description: Download the file associated with a submission
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                type: string
+                format: binary
+
+        '400':
+          description: Bad Request
+        '401':
+          description: UnAuthorized
+        '500':
+          description: Internal Server Error
+
+
+  /submissions/(submission_id)/results:
+    get:
+      summary: Get submission results
+      description: return judge results of a submission
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  test_states:
+                    type: array
+                    items:
+                      type: integer
+                      enum: [0, 1, 2, 3]
+                  score:
+                    type: integer
+                    example: 10
+                  message:
+                    type: string
+                    example: "Compiler error"
+
+        '400':
+          description: Bad Request
+        '401':
+          description: UnAuthorized
+        '500':
+          description: Internal Server Error
