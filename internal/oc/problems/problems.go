@@ -14,6 +14,8 @@ type ProblemsHandler interface {
 	CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int)
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
 	ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int)
+	DeleteProblem(ctx context.Context, problemId int64) int
+	UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int
 }
 
 type ProblemsHandlerImp struct {
@@ -103,4 +105,68 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 		})
 	}
 	return ans, http.StatusOK
+}
+
+func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "DeleteProblem",
+		"module": "Problems",
+	})
+
+	if req.Title != "" {
+		err := p.problemMetadataRepo.UpdateProblem(ctx, req.Id, req.Title)
+		if err != nil {
+			logger.Error("error on updating problem on problem metadata repo: ", err)
+			status := http.StatusInternalServerError
+			if errors.Is(err, pkg.ErrNotFound) {
+				status = http.StatusNotFound
+			}
+			return status
+		}
+	}
+
+	if req.Description != "" {
+		problem, err := p.problemMetadataRepo.GetProblem(ctx, req.Id)
+		if err != nil {
+			logger.Error("error on getting problem from problem metadata repo: ", err)
+			status := http.StatusInternalServerError
+			if errors.Is(err, pkg.ErrNotFound) {
+				status = http.StatusNotFound
+			}
+			return status
+		}
+		err = p.problemsDescriptionRepo.Update(problem.DocumentID, req.Description)
+		if err != nil {
+			logger.Error("error on updating problem description: ", err)
+			status := http.StatusInternalServerError
+			return status
+		}
+	}
+
+	return http.StatusAccepted
+}
+
+func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "DeleteProblem",
+		"module": "Problems",
+	})
+
+	documentID, err := p.problemMetadataRepo.DeleteProblem(ctx, problemID)
+	if err != nil {
+		logger.Error("error on getting problem from problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+
+	err = p.problemsDescriptionRepo.Delete(documentID)
+	if err != nil {
+		logger.Error("error on getting problem from problem decription repo: ", err)
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusAccepted
 }

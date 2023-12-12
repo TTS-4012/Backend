@@ -106,3 +106,27 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	}
 	return ans, err
 }
+
+func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string) error {
+	stmt := `
+	UPDATE problems SET title = $1 WHERE id = $2
+	`
+
+	_, err := a.conn.Exec(ctx, stmt, title, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
+}
+
+func (a *ProblemsMetadataRepoImp) DeleteProblem(ctx context.Context, id int64) (string, error) {
+	stmt := `
+	DELETE FROM problems WHERE id = $1 RETURNING document_id
+	`
+	var documentId string
+	err := a.conn.QueryRow(ctx, stmt, id).Scan(documentId)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return documentId, err
+}

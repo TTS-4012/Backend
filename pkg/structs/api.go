@@ -76,6 +76,12 @@ type ResponseGetProblem struct {
 	Description string `json:"description"`
 }
 
+type RequestUpdateProblem struct {
+	Id          int64
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 // SUBMISSIONS
 type RequestSubmit struct {
 	UserID      int64
