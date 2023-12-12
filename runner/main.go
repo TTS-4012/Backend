@@ -9,13 +9,12 @@ import (
 )
 
 type RunnerScheduler interface {
-	StartListern()
+	StartListen()
 	ProcessCode(msg *nats.Msg)
 }
 
 type RunnerSchedulerImp struct {
-	queue  judge.JudgeQueue
-	runner Runner
+	queue judge.JudgeQueue
 }
 
 func NewRunnerScheduler(natsConfig configs.SectionNats) (RunnerScheduler, error) {
@@ -24,12 +23,11 @@ func NewRunnerScheduler(natsConfig configs.SectionNats) (RunnerScheduler, error)
 		return nil, errors.WithStack(err)
 	}
 	return RunnerSchedulerImp{
-		queue:  queue,
-		runner: NewDummy(),
+		queue: queue,
 	}, nil
 }
 
-func (r RunnerSchedulerImp) StartListern() {
+func (r RunnerSchedulerImp) StartListen() {
 	for {
 		msg, err := r.queue.Get()
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	"ocontest/pkg"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,7 +50,6 @@ type Runner interface {
 }
 
 type Dummy struct {
-	logger *log.Logger
 	tmpdir string
 	env    []string
 	tl     time.Duration
@@ -65,37 +64,36 @@ func NewDummy() *Dummy {
 	return &Dummy{}
 }
 
-func (s Dummy) Id() string {
+func (s *Dummy) Id() string {
 	return s.tmpdir
 }
 
-func (s *Dummy) Init(logger *log.Logger) error {
+func (s *Dummy) Init() error {
 	var err error
 	if s.tmpdir, err = os.MkdirTemp("", "dummysandbox"); err != nil {
 		return err
 	}
 
 	s.workingDir = s.tmpdir
-	s.logger = logger
-	os.Chdir(s.tmpdir)
-	return nil
+	err = os.Chdir(s.tmpdir)
+	return err
 }
 
-func (s Dummy) Pwd() string {
+func (s *Dummy) Pwd() string {
 	return s.tmpdir
 }
 
 func (s *Dummy) CreateFile(filename string, r io.Reader) error {
-	s.logger.Print("Creating file ", filename)
+	pkg.Log.Debug("Creating file ", filename)
 
 	f, err := os.Create(filename)
 	if err != nil {
-		s.logger.Print("Error occurred while creating file ", err)
+		pkg.Log.Debug("Error occurred while creating file ", err)
 		return err
 	}
 
 	if _, err := io.Copy(f, r); err != nil {
-		s.logger.Print("Error occurred while populating it with its content: ", err)
+		pkg.Log.Debug("Error occurred while populating it with its content: ", err)
 		f.Close()
 		return err
 	}
@@ -103,7 +101,7 @@ func (s *Dummy) CreateFile(filename string, r io.Reader) error {
 	return f.Close()
 }
 
-func (s Dummy) GetFile(name string) (io.Reader, error) {
+func (s *Dummy) GetFile(name string) (io.Reader, error) {
 	f, err := ioutil.ReadFile(filepath.Join(s.Pwd(), name))
 	if err != nil {
 		return nil, err
@@ -112,10 +110,10 @@ func (s Dummy) GetFile(name string) (io.Reader, error) {
 	return bytes.NewBuffer(f), nil
 }
 
-func (s Dummy) MakeExecutable(filename string) error {
+func (s *Dummy) MakeExecutable(filename string) error {
 
 	err := os.Chmod(filename, 0777)
-	s.logger.Print("Making executable: ", filename, " error: ", err)
+	pkg.Log.Debug("Making executable: ", filename, " error: ", err)
 
 	return err
 }
@@ -207,19 +205,36 @@ func (s *Dummy) Cleanup() error {
 	return os.RemoveAll(s.tmpdir)
 }
 
-func main() {
+func RunTask(timeLimit time.Duration, memoryLimit int, code string, input io.Reader, output io.Writer) (error, Verdict) {
 	// runner for python
 	d := NewDummy()
-	d.Init(log.New(os.Stdout, "", 0))
-	d.TimeLimit(time.Second)
-	d.Stdout(os.Stdout)
-	d.Stderr(os.Stderr)
-	d.CreateFile("runner_test.py", strings.NewReader(`print("Hello World")`))
-	d.MakeExecutable("runner_test.py")
+	err := d.Init()
+	if err != nil {
+		return err, VerdictXX
+	}
+
+	d.MemoryLimit(memoryLimit)
+	d.TimeLimit(timeLimit)
+	d.Stdin(input)
+	d.Stdout(output)
+	d.Stderr(output)
+	const fileName = "runner_test.py"
+	err = d.CreateFile(fileName, strings.NewReader(code))
+	if err != nil {
+		return err, VerdictXX
+	}
+	err = d.MakeExecutable(fileName)
+	if err != nil {
+		return err, VerdictXX
+	}
 
 	v, err := d.Run("runner_test.py", false)
 	if err != nil {
-		panic(err)
+		return err, v
 	}
-	fmt.Println("Verdict", v.String())
+	err = d.Cleanup()
+	if err != nil {
+		pkg.Log.Warning("error on doing cleanup of runner: ", err)
+	}
+	return nil, v
 }
