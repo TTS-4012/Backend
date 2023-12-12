@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"ocontest/internal/db"
+	"ocontest/internal/judge"
 	"ocontest/internal/minio"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
@@ -14,18 +15,20 @@ import (
 type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
+	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
 }
 
 type SubmissionsHandlerImp struct {
-	Handler
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
+	judge                  judge.Judge
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler) Handler {
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
+		judge:                  judgeHandler,
 	}
 }
 
@@ -50,13 +53,14 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return
 	}
 
-	objectName := getObjectName(request.UserID, request.ProblemID, submissionID)
+	objectName := s.minioHandler.GenCodeObjectname(request.UserID, request.ProblemID, submissionID)
 	err = s.minioHandler.UploadFile(ctx, request.Code, objectName, request.ContentType)
 	if err != nil {
 		logger.Error("error on uploading file from minio: ", err)
 		return submissionID, http.StatusInternalServerError
 	}
 
+	go s.judge.Dispatch(ctx, submissionID)
 	return submissionID, http.StatusOK
 }
 
@@ -95,4 +99,40 @@ func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID in
 	}
 
 	return
+}
+
+func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int64) (ans structs.ResponseGetSubmissionResults, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetResult",
+		"module": "Submissions",
+	})
+
+	submission, err := s.submissionMetadataRepo.Get(ctx, submissionID)
+	if err != nil {
+		logger.Error("error on getting submission from db:", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	testResultID := submission.JudgeResultID
+	testResults, err := s.judge.GetResults(ctx, testResultID)
+	if err != nil {
+		logger.Error("error on getting test results from judge: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	if testResults.ServerError != "" {
+		return structs.ResponseGetSubmissionResults{
+			TestStates: nil,
+			Message:    "Something Went Wrong!, please try again later...",
+			Score:      0,
+		}, http.StatusInternalServerError
+	}
+	return structs.ResponseGetSubmissionResults{
+		TestStates: testResults.TestStates,
+		Message:    testResults.UserError,
+		Score:      calcScore(testResults.TestStates, testResults.UserError),
+	}, http.StatusOK
+
 }

@@ -3,11 +3,12 @@ package problems
 import (
 	"context"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ProblemsHandler interface {
@@ -32,7 +33,7 @@ func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptio
 
 func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (ans structs.ResponseCreateProblem, status int) {
 	logger := pkg.Log.WithField("method", "create_problem")
-	docID, err := p.problemsDescriptionRepo.Save(req.Description)
+	docID, err := p.problemsDescriptionRepo.Save(req.Description, nil)
 	if err != nil {
 		logger.Error("error on inserting problem description: ", err)
 		status = http.StatusInternalServerError
@@ -80,19 +81,19 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 		Title:       problem.Title,
 		SolveCount:  problem.SolvedCount,
 		Hardness:    problem.Hardness,
-		Description: doc,
+		Description: doc.Description,
 	}, http.StatusOK
 }
 
-func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int) {
+func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListProblem",
 		"module": "Problems",
 	})
-	problems, err := p.problemMetadataRepo.ListProblems(ctx, req.OrderedBy, req.Descending, req.Limit, req.Offset)
+	problems, total_count, err := p.problemMetadataRepo.ListProblems(ctx, req.OrderedBy, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
 		logger.Error("error on listing problems: ", err)
-		return nil, http.StatusInternalServerError
+		return structs.ResponseListProblems{}, http.StatusInternalServerError
 	}
 
 	ans := make([]structs.ResponseListProblemsItem, 0)
@@ -104,7 +105,10 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 			Hardness:   p.Hardness,
 		})
 	}
-	return ans, http.StatusOK
+	return structs.ResponseListProblems{
+		TotalCount: total_count,
+		Problems:   ans,
+	}, http.StatusOK
 }
 
 func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int {

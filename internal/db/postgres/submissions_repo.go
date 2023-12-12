@@ -26,15 +26,19 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 		"CREATE TYPE submission_language AS ENUM('python')",
 		`
 		CREATE TABLE IF NOT EXISTS submissions(
-			id SERIAL PRIMARY KEY,
-			problem_id bigint,
-			user_id bigint,
+			id SERIAL,
+			problem_id bigint not null,
+			user_id bigint not null ,
 			file_name varchar(50),
-			score int DEFAULT 0,
+			judge_result_id varchar(70),
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
 			public boolean DEFAULT FALSE,
-			created_at TIMESTAMP DEFAULT NOW()
+			created_at TIMESTAMP DEFAULT NOW(),
+
+			primary key (id, problem_id, user_id),
+			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
+			CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id)
 	)`}
 
 	var err error
@@ -47,7 +51,9 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 
 func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error) {
 	stmt := `
-	INSERT INTO submissions(problem_id, user_id, file_name, language) VALUES($1, $2, $3, $4)
+	INSERT INTO submissions(
+		problem_id, user_id, file_name, language) 
+		VALUES($1, $2, $3, $4) RETURNING id
 	`
 
 	var id int64
@@ -57,14 +63,22 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, score, status, language, public FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.Status, &ans.Language, &ans.Public)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.Public)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return ans, err
+}
+
+func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID string) error {
+	stmt := `
+	UPDATE submissions SET judge_result_id = $1 where id = $2
+	`
+	_, err := s.conn.Exec(ctx, stmt, docID, id)
+	return err
 }

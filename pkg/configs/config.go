@@ -23,6 +23,7 @@ type OContestConf struct {
 	AESKey   string          `yaml:"AESKey"`
 	Auth     SectionAuth     `yaml:"auth"`
 	MinIO    SectionMinIO    `yaml:"minio"`
+	Judge    SectionJudge    `yaml:"judge"`
 }
 
 type SectionLog struct {
@@ -44,10 +45,11 @@ type SectionMongo struct {
 }
 
 type SectionNats struct {
-	Url               string `yaml:"url"`
-	Subject           string `yaml:"subject"`
-	Queue             string `yaml:"queue"`
-	SubscribeChanSize int    `yaml:"subscribe_chan_size"`
+	Url               string        `yaml:"url"`
+	Subject           string        `yaml:"subject"`
+	ReplyTimeout      time.Duration `yaml:"reply_timeout"`
+	Queue             string        `yaml:"queue"`
+	SubscribeChanSize int           `yaml:"subscribe_chan_size"`
 }
 
 type SectionJWT struct {
@@ -83,6 +85,10 @@ type SectionMinIO struct {
 	Bucket    string `yaml:"bucket"`
 	Region    string `yaml:"region"`
 	Secure    bool   `yaml:"secure"`
+}
+
+type SectionJudge struct {
+	Nats SectionNats `yaml:"nats"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
