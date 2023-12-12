@@ -93,6 +93,5 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 }
 
 func (j JudgeImp) GetResults(ctx context.Context, id string) (structs.JudgeResponse, error) {
-	//TODO implement me
 	return j.judgeRepo.GetResults(ctx, id)
 }
