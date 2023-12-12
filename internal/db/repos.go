@@ -17,12 +17,16 @@ type AuthRepo interface {
 type ProblemsMetadataRepo interface {
 	InsertProblem(ctx context.Context, problem structs.Problem) (int64, error)
 	GetProblem(ctx context.Context, id int64) (structs.Problem, error)
-	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int) ([]structs.Problem, error)
+	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error)
+  UpdateProblem(ctx context.Context, id int64, title string) error
+	DeleteProblem(ctx context.Context, id int64) (string, error)
 }
 
 type ProblemDescriptionsRepo interface {
-	Save(description string, testCases []string) (string, error)
-	Get(id string) (structs.ProblemDescription, error)
+	Save(description string) (string, error)
+	Get(id string) (string, error)
+	Update(id string, description string) error
+	Delete(id string) error
 }
 type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)

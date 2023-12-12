@@ -83,4 +83,53 @@ func (p ProblemDescriptionRepoImp) AddTestcase(ctx context.Context, id string, t
 		"_id", fid,
 	}}, change, nil)
 	return err
+	}
+
+	change := bson.M{"$push": bson.M{"testcases": testCase}}
+
+	_, err = p.collection.UpdateOne(ctx, bson.D{{
+		"_id", fid,
+	}}, change, nil)
+	return err
+}
+
+func (p ProblemDescriptionRepoImp) Update(id, description string) error {
+	fid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.D{{"_id", fid}}
+	update := bson.D{{"$set", bson.D{{"description", description}}}}
+
+	result, err := p.collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return pkg.ErrNotFound
+	}
+
+	return nil
+}
+
+func (p ProblemDescriptionRepoImp) Delete(id string) error {
+	fid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.D{{"_id", fid}}
+
+	res, err := p.collection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
+		return pkg.ErrNotFound
+	}
+
+	return nil
 }

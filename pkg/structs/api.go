@@ -59,6 +59,12 @@ type RequestListProblems struct {
 	Descending bool   `json:"descending"`
 	Limit      int    `json:"limit"`
 	Offset     int    `json:"offset"`
+	GetCount   bool   `json:"get_count"`
+}
+
+type ResponseListProblems struct {
+	TotalCount int                        `json:"total_count,omitempty"`
+	Problems   []ResponseListProblemsItem `json:"problems"`
 }
 
 type ResponseListProblemsItem struct {
@@ -73,6 +79,12 @@ type ResponseGetProblem struct {
 	Title       string `json:"title"`
 	SolveCount  int64  `json:"solve_count"`
 	Hardness    int64  `json:"hardness"`
+	Description string `json:"description"`
+}
+
+type RequestUpdateProblem struct {
+	Id          int64
+	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
@@ -96,3 +108,4 @@ type ResponseGetSubmissionResults struct {
 	Score      int         `json:"score"`
 	Message    string      `json:"message"`
 }
+

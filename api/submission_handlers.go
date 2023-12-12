@@ -1,9 +1,7 @@
 package api
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net/http"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
@@ -24,27 +22,18 @@ func (h *handlers) Submit(c *gin.Context) {
 		return
 	}
 
-	problemID, err := strconv.ParseInt(c.PostForm("problem_id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		logger.Error("error on getting problem_id from request: ", err)
+		logger.Error("error on getting problem_id from url: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid problem_id, problem_id should be an integer",
 		})
 		return
 	}
 
-	file, fileHeader, err := c.Request.FormFile("file")
+	buffer, err := c.GetRawData()
 	if err != nil {
-		logger.Error("Failed to read file from request: ", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": pkg.ErrBadRequest.Error(),
-		})
-		return
-	}
-
-	buffer := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buffer, file); err != nil {
-		logger.Error("Failed copy file to byte buffer: ", err)
+		logger.Error("Failed reading file from request body: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": pkg.ErrInternalServerError.Error(),
 		})
@@ -54,9 +43,9 @@ func (h *handlers) Submit(c *gin.Context) {
 	reqData := structs.RequestSubmit{
 		UserID:      userID.(int64),
 		ProblemID:   problemID,
-		Code:        buffer.Bytes(),
-		FileName:    fileHeader.Filename,
-		ContentType: fileHeader.Header["Content-Type"][0],
+		Code:        buffer,
+		FileName:    "filename", // File name currently not preserved
+		ContentType: c.GetHeader("Content-Type"),
 		Language:    "python", // For now just python
 	}
 
