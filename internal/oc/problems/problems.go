@@ -14,7 +14,7 @@ import (
 type ProblemsHandler interface {
 	CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (structs.ResponseCreateProblem, int)
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
-	ListProblem(ctx context.Context, req structs.RequestListProblems) ([]structs.ResponseListProblemsItem, int)
+	ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int)
 	DeleteProblem(ctx context.Context, problemId int64) int
 	UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int
 }

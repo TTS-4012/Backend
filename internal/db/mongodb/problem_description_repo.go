@@ -83,14 +83,6 @@ func (p ProblemDescriptionRepoImp) AddTestcase(ctx context.Context, id string, t
 		"_id", fid,
 	}}, change, nil)
 	return err
-	}
-
-	change := bson.M{"$push": bson.M{"testcases": testCase}}
-
-	_, err = p.collection.UpdateOne(ctx, bson.D{{
-		"_id", fid,
-	}}, change, nil)
-	return err
 }
 
 func (p ProblemDescriptionRepoImp) Update(id, description string) error {

@@ -108,4 +108,3 @@ type ResponseGetSubmissionResults struct {
 	Score      int         `json:"score"`
 	Message    string      `json:"message"`
 }
-
