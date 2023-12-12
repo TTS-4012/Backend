@@ -8,26 +8,28 @@ import (
 	"ocontest/pkg/configs"
 )
 
-type RunnerTaskHandler interface {
+type RunnerScheduler interface {
 	StartListern()
 	ProcessCode(msg *nats.Msg)
 }
 
-type RunnerImp struct {
-	queue judge.JudgeQueue
+type RunnerSchedulerImp struct {
+	queue  judge.JudgeQueue
+	runner Runner
 }
 
-func NewRunner(natsConfig configs.SectionNats) (RunnerTaskHandler, error) {
+func NewRunnerScheduler(natsConfig configs.SectionNats) (RunnerScheduler, error) {
 	queue, err := judge.NewJudgeQueue(natsConfig)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return RunnerImp{
-		queue: queue,
+	return RunnerSchedulerImp{
+		queue:  queue,
+		runner: NewDummy(),
 	}, nil
 }
 
-func (r RunnerImp) StartListern() {
+func (r RunnerSchedulerImp) StartListern() {
 	for {
 		msg, err := r.queue.Get()
 		if err != nil {
@@ -37,7 +39,7 @@ func (r RunnerImp) StartListern() {
 	}
 }
 
-func (r RunnerImp) ProcessCode(msg *nats.Msg) {
+func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 	//TODO implement me
 
 	panic("implement me")
