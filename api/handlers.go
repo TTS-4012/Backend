@@ -56,6 +56,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		{
       problemGroup.POST("/:id/submit", h.Submit)
 			submissionGroup.GET("/:id", h.GetSubmission)
+			submissionGroup.POST("/", h.Submit)
 			submissionGroup.GET("/:id/results", h.GetSubmissionResult)
 		}
 	}
