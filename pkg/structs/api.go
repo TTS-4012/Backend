@@ -108,3 +108,26 @@ type ResponseGetSubmissionResults struct {
 	Score      int         `json:"score"`
 	Message    string      `json:"message"`
 }
+
+type RequestListSubmissions struct {
+	Descending bool `json:"descending"`
+	Limit      int  `json:"limit"`
+	Offset     int  `json:"offset"`
+}
+
+type ResponseListSubmissions struct {
+	TotalCount  int                           `json:"total_count,omitempty"`
+	Submissions []ResponseListSubmissionsItem `json:"submissions"`
+}
+
+type SubmissionListMetadata struct {
+	ID        int64  `json:"submission_id"`
+	Language  string `json:"language"`
+	CreatedAt string `json:"created_at"`
+	FileName  string `json:"file_name"`
+}
+
+type ResponseListSubmissionsItem struct {
+	Metadata SubmissionListMetadata       `json:"metadata"`
+	Results  ResponseGetSubmissionResults `json:"results"`
+}

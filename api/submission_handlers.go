@@ -101,3 +101,7 @@ func (h *handlers) GetSubmissionResult(c *gin.Context) {
 
 	c.JSON(status, resp)
 }
+
+func (h *handlers) ListSubmissions(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}

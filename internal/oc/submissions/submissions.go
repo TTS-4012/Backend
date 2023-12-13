@@ -16,6 +16,7 @@ type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
+	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
@@ -135,4 +136,8 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 		Score:      calcScore(testResults.TestStates, testResults.UserError),
 	}, http.StatusOK
 
+}
+
+func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	panic("implement me!")
 }
