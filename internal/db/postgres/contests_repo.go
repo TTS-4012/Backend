@@ -21,6 +21,8 @@ func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
 		id SERIAL PRIMARY KEY,
 		created_by int NOT NULL,
 		title varchar(70) NOT NULL,
+	    start_time timestamp,
+	    duration int,
 		created_at TIMESTAMP DEFAULT NOW(),
 		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
 	);
@@ -121,10 +123,10 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 
 func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error) {
 	stmt := `
-	SELECT id, created_by, title, FROM contests ORDER BY id
+	SELECT id, created_by, title FROM contests ORDER BY id
 	`
 	if descending {
-		stmt += " DEC"
+		stmt += " DESC"
 	}
 	if limit != 0 {
 		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)

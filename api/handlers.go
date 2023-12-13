@@ -13,15 +13,17 @@ import (
 type handlers struct {
 	authHandler        auth.AuthHandler
 	problemsHandler    problems.ProblemsHandler
-	contestHandler     contests.ContestsHandler
+	contestsHandler    contests.ContestsHandler
 	submissionsHandler submissions.Handler
 }
 
-func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler submissions.Handler) {
+func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler submissions.Handler,
+	contestsHandler contests.ContestsHandler) {
 	h := handlers{
 		authHandler:        authHandler,
 		problemsHandler:    problemHandler,
 		submissionsHandler: submissionsHandler,
+		contestsHandler:    contestsHandler,
 	}
 
 	r.Use(h.corsHandler)
@@ -52,7 +54,8 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("", h.ListProblems)
 		}
-		contestGroup := v1.Group("/contests", h.AuthMiddleware())
+		//contestGroup := v1.Group("/contests", h.AuthMiddleware())
+		contestGroup := v1.Group("/contests")
 		{
 			contestGroup.POST("", h.CreateContest)
 			contestGroup.GET("/:id", h.GetContest)

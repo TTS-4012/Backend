@@ -31,13 +31,14 @@ func NewContestsHandler(contestsRepo db.ContestsMetadataRepo) ContestsHandler {
 
 func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int) {
 	logger := pkg.Log.WithField("method", "create_contest")
-	problem := structs.Contest{
-		CreatedBy: ctx.Value("user_id").(int64),
+	contest := structs.Contest{
+		//CreatedBy: ctx.Value("user_id").(int64),
+		CreatedBy: (int64)(1),
 		Title:     req.Title,
 		Problems:  nil,
 	}
 	var err error
-	res.ContestID, err = c.ContestsRepo.InsertContest(ctx, problem)
+	res.ContestID, err = c.ContestsRepo.InsertContest(ctx, contest)
 	if err != nil {
 		logger.Error("error on inserting contest: ", err)
 		status = http.StatusInternalServerError

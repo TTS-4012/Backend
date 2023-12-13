@@ -10,6 +10,7 @@ import (
 	"ocontest/internal/jwt"
 	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/oc/contests"
 	"ocontest/internal/oc/problems"
 	"ocontest/internal/oc/submissions"
 	"ocontest/internal/otp"
@@ -64,6 +65,11 @@ func main() {
 		log.Fatal("error on creating problems metadata repo: ", err)
 	}
 
+	contestsMetadataRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating problems metadata repo: ", err)
+	}
+
 	problemsDescriptionRepo, err := mongodb.NewProblemDescriptionRepo(c.Mongo)
 	if err != nil {
 		log.Fatal("error on creating problem description repo: ", err)
@@ -83,9 +89,10 @@ func main() {
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient)
+	contestsHandler := contests.NewContestsHandler(contestsMetadataRepo)
 
 	// starting http server
-	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)
+	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestsHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)

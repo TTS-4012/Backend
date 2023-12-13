@@ -20,7 +20,7 @@ func (h *handlers) CreateContest(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.contestHandler.CreateContest(c, reqData)
+	resp, status := h.contestsHandler.CreateContest(c, reqData)
 	c.JSON(status, resp)
 }
 
@@ -34,7 +34,7 @@ func (h *handlers) GetContest(c *gin.Context) {
 		})
 		return
 	}
-	resp, status := h.contestHandler.GetContest(c, contestID)
+	resp, status := h.contestsHandler.GetContest(c, contestID)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {
@@ -66,7 +66,7 @@ func (h *handlers) ListContests(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.contestHandler.ListContests(c, reqData)
+	resp, status := h.contestsHandler.ListContests(c, reqData)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {
