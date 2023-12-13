@@ -106,6 +106,26 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "ListSubmissions")
 	var reqData structs.RequestListSubmissions
 
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	reqData.UserID = userID.(int64)
+
+	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting problem_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid problem_id, problem_id should be an integer",
+		})
+		return
+	}
+	reqData.ProblemID = problemID
+
 	reqData.Descending = c.Query("descending") == "true"
 
 	reqData.GetCount = c.Query("get_count") == "true"
