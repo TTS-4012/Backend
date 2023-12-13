@@ -22,8 +22,8 @@ func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
 		id SERIAL PRIMARY KEY,
 		created_by int NOT NULL,
 		title varchar(70) NOT NULL,
-	    start_time timestamp,
-	    duration int,
+	    start_time varchar(14) NOT NULL,
+	    duration int NOT NULL,
 		created_at TIMESTAMP DEFAULT NOW(),
 		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
 	);
@@ -48,36 +48,22 @@ func NewContestsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.Contes
 
 func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest structs.Contest) (int64, error) {
 	var contestID int64
-	if contest.StartTime != "" {
-		insertContestStmt := `
+	insertContestStmt := `
 			INSERT INTO contests(
 				created_by, title, start_time, duration) 
 			VALUES($1, $2, $3, $4) RETURNING id
 		`
 
-		tmpTime, err := time.Parse("20060102150405", contest.StartTime)
-		if err != nil {
-			return 0, err
-		}
-		err = c.conn.
-			QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, tmpTime, contest.Duration).
-			Scan(&contestID)
-		if err != nil {
-			return 0, err
-		}
-	} else {
-		insertContestStmt := `
-			INSERT INTO contests(
-				created_by, title, duration) 
-			VALUES($1, $2, $3) RETURNING id
-		`
+	_, err := time.Parse("20060102150405", contest.StartTime)
+	if err != nil {
+		return 0, err
+	}
 
-		err := c.conn.
-			QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, contest.Duration).
-			Scan(&contestID)
-		if err != nil {
-			return 0, err
-		}
+	err = c.conn.
+		QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, contest.StartTime, contest.Duration).
+		Scan(&contestID)
+	if err != nil {
+		return 0, err
 	}
 
 	insertContestProblemsStmt := `
@@ -98,12 +84,12 @@ func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest str
 
 func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (structs.Contest, error) {
 	selectContestStmt := `
-		SELECT created_by, title FROM contests WHERE id = $1
+		SELECT created_by, title, start_time, duration FROM contests WHERE id = $1
 	`
 
 	var contest structs.Contest
 	err := c.conn.QueryRow(ctx, selectContestStmt, id).
-		Scan(&contest.CreatedBy, &contest.Title)
+		Scan(&contest.CreatedBy, &contest.Title, &contest.StartTime, &contest.Duration)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return structs.Contest{}, pkg.ErrNotFound
 	} else if err != nil {
@@ -137,7 +123,7 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 			return structs.Contest{}, err
 		}
 		contestProblem := structs.ContestProblem{
-			ID:    problem.ID,
+			ID:    problemID,
 			Title: problem.Title,
 		}
 

@@ -107,6 +107,8 @@ type ResponseGetContest struct {
 	ContestID int64            `json:"contest_Id"`
 	Title     string           `json:"title"`
 	Problems  []ContestProblem `json:"problems"`
+	StartTime string           `json:"start_time"`
+	Duration  int              `json:"duration"`
 }
 
 type RequestListContests struct {

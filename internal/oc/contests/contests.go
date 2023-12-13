@@ -70,6 +70,8 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		ContestID: contestID,
 		Title:     contest.Title,
 		Problems:  contest.Problems,
+		StartTime: contest.StartTime,
+		Duration:  contest.Duration,
 	}, http.StatusOK
 }
 
