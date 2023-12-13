@@ -110,10 +110,12 @@ type ResponseGetSubmissionResults struct {
 }
 
 type RequestListSubmissions struct {
-	Descending bool `json:"descending"`
-	Limit      int  `json:"limit"`
-	Offset     int  `json:"offset"`
-	GetCount   bool `json:"get_count"`
+	ProblemID  int64 `json:"problem_id"`
+	UserID     int64 `json:"user_id"`
+	Descending bool  `json:"descending"`
+	Limit      int   `json:"limit"`
+	Offset     int   `json:"offset"`
+	GetCount   bool  `json:"get_count"`
 }
 
 type ResponseListSubmissions struct {

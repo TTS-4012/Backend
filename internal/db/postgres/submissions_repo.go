@@ -83,3 +83,7 @@ func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID 
 	_, err := s.conn.Exec(ctx, stmt, docID, id)
 	return err
 }
+
+func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
+	panic("implement me!")
+}
