@@ -36,6 +36,8 @@ func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.Reque
 		CreatedBy: (int64)(1),
 		Title:     req.Title,
 		Problems:  nil,
+		StartTime: req.StartTime,
+		Duration:  req.Duration,
 	}
 	var err error
 	res.ContestID, err = c.ContestsRepo.InsertContest(ctx, contest)

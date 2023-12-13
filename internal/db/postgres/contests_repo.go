@@ -9,6 +9,7 @@ import (
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -46,16 +47,37 @@ func NewContestsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.Contes
 }
 
 func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest structs.Contest) (int64, error) {
-	insertContestStmt := `
-		INSERT INTO contests(
-			created_by, title) 
-		VALUES($1, $2) RETURNING id
-	`
-
 	var contestID int64
-	err := c.conn.QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title).Scan(&contestID)
-	if err != nil {
-		return 0, err
+	if contest.StartTime != "" {
+		insertContestStmt := `
+			INSERT INTO contests(
+				created_by, title, start_time, duration) 
+			VALUES($1, $2, $3, $4) RETURNING id
+		`
+
+		tmpTime, err := time.Parse("20060102150405", contest.StartTime)
+		if err != nil {
+			return 0, err
+		}
+		err = c.conn.
+			QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, tmpTime, contest.Duration).
+			Scan(&contestID)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		insertContestStmt := `
+			INSERT INTO contests(
+				created_by, title, duration) 
+			VALUES($1, $2, $3) RETURNING id
+		`
+
+		err := c.conn.
+			QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, contest.Duration).
+			Scan(&contestID)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	insertContestProblemsStmt := `
@@ -114,8 +136,12 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 		if err != nil {
 			return structs.Contest{}, err
 		}
+		contestProblem := structs.ContestProblem{
+			ID:    problem.ID,
+			Title: problem.Title,
+		}
 
-		contest.Problems = append(contest.Problems, problem)
+		contest.Problems = append(contest.Problems, contestProblem)
 	}
 
 	return contest, nil

@@ -94,7 +94,9 @@ type ResponseGetSubmission struct {
 // Contests
 
 type RequestCreateContest struct {
-	Title string `json:"title"`
+	Title     string `json:"title"`
+	StartTime string `json:"start_time"`
+	Duration  int    `json:"duration"`
 }
 
 type ResponseCreateContest struct {
@@ -102,9 +104,9 @@ type ResponseCreateContest struct {
 }
 
 type ResponseGetContest struct {
-	ContestID int64     `json:"contest_Id"`
-	Title     string    `json:"title"`
-	Problems  []Problem `json:"problems"`
+	ContestID int64            `json:"contest_Id"`
+	Title     string           `json:"title"`
+	Problems  []ContestProblem `json:"problems"`
 }
 
 type RequestListContests struct {

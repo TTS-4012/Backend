@@ -45,9 +45,16 @@ type JudgeSubmissions struct {
 	TestStates []string   `json:"testStates"`
 }
 
+type ContestProblem struct {
+	ID    int64
+	Title string
+}
+
 type Contest struct {
 	CreatedBy int64
 	ID        int64
 	Title     string
-	Problems  []Problem
+	StartTime string
+	Duration  int
+	Problems  []ContestProblem
 }
