@@ -28,7 +28,13 @@ func NewProblemsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.Proble
 	return ans, ans.Migrate(ctx)
 }
 
-func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
+func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
+	// TODO: remove it if contest module is implemented.
+	_, err = a.conn.Exec(ctx, `create table if not exists contests(id bigint primary key);`)
+	if err != nil {
+		return err
+	}
+
 	stmt := `
 	CREATE TABLE IF NOT EXISTS problems(
 	    id SERIAL PRIMARY KEY ,
@@ -44,7 +50,7 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
 	)
 	`
 
-	_, err := a.conn.Exec(ctx, stmt)
+	_, err = a.conn.Exec(ctx, stmt)
 	return err
 }
 func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem structs.Problem) (int64, error) {

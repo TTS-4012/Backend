@@ -36,3 +36,7 @@ func init() {
 	// is called directly, e.g.:
 	// runnerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
+
+func RunRunnerTaskHandler() {
+	panic("implement me!")
+}
