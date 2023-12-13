@@ -25,6 +25,7 @@ type ContestsMetadataRepo interface {
 	GetContest(ctx context.Context, id int64) (structs.Contest, error)
 	ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error)
 	DeleteContest(ctx context.Context, id int64) error
+	AddProblem(ctx context.Context, contestID int64, problemID int64) error
 }
 
 type ProblemDescriptionsRepo interface {

@@ -178,3 +178,16 @@ func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) e
 	}
 	return err
 }
+
+func (c *ContestsMetadataRepoImp) AddProblem(ctx context.Context, contestID int64, problemID int64) error {
+	insertContestProblemsStmt := `
+		INSERT INTO contest_problems(
+			contest_id, problem_id) 
+		VALUES($1, $2)
+	`
+	_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problemID)
+	if err != nil {
+		return err
+	}
+	return nil
+}

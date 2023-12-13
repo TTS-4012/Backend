@@ -77,3 +77,19 @@ func (h *handlers) ListContests(c *gin.Context) {
 func (h *handlers) UpdateContest(c *gin.Context) {}
 
 func (h *handlers) DeleteContest(c *gin.Context) {}
+
+func (h *handlers) AddProblemContest(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "addProblemContest")
+
+	var reqData structs.RequestAddProblemContest
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.contestsHandler.AddProblemContest(c, reqData)
+	c.Status(status)
+}
