@@ -113,6 +113,7 @@ type RequestListSubmissions struct {
 	Descending bool `json:"descending"`
 	Limit      int  `json:"limit"`
 	Offset     int  `json:"offset"`
+	GetCount   bool `json:"get_count"`
 }
 
 type ResponseListSubmissions struct {
