@@ -88,7 +88,7 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	}
 	stmt += " " + colName
 	if descending {
-		stmt += " DEC"
+		stmt += " DESC"
 	}
 	if limit != 0 {
 		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)

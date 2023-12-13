@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
@@ -85,5 +86,54 @@ func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID 
 }
 
 func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
-	panic("implement me!")
+	stmt := `
+	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public
+	`
+	if getCount {
+		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
+	}
+	stmt = fmt.Sprintf("%s FROM submissions", stmt)
+
+	stmt = fmt.Sprintf("%s WHERE problem_id = $1", stmt)
+	if userID != 0 {
+		stmt = fmt.Sprintf("%s AND user_id = $2", stmt)
+	}
+
+	stmt = fmt.Sprintf("%s ORDER BY created_at", stmt)
+	if descending {
+		stmt += " DESC"
+	}
+	if limit != 0 {
+		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
+	}
+	if offset != 0 {
+		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
+	}
+
+	var rows pgx.Rows
+	var err error
+	if userID != 0 {
+		rows, err = s.conn.Query(ctx, stmt, problemID, userID)
+	} else {
+		rows, err = s.conn.Query(ctx, stmt, problemID)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+
+	ans := make([]structs.SubmissionMetadata, 0)
+	var total_count int = 0
+	for rows.Next() {
+		var submission structs.SubmissionMetadata
+		if getCount {
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &total_count)
+		} else {
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public)
+		}
+		if err != nil {
+			return nil, 0, err
+		}
+		ans = append(ans, submission)
+	}
+	return ans, total_count, err
 }
