@@ -41,7 +41,10 @@ func (r RunnerSchedulerImp) StartListen() {
 
 	for {
 		msg, err := sub.NextMsg(NatsTimeout)
-		if err != nil && !errors.Is(err, nats.ErrTimeout) {
+		if errors.Is(err, nats.ErrTimeout) {
+			continue
+		}
+		if err != nil {
 			pkg.Log.Error("error on getting message from queue: ", err)
 			continue
 		}
