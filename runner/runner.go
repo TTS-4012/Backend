@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"ocontest/pkg"
+	"ocontest/pkg/structs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,35 +15,6 @@ import (
 	"sync"
 	"time"
 )
-
-type Verdict int
-
-const (
-	VerdictOK Verdict = 1 << iota
-	VerdictTL
-	VerdictML
-	VerdictRE
-	VerdictXX
-	VerdictCE
-)
-
-func (v Verdict) String() string {
-	switch v {
-	case VerdictOK:
-		return "OK"
-	case VerdictTL:
-		return "TL"
-	case VerdictML:
-		return "ML"
-	case VerdictRE:
-		return "RE"
-	case VerdictXX:
-		return "XX"
-	case VerdictCE:
-		return "CE"
-	}
-	return fmt.Sprintf("?? %d", v)
-}
 
 type Runner interface {
 	TimeLimit(duration time.Duration) Runner
@@ -146,7 +118,7 @@ func (s *Dummy) Stdout(writer io.Writer) Runner {
 	return s
 }
 
-func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
+func (s *Dummy) Run(prg string, needStatus bool) (structs.Verdict, error) {
 	cmd := exec.Command("python3", prg)
 	cmd.Stdin = s.stdin
 	cmd.Stdout = s.stdout
@@ -162,7 +134,7 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 
 	start := time.NewTimer(s.tl)
 	if err := cmd.Start(); err != nil {
-		return VerdictXX, err
+		return structs.VerdictUnknown, err
 	}
 	defer start.Stop()
 
@@ -174,12 +146,12 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 		finish <- true
 	}()
 
-	v := VerdictOK
+	v := structs.VerdictOK
 	select {
 	case <-start.C:
-		v = VerdictTL
+		v = structs.VerdictTimeLimit
 		if errKill = cmd.Process.Kill(); errKill != nil {
-			v = VerdictXX
+			v = structs.VerdictUnknown
 		}
 	case <-finish:
 	}
@@ -188,8 +160,8 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 
 	//if errWait != nil && (strings.HasPrefix(errWait.Error(), "exit status") || strings.HasPrefix(errWait.Error(), "signal:")) {
 	if _, ok := errWait.(*exec.ExitError); ok {
-		if v == VerdictOK {
-			v = VerdictRE
+		if v == structs.VerdictOK {
+			v = structs.VerdictRuntimeError
 		}
 		errWait = nil
 	}
@@ -205,36 +177,36 @@ func (s *Dummy) Cleanup() error {
 	return os.RemoveAll(s.tmpdir)
 }
 
-func RunTask(timeLimit time.Duration, memoryLimit int, code string, input io.Reader, output io.Writer) (error, Verdict) {
+func RunTask(timeLimit time.Duration, memoryLimit int, code string, input io.Reader, output io.Writer, stderr io.Writer) (structs.Verdict, error) {
 	// runner for python
 	d := NewDummy()
 	err := d.Init()
 	if err != nil {
-		return err, VerdictXX
+		return structs.VerdictUnknown, err
 	}
 
 	d.MemoryLimit(memoryLimit)
 	d.TimeLimit(timeLimit)
 	d.Stdin(input)
 	d.Stdout(output)
-	d.Stderr(output)
+	d.Stderr(stderr)
 	const fileName = "runner_test.py"
 	err = d.CreateFile(fileName, strings.NewReader(code))
 	if err != nil {
-		return err, VerdictXX
+		return structs.VerdictUnknown, err
 	}
 	err = d.MakeExecutable(fileName)
 	if err != nil {
-		return err, VerdictXX
+		return structs.VerdictUnknown, err
 	}
 
 	v, err := d.Run("runner_test.py", false)
 	if err != nil {
-		return err, v
+		return v, err
 	}
 	err = d.Cleanup()
 	if err != nil {
 		pkg.Log.Warning("error on doing cleanup of runner: ", err)
 	}
-	return nil, v
+	return v, nil
 }

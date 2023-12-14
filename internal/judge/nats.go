@@ -63,7 +63,7 @@ func (j JudgeQueueImp) StartSubscribe() error {
 
 func (j JudgeQueueImp) Get() (msg *nats.Msg, err error) {
 	if j.sub == nil {
-		pkg.Log.Error("Get Next called when there is no subscription")
+		pkg.Log.Error("GetByID Next called when there is no subscription")
 		return nil, pkg.ErrBadRequest
 	}
 	return j.sub.NextMsg(j.config.ReplyTimeout)

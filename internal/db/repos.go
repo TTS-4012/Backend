@@ -23,10 +23,16 @@ type ProblemsMetadataRepo interface {
 }
 
 type ProblemDescriptionsRepo interface {
-	Save(description string, testCases []string) (string, error)
+	Insert(description string, testCases []string) (string, error)
 	Get(id string) (structs.ProblemDescription, error)
 	Update(id string, description string) error
 	Delete(id string) error
+}
+
+type TestCaseRepo interface {
+	Insert(ctx context.Context, testCase structs.Testcase) (int64, error)
+	GetByID(ctx context.Context, id int64) (structs.Testcase, error)
+	GetAllTestsOfProblem(ctx context.Context, problemID int64) ([]structs.Testcase, error)
 }
 
 type SubmissionMetadataRepo interface {

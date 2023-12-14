@@ -11,7 +11,7 @@ type User struct {
 type ProblemDescription struct {
 	ID          string
 	Description string
-	Testcases   []string
+	Testcases   []Testcase
 }
 
 type Problem struct {
@@ -35,26 +35,28 @@ type SubmissionMetadata struct {
 }
 
 type Testcase struct {
-	Input  string `json:"input"`
-	Answer string `json:"answer"`
+	ProblemID int64 `json:"problem_id"`
+	ID        int64 `json:"id"`
+
+	Input          string `json:"input,omitempty"`
+	ExpectedOutput string `json:"expected_output,omitempty"`
+}
+
+type TestResult struct {
+	SubmissionID int64 `json:"submission_id"`
+	TestcaseID   int64 `json:"id"`
+
+	RunnerOutput string `json:"runner_output"`
+	RunnerError  string `json:"runner_error"`
+	Verdict
 }
 
 type JudgeRequest struct {
-	Code      []byte   `json:"code"`
-	Testcases []string `json:"testcases"`
+	Code      string     `json:"code"`
+	Testcases []Testcase `json:"testcases"`
 }
 
-type TestState int64
-
-const (
-	TestStateSuccess     TestState = iota
-	TestStateWrong       TestState = iota
-	TestStateTimeLimit   TestState = iota
-	TestStateMemoryLimit TestState = iota
-)
-
 type JudgeResponse struct {
-	ServerError string      `json:"server_error"` // for example, a database failure
-	UserError   string      `json:"user_error"`   // for example, a compile error on user code
-	TestStates  []TestState `json:"testStates"`   // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
+	ServerError string     `json:"server_error"` // for example, a database failure
+	TestStates  []Testcase `json:"testStates"`   // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }

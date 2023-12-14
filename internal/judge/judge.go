@@ -65,7 +65,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	}
 
 	req := structs.JudgeRequest{
-		Code:      code,
+		Code:      string(code),
 		Testcases: problemDescription.Testcases,
 	}
 

@@ -66,7 +66,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 
 func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID int64) (ans structs.ResponseGetSubmission, contentType string, status int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "Get",
+		"method": "GetByID",
 		"module": "Submission",
 	})
 

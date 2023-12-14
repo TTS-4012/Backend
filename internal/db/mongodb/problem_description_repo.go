@@ -39,7 +39,7 @@ func NewProblemDescriptionRepo(config configs.SectionMongo) (db.ProblemDescripti
 	}, client.Ping(ctx, nil)
 }
 
-func (p ProblemDescriptionRepoImp) Save(description string, testCases []string) (string, error) {
+func (p ProblemDescriptionRepoImp) Insert(description string, testCases []string) (string, error) {
 	document := bson.D{
 		{"description", description},
 		{"testcases", testCases},

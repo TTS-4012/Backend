@@ -36,6 +36,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			public boolean DEFAULT FALSE,
 			created_at TIMESTAMP DEFAULT NOW(),
 
+			unique(id),
 			primary key (id, problem_id, user_id),
 
 			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
