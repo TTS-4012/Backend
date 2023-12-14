@@ -17,6 +17,8 @@ type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
+	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
+	ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
@@ -153,4 +155,112 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 		Message:  message,
 	}, http.StatusOK
 
+}
+
+func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListSubmission",
+		"module": "submissions",
+	})
+
+	submissions, total_count, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	if err != nil {
+		logger.Error("error on listing problems: ", err)
+		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseListSubmissionsItem, 0)
+	for _, sub := range submissions {
+		metadata := structs.SubmissionListMetadata{
+			ID:        sub.ID,
+			UserID:    0,
+			Language:  sub.Language,
+			CreatedAt: sub.CreatedAT,
+			FileName:  sub.FileName,
+		}
+		results := structs.ResponseGetSubmissionResults{}
+
+		testResults, err := s.judge.GetResults(ctx, sub.JudgeResultID)
+		if err != nil {
+			logger.Error("error on getting test results from judge: ", err)
+		}
+
+		if testResults.ServerError != "" && err != nil {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: nil,
+				Message:    "Something Went Wrong!, please try again later...",
+				Score:      0,
+			}
+		} else {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: testResults.TestStates,
+				Message:    testResults.UserError,
+				Score:      calcScore(testResults.TestStates, testResults.UserError),
+			}
+		}
+
+		ans = append(ans, structs.ResponseListSubmissionsItem{
+			Metadata: metadata,
+			Results:  results,
+		})
+	}
+
+	return structs.ResponseListSubmissions{
+		TotalCount:  total_count,
+		Submissions: ans,
+	}, http.StatusOK
+}
+
+func (s *SubmissionsHandlerImp) ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListAllSubmission",
+		"module": "submissions",
+	})
+
+	submissions, total_count, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	if err != nil {
+		logger.Error("error on listing problems: ", err)
+		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseListSubmissionsItem, 0)
+	for _, sub := range submissions {
+		metadata := structs.SubmissionListMetadata{
+			ID:        sub.ID,
+			UserID:    sub.UserID,
+			Language:  sub.Language,
+			CreatedAt: sub.CreatedAT,
+			FileName:  sub.FileName,
+		}
+		results := structs.ResponseGetSubmissionResults{}
+
+		testResults, err := s.judge.GetResults(ctx, sub.JudgeResultID)
+		if err != nil {
+			logger.Error("error on getting test results from judge: ", err)
+		}
+
+		if testResults.ServerError != "" && err != nil {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: nil,
+				Message:    "Something Went Wrong!, please try again later...",
+				Score:      0,
+			}
+		} else {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: testResults.TestStates,
+				Message:    testResults.UserError,
+				Score:      calcScore(testResults.TestStates, testResults.UserError),
+			}
+		}
+
+		ans = append(ans, structs.ResponseListSubmissionsItem{
+			Metadata: metadata,
+			Results:  results,
+		})
+	}
+
+	return structs.ResponseListSubmissions{
+		TotalCount:  total_count,
+		Submissions: ans,
+	}, http.StatusOK
 }

@@ -31,6 +31,7 @@ type SubmissionMetadata struct {
 	Status        string `json:"status"`   // either 'new', 'processing', 'processed'
 	Language      string `json:"language"` // just 'python' for now
 	Public        bool   `json:"public"`
+	CreatedAT     string `json:"created_at"`
 }
 
 type Testcase struct {
