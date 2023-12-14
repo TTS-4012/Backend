@@ -48,6 +48,7 @@ type RequestEditUser struct {
 type RequestCreateProblem struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	ContestID   int64  `json:"contest_id"`
 }
 
 type ResponseCreateProblem struct {
