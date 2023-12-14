@@ -116,7 +116,7 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 	}
 	reqData.UserID = userID.(int64)
 
-	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		logger.Error("error on getting problem_id from url: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -161,7 +161,7 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 	var reqData structs.RequestListSubmissions
 	reqData.UserID = 0
 
-	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		logger.Error("error on getting problem_id from url: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{
