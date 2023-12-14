@@ -102,9 +102,6 @@ func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 
 	}
 
-	for _, v := range resp.TestResults {
-		pkg.Log.Debug(v.Verdict.String())
-	}
 	respData, err := json.Marshal(resp)
 	if err != nil {
 		errorMessage := "error on json marshalling response"

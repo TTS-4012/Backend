@@ -30,16 +30,17 @@ func NewJudgeRepo(config configs.SectionMongo) (db.JudgeRepo, error) {
 	}
 
 	return &JudgeRepoImp{
-		collection: client.Database(config.Database).Collection(collectionName),
+		collection: client.Database(config.Database).Collection("judge"),
 	}, client.Ping(ctx, nil)
 }
 
 func (j JudgeRepoImp) Insert(ctx context.Context, response structs.JudgeResponse) (string, error) {
 	//TODO implement me
 
+	pkg.Log.Info(response)
 	document := bson.D{
-		{"serverError", response.ServerError},
-		{"testStates", response.TestResults},
+		{"server_error", response.ServerError},
+		{"test_results", response.TestResults},
 	}
 
 	res, err := j.collection.InsertOne(context.Background(), document)
@@ -57,12 +58,15 @@ func (j JudgeRepoImp) GetResults(ctx context.Context, id string) (structs.JudgeR
 		return ans, err
 	}
 
-	err = j.collection.FindOne(ctx, bson.D{{"_id", fid}}, nil).Decode(&ans)
+	cur := j.collection.FindOne(ctx, bson.M{"_id": fid}, nil)
+	pkg.Log.Debug(cur.Raw())
+	err = cur.Decode(&ans)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return ans, pkg.ErrNotFound
 		}
 		return ans, err
 	}
+	pkg.Log.Debug(ans, id)
 	return ans, nil
 }

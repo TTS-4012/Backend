@@ -16,7 +16,6 @@ import (
 
 // Replace the placeholder with your Atlas connection string
 const timeout = time.Second
-const collectionName = "problem_description"
 
 type ProblemDescriptionRepoImp struct {
 	collection *mongo.Collection
@@ -35,7 +34,7 @@ func NewProblemDescriptionRepo(config configs.SectionMongo) (db.ProblemDescripti
 	}
 
 	return &ProblemDescriptionRepoImp{
-		collection: client.Database(config.Database).Collection(collectionName),
+		collection: client.Database(config.Database).Collection("problem_description"),
 	}, client.Ping(ctx, nil)
 }
 

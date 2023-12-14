@@ -123,6 +123,13 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 		return
 	}
 
+	if submission.Status != "processed" {
+		ans.Verdicts = nil
+		ans.Message = "not judged yet!"
+		status = http.StatusTooEarly
+		return
+	}
+
 	testResultID := submission.JudgeResultID
 	judgeResult, err := s.judge.GetResults(ctx, testResultID)
 	if err != nil {
@@ -144,7 +151,7 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 			message = fmt.Sprintf("Error: %v", t.RunnerError)
 		}
 		if t.Verdict != structs.VerdictOK {
-			message = "Failed"
+			message = "Failed, verdict: " + t.Verdict.String()
 		}
 		verdicts = append(verdicts, t.Verdict)
 	}
