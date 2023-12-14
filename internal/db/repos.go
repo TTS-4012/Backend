@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 type AuthRepo interface {

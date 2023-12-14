@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"ocontest/pkg/configs"
+	"github.com/ocontest/backend/pkg/configs"
 )
 
 func NewConnectionPool(ctx context.Context, conf configs.SectionPostgres) (*pgxpool.Pool, error) {

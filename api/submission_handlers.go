@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"net/http"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

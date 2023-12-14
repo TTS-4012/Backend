@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"errors"
+	"github.com/ocontest/backend/pkg/configs"
 	"github.com/sirupsen/logrus"
 	"io"
-	"ocontest/pkg/configs"
 	"os"
 )
 

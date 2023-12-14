@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"ocontest/internal/db"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 type AuthRepoImp struct {

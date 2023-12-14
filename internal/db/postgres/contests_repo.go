@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"ocontest/internal/db"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 type ContestsMetadataRepoImp struct {

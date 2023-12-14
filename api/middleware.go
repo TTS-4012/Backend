@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"ocontest/pkg"
+	"github.com/ocontest/backend/pkg"
 	"strings"
 )
 

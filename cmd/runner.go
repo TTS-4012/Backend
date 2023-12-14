@@ -4,11 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
+	"github.com/ocontest/backend/runner"
 	"github.com/spf13/cobra"
 	"log"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
-	"ocontest/runner"
 )
 
 // runnerCmd represents the runner command

@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/nats-io/nats.go"
+	"github.com/ocontest/backend/internal/judge"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
+	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"log"
-	"ocontest/internal/judge"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
-	"ocontest/pkg/structs"
 	"strings"
 )
 

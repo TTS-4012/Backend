@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"ocontest/internal/db"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"time"
 
 	"github.com/jackc/pgx/v5"

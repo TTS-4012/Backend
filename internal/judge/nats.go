@@ -3,8 +3,8 @@ package judge
 import (
 	"encoding/json"
 	"github.com/nats-io/nats.go"
-	"ocontest/pkg/configs"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/pkg/configs"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 type JudgeQueue interface {

@@ -3,10 +3,10 @@ package problems
 import (
 	"context"
 	"errors"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"net/http"
-	"ocontest/internal/db"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 
 	"github.com/sirupsen/logrus"
 )

@@ -2,8 +2,8 @@ package otp
 
 import (
 	"fmt"
+	"github.com/ocontest/backend/pkg"
 	"math/rand"
-	"ocontest/pkg"
 )
 
 type OTPStorage interface {

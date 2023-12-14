@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
 	"io"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

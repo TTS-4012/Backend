@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/ocontest/backend/internal/oc/auth"
+	"github.com/ocontest/backend/internal/oc/contests"
+	"github.com/ocontest/backend/internal/oc/problems"
+	"github.com/ocontest/backend/internal/oc/submissions"
 	"net/http"
-	"ocontest/internal/oc/auth"
-	"ocontest/internal/oc/contests"
-	"ocontest/internal/oc/problems"
-	"ocontest/internal/oc/submissions"
 
 	"github.com/gin-gonic/gin"
 )

@@ -2,7 +2,7 @@ package auth
 
 import (
 	"fmt"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 const registerMessageTemplate = `

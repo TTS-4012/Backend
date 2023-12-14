@@ -3,12 +3,12 @@ package submissions
 import (
 	"context"
 	"fmt"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/judge"
+	"github.com/ocontest/backend/internal/minio"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"net/http"
-	"ocontest/internal/db"
-	"ocontest/internal/judge"
-	"ocontest/internal/minio"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 
 	"github.com/sirupsen/logrus"
 )

@@ -3,8 +3,8 @@ package jwt
 import (
 	"encoding/json"
 	"github.com/golang-jwt/jwt/v5"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
 	"time"
 )
 

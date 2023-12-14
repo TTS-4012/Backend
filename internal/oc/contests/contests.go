@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"ocontest/internal/db"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 )
 
 type ContestsHandler interface {

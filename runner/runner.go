@@ -3,10 +3,10 @@ package runner
 
 import (
 	"bytes"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"io"
 	"io/ioutil"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 	"os"
 	"os/exec"
 	"path/filepath"

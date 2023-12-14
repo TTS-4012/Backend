@@ -2,9 +2,9 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 	"net/http"
-	"ocontest/pkg"
-	"ocontest/pkg/structs"
 	"strconv"
 )
 

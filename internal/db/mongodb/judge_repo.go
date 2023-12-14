@@ -2,15 +2,15 @@ package mongodb
 
 import (
 	"context"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
+	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"ocontest/internal/db"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
-	"ocontest/pkg/structs"
 )
 
 type JudgeRepoImp struct {

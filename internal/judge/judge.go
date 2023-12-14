@@ -2,10 +2,10 @@ package judge
 
 import (
 	"context"
-	"ocontest/internal/db"
-	"ocontest/internal/minio"
-	"ocontest/pkg/configs"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/minio"
+	"github.com/ocontest/backend/pkg/configs"
+	"github.com/ocontest/backend/pkg/structs"
 
 	"github.com/pkg/errors"
 )

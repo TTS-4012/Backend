@@ -2,9 +2,9 @@ package smtp
 
 import (
 	"fmt"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
 	"net/smtp"
-	"ocontest/pkg"
-	"ocontest/pkg/configs"
 )
 
 const smtpHost = "smtp.gmail.com"

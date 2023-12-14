@@ -1,7 +1,7 @@
 package structs
 
 import (
-	"ocontest/pkg"
+	"github.com/ocontest/backend/pkg"
 )
 
 // Verdict is the result of a testcase

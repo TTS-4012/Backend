@@ -2,7 +2,7 @@ package submissions
 
 import (
 	"fmt"
-	"ocontest/pkg/structs"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 func getObjectName(userID, problemID, submissionID int64) string {

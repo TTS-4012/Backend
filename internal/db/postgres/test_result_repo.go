@@ -2,9 +2,9 @@ package postgres
 
 import (
 	"context"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
-	"ocontest/internal/db"
-	"ocontest/pkg/structs"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
