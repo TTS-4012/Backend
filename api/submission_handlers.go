@@ -156,5 +156,46 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 }
 
 func (h *handlers) ListAllSubmissions(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "ListAllSubmissions")
+
+	var reqData structs.RequestListSubmissions
+	reqData.UserID = 0
+
+	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting problem_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid problem_id, problem_id should be an integer",
+		})
+		return
+	}
+	reqData.ProblemID = problemID
+
+	reqData.Descending = c.Query("descending") == "true"
+
+	reqData.GetCount = c.Query("get_count") == "true"
+
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+	var errLimit, errOffset error
+	if limitStr != "" {
+		reqData.Limit, errLimit = strconv.Atoi(limitStr)
+	}
+	if offsetStr != "" {
+		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
+	}
+	if errLimit != nil || errOffset != nil {
+		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid limit or offset, limit and offset should be integers",
+		})
+		return
+	}
+
+	resp, status := h.submissionsHandler.ListAllSubmission(c, reqData)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
 }
