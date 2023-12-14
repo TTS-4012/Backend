@@ -1,5 +1,9 @@
 package structs
 
+import (
+	"ocontest/pkg"
+)
+
 // Verdict is the result of a testcase
 type Verdict int
 
@@ -30,5 +34,27 @@ func (v Verdict) String() string {
 	case VerdictCompileError:
 		return "CE"
 	}
-	return "??"
+	return "XX"
+}
+
+func VerdictFromString(s string) Verdict {
+	switch s {
+	case "OK":
+		return VerdictOK
+	case "WR":
+		return VerdictWrong
+	case "TL":
+		return VerdictTimeLimit
+	case "ML":
+		return VerdictMemoryLimit
+	case "RE":
+		return VerdictRuntimeError
+	case "XX":
+		return VerdictUnknown
+	case "CE":
+		return VerdictCompileError
+	}
+	// TODO: safe error handling
+	pkg.Log.Error("unknown verdict", s)
+	return -1
 }

@@ -10,6 +10,7 @@ import (
 	"ocontest/pkg"
 	"ocontest/pkg/configs"
 	"ocontest/pkg/structs"
+	"strings"
 )
 
 type RunnerScheduler interface {
@@ -56,8 +57,12 @@ func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 		msg.Respond([]byte("error on unmarshal message"))
 	}
 
-	for _, testCase := range task.Testcases {
-		input := bytes.NewReader([]byte(testCase))
+	for ind := range task.Testcases {
+		testCase := task.Testcases[ind]
+		resp.TestResults[ind].SubmissionID = task.SubmissionID
+		resp.TestResults[ind].TestcaseID = testCase.ID
+
+		input := bytes.NewReader([]byte(testCase.Input))
 		var output, stderr bytes.Buffer
 		verdict, err := RunTask(TimeLimit, MemoryLimit, task.Code, input, &output, &stderr)
 		if err != nil {
@@ -69,10 +74,25 @@ func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 		stderrStr := stderr.String()
 		if stderrStr != "" {
 			logger.Warning("stderr is not empty: ", stderrStr)
-			resp.UserError = stderrStr
+		}
+		resp.TestResults[ind].RunnerError = stderrStr
+		resp.TestResults[ind].RunnerOutput = outputStr
+
+		if verdict != structs.VerdictOK {
+			continue
+		}
+		if verdict == structs.VerdictOK && r.checkOutput(outputStr, task.Testcases[ind].ExpectedOutput) {
+
 		}
 
 	}
 
 	panic("implement me")
+}
+
+func (r RunnerSchedulerImp) checkOutput(actual, expected string) bool {
+	actual = strings.TrimSpace(actual)
+	expected = strings.TrimSpace(expected)
+	return actual == expected
+
 }

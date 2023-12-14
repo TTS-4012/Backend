@@ -52,11 +52,12 @@ type TestResult struct {
 }
 
 type JudgeRequest struct {
-	Code      string     `json:"code"`
-	Testcases []Testcase `json:"testcases"`
+	SubmissionID int64      `json:"submission_id"`
+	Code         string     `json:"code"`
+	Testcases    []Testcase `json:"testcases"`
 }
 
 type JudgeResponse struct {
-	ServerError string     `json:"server_error"` // for example, a database failure
-	TestStates  []Testcase `json:"testStates"`   // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
+	ServerError string       `json:"server_error"` // for example, a database failure
+	TestResults []TestResult `json:"test_result"`  // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }

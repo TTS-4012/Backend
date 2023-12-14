@@ -11,7 +11,6 @@ import (
 	"ocontest/api"
 	"ocontest/internal/db/mongodb"
 	"ocontest/internal/db/postgres"
-	"ocontest/internal/judge"
 	"ocontest/internal/jwt"
 	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
@@ -113,16 +112,14 @@ func RunServer() {
 		log.Fatal("error on creating submission metadata repo: ", err)
 	}
 
-	judgeRepo, err := mongodb.NewJudgeRepo(c.Mongo)
-
 	// initiating module handlers
-	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, problemsDescriptionRepo, problemsMetadataRepo, judgeRepo)
+	// judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, problemsDescriptionRepo, problemsMetadataRepo, judgeRepo)
 	if err != nil {
 		log.Fatal("error on creating judge handler", err)
 	}
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
-	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
+	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, nil)
 
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)

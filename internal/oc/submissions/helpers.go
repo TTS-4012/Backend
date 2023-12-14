@@ -9,7 +9,7 @@ func getObjectName(userID, problemID, submissionID int64) string {
 	return fmt.Sprintf("%d/%d/%d", problemID, userID, submissionID)
 }
 
-func calcScore(results []structs.Testcase, userError string) int {
+func calcScore(results []structs.TestResult, userError string) int {
 	if userError != "" {
 		return 0
 	}
