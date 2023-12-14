@@ -139,7 +139,7 @@ type ResponseListSubmissionsItem struct {
 // CONTESTS
 type RequestCreateContest struct {
 	Title     string `json:"title"`
-	StartTime string `json:"start_time"`
+	StartTime int64  `json:"start_time"`
 	Duration  int    `json:"duration"`
 }
 
@@ -151,7 +151,7 @@ type ResponseGetContest struct {
 	ContestID int64            `json:"contest_Id"`
 	Title     string           `json:"title"`
 	Problems  []ContestProblem `json:"problems"`
-	StartTime string           `json:"start_time"`
+	StartTime int64            `json:"start_time"`
 	Duration  int              `json:"duration"`
 }
 

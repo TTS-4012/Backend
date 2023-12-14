@@ -71,7 +71,7 @@ type Contest struct {
 	CreatedBy int64
 	ID        int64
 	Title     string
-	StartTime string
+	StartTime int64
 	Duration  int
 	Problems  []ContestProblem
 }
