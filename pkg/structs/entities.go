@@ -61,3 +61,17 @@ type JudgeResponse struct {
 	ServerError string       `json:"server_error"` // for example, a database failure
 	TestResults []TestResult `json:"test_result"`  // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }
+
+type ContestProblem struct {
+	ID    int64
+	Title string
+}
+
+type Contest struct {
+	CreatedBy int64
+	ID        int64
+	Title     string
+	StartTime string
+	Duration  int
+	Problems  []ContestProblem
+}

@@ -103,6 +103,39 @@ type ResponseGetSubmission struct {
 	RawCode  []byte `json:"data"`
 }
 
+type RequestCreateContest struct {
+	Title     string `json:"title"`
+	StartTime string `json:"start_time"`
+	Duration  int    `json:"duration"`
+}
+
+type ResponseCreateContest struct {
+	ContestID int64 `json:"contest_Id"`
+}
+
+type ResponseGetContest struct {
+	ContestID int64            `json:"contest_Id"`
+	Title     string           `json:"title"`
+	Problems  []ContestProblem `json:"problems"`
+	StartTime string           `json:"start_time"`
+	Duration  int              `json:"duration"`
+}
+
+type RequestListContests struct {
+	Descending bool `json:"descending"`
+	Limit      int  `json:"limit"`
+	Offset     int  `json:"offset"`
+}
+
+type ResponseListContestsItem struct {
+	ContestID int64  `json:"contest_Id"`
+	Title     string `json:"title"`
+}
+
+type RequestAddProblemContest struct {
+	ContestID int64 `json:"contest_Id"`
+	ProblemID int64 `json:"problem_Id"`
+=======
 type ResponseGetSubmissionResults struct {
 	Verdicts []Verdict `json:"verdicts"`
 	Message  string    `json:"message"`

@@ -22,6 +22,14 @@ type ProblemsMetadataRepo interface {
 	DeleteProblem(ctx context.Context, id int64) (string, error)
 }
 
+type ContestsMetadataRepo interface {
+	InsertContest(ctx context.Context, contest structs.Contest) (int64, error)
+	GetContest(ctx context.Context, id int64) (structs.Contest, error)
+	ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error)
+	DeleteContest(ctx context.Context, id int64) error
+	AddProblem(ctx context.Context, contestID int64, problemID int64) error
+}
+
 type ProblemDescriptionsRepo interface {
 	Insert(description string, testCases []string) (string, error)
 	Get(id string) (structs.ProblemDescription, error)
