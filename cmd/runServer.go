@@ -100,11 +100,6 @@ func RunServer() {
 		log.Fatal("error on creating auth repo: ", err)
 	}
 
-	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
-	if err != nil {
-		log.Fatal("error on creating contest repo", err)
-	}
-
 	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, dbConn)
 	if err != nil {
 		log.Fatal("error on creating problems metadata repo: ", err)
@@ -128,6 +123,11 @@ func RunServer() {
 	judgeRepo, err := mongodb.NewJudgeRepo(c.Mongo)
 	if err != nil {
 		log.Fatal("error on creating judge repo")
+	}
+
+	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating contest repo", err)
 	}
 
 	// initiating module handlers
