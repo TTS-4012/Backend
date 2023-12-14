@@ -15,6 +15,7 @@ import (
 	"ocontest/internal/jwt"
 	"ocontest/internal/minio"
 	"ocontest/internal/oc/auth"
+	"ocontest/internal/oc/contests"
 	"ocontest/internal/oc/problems"
 	"ocontest/internal/oc/submissions"
 	"ocontest/internal/otp"
@@ -123,6 +124,7 @@ func RunServer() {
 		log.Fatal("error on creating judge repo")
 	}
 
+	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
 	// initiating module handlers
 	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, judgeRepo)
 	if err != nil {
@@ -131,9 +133,10 @@ func RunServer() {
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
+	contestHandler := contests.NewContestsHandler(contestRepo)
 
 	// starting http server
-	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler)
+	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)
