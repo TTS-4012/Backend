@@ -7,6 +7,7 @@ import (
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -65,15 +66,17 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public, created_at FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
+	var t time.Time
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.Public)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.Public, &t)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
+	ans.CreatedAT = t.Format(time.RFC3339)
 	return ans, err
 }
 
@@ -87,7 +90,7 @@ func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID 
 
 func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public
+	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public, created_at
 	`
 	if getCount {
 		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
@@ -125,14 +128,16 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 	var total_count int = 0
 	for rows.Next() {
 		var submission structs.SubmissionMetadata
+		var t time.Time
 		if getCount {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &total_count)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
 		} else {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
 		}
 		if err != nil {
 			return nil, 0, err
 		}
+		submission.CreatedAT = t.Format(time.RFC3339)
 		ans = append(ans, submission)
 	}
 	return ans, total_count, err

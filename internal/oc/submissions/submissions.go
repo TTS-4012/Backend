@@ -157,7 +157,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 			ID:        sub.ID,
 			UserID:    0,
 			Language:  sub.Language,
-			CreatedAt: "", // TODO get created_at
+			CreatedAt: sub.CreatedAT,
 			FileName:  sub.FileName,
 		}
 		results := structs.ResponseGetSubmissionResults{}
@@ -211,7 +211,7 @@ func (s *SubmissionsHandlerImp) ListAllSubmission(ctx context.Context, req struc
 			ID:        sub.ID,
 			UserID:    sub.UserID,
 			Language:  sub.Language,
-			CreatedAt: "", // TODO get created_at
+			CreatedAt: sub.CreatedAT,
 			FileName:  sub.FileName,
 		}
 		results := structs.ResponseGetSubmissionResults{}
