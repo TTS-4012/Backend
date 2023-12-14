@@ -9,7 +9,6 @@ import (
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
-	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -22,7 +21,7 @@ func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
 		id SERIAL PRIMARY KEY,
 		created_by int NOT NULL,
 		title varchar(70) NOT NULL,
-	    start_time varchar(14) NOT NULL,
+	    start_time bigint NOT NULL,
 	    duration int NOT NULL,
 		created_at TIMESTAMP DEFAULT NOW(),
 		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
@@ -54,12 +53,7 @@ func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest str
 			VALUES($1, $2, $3, $4) RETURNING id
 		`
 
-	_, err := time.Parse("20060102150405", contest.StartTime)
-	if err != nil {
-		return 0, err
-	}
-
-	err = c.conn.
+	err := c.conn.
 		QueryRow(ctx, insertContestStmt, contest.CreatedBy, contest.Title, contest.StartTime, contest.Duration).
 		Scan(&contestID)
 	if err != nil {

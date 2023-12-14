@@ -33,8 +33,7 @@ func NewContestsHandler(contestsRepo db.ContestsMetadataRepo) ContestsHandler {
 func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int) {
 	logger := pkg.Log.WithField("method", "create_contest")
 	contest := structs.Contest{
-		//CreatedBy: ctx.Value("user_id").(int64),
-		CreatedBy: (int64)(1),
+		CreatedBy: ctx.Value("user_id").(int64),
 		Title:     req.Title,
 		Problems:  nil,
 		StartTime: req.StartTime,
