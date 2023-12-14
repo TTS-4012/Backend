@@ -13,7 +13,6 @@ import (
 	"ocontest/pkg/structs"
 )
 
-// Replace the placeholder with your Atlas connection string
 type JudgeRepoImp struct {
 	collection *mongo.Collection
 }
@@ -39,8 +38,8 @@ func (j JudgeRepoImp) Insert(ctx context.Context, response structs.JudgeResponse
 	//TODO implement me
 
 	document := bson.D{
-		{"userError", response.UserError},
-		{"testStates", response.TestStates},
+		{"serverError", response.ServerError},
+		{"testStates", response.TestResults},
 	}
 
 	res, err := j.collection.InsertOne(context.Background(), document)
@@ -58,7 +57,7 @@ func (j JudgeRepoImp) GetResults(ctx context.Context, id string) (structs.JudgeR
 		return ans, err
 	}
 
-	err = j.collection.FindOne(context.Background(), bson.D{{"_id", fid}}, nil).Decode(&ans)
+	err = j.collection.FindOne(ctx, bson.D{{"_id", fid}}, nil).Decode(&ans)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return ans, pkg.ErrNotFound

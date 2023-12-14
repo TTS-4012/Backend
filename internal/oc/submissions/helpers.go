@@ -9,14 +9,14 @@ func getObjectName(userID, problemID, submissionID int64) string {
 	return fmt.Sprintf("%d/%d/%d", problemID, userID, submissionID)
 }
 
-func calcScore(results []structs.TestState, userError string) int {
+func calcScore(results []structs.TestResult, userError string) int {
 	if userError != "" {
 		return 0
 	}
 
 	accepeted := 0
 	for _, t := range results {
-		if t == structs.TestStateSuccess {
+		if t.Verdict == structs.VerdictOK {
 			accepeted += 1
 		}
 	}

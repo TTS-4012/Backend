@@ -2,6 +2,7 @@ package submissions
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"ocontest/internal/db"
 	"ocontest/internal/judge"
@@ -60,13 +61,20 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return submissionID, http.StatusInternalServerError
 	}
 
-	go s.judge.Dispatch(ctx, submissionID)
+	go func() {
+		err = s.judge.Dispatch(context.Background(), submissionID) // ctx must not be passed to judge, because deadlines are different
+		if err != nil {
+			logger.Error("error on dispatching judge: ", err)
+			return
+		}
+	}()
+
 	return submissionID, http.StatusOK
 }
 
 func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID int64) (ans structs.ResponseGetSubmission, contentType string, status int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "Get",
+		"method": "GetByID",
 		"module": "Submission",
 	})
 
@@ -115,24 +123,34 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 	}
 
 	testResultID := submission.JudgeResultID
-	testResults, err := s.judge.GetResults(ctx, testResultID)
+	judgeResult, err := s.judge.GetResults(ctx, testResultID)
 	if err != nil {
 		logger.Error("error on getting test results from judge: ", err)
 		status = http.StatusInternalServerError
 		return
 	}
 
-	if testResults.ServerError != "" {
+	if judgeResult.ServerError != "" {
 		return structs.ResponseGetSubmissionResults{
-			TestStates: nil,
-			Message:    "Something Went Wrong!, please try again later...",
-			Score:      0,
+			Verdicts: nil,
+			Message:  "Something Went Wrong!, please try again later...",
 		}, http.StatusInternalServerError
 	}
+	message := `All tests ran successfully`
+	verdicts := make([]structs.Verdict, 0)
+	for _, t := range judgeResult.TestResults {
+		if t.RunnerError != "" {
+			message = fmt.Sprintf("Error: %v", t.RunnerError)
+		}
+		if t.Verdict != structs.VerdictOK {
+			message = "Failed"
+		}
+		verdicts = append(verdicts, t.Verdict)
+	}
+
 	return structs.ResponseGetSubmissionResults{
-		TestStates: testResults.TestStates,
-		Message:    testResults.UserError,
-		Score:      calcScore(testResults.TestStates, testResults.UserError),
+		Verdicts: verdicts,
+		Message:  message,
 	}, http.StatusOK
 
 }

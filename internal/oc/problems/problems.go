@@ -33,7 +33,7 @@ func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptio
 
 func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.RequestCreateProblem) (ans structs.ResponseCreateProblem, status int) {
 	logger := pkg.Log.WithField("method", "create_problem")
-	docID, err := p.problemsDescriptionRepo.Save(req.Description, nil)
+	docID, err := p.problemsDescriptionRepo.Insert(req.Description, nil)
 	if err != nil {
 		logger.Error("error on inserting problem description: ", err)
 		status = http.StatusInternalServerError

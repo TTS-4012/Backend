@@ -2,16 +2,14 @@ package judge
 
 import (
 	"encoding/json"
-	"ocontest/pkg"
+	"github.com/nats-io/nats.go"
 	"ocontest/pkg/configs"
 	"ocontest/pkg/structs"
-
-	"github.com/nats-io/nats.go"
 )
 
 type JudgeQueue interface {
 	Send(req structs.JudgeRequest) (structs.JudgeResponse, error)
-	Get() (*nats.Msg, error)
+	Subscribe() (*nats.Subscription, error)
 }
 
 type JudgeQueueImp struct {
@@ -29,7 +27,6 @@ func NewJudgeQueue(c configs.SectionNats) (JudgeQueue, error) {
 		conn:   conn,
 		config: c,
 	}
-	err = ans.StartSubscribe()
 	return ans, err
 }
 
@@ -45,26 +42,8 @@ func (j JudgeQueueImp) Send(req structs.JudgeRequest) (resp structs.JudgeRespons
 	err = json.Unmarshal(msg.Data, &resp)
 	return
 }
+func (j JudgeQueueImp) Subscribe() (*nats.Subscription, error) {
 
-func (j JudgeQueueImp) StartSubscribe() error {
+	return j.conn.QueueSubscribeSync(j.config.Subject, j.config.Queue)
 
-	if j.sub != nil {
-		pkg.Log.Error("subscribe called when j.sub is not nil")
-		return pkg.ErrInternalServerError
-	}
-
-	sub, err := j.conn.QueueSubscribeSync(j.config.Subject, j.config.Queue)
-	if err != nil {
-		return err
-	}
-	j.sub = sub
-	return nil
-}
-
-func (j JudgeQueueImp) Get() (msg *nats.Msg, err error) {
-	if j.sub == nil {
-		pkg.Log.Error("Get Next called when there is no subscription")
-		return nil, pkg.ErrBadRequest
-	}
-	return j.sub.NextMsg(j.config.ReplyTimeout)
 }
