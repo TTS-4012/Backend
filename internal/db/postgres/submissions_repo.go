@@ -83,7 +83,7 @@ func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.Submissi
 
 func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID string) error {
 	stmt := `
-	UPDATE submissions SET judge_result_id = $1 where id = $2
+	UPDATE submissions SET status='processed', judge_result_id = $1 where id = $2
 	`
 	_, err := s.conn.Exec(ctx, stmt, docID, id)
 	return err

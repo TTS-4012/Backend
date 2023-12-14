@@ -58,8 +58,8 @@ type JudgeRequest struct {
 }
 
 type JudgeResponse struct {
-	ServerError string       `json:"server_error"` // for example, a database failure
-	TestResults []TestResult `json:"test_result"`  // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
+	ServerError string       `json:"server_error" bson:"server_error"` // for example, a database failure
+	TestResults []TestResult `json:"test_results" bson:"test_results"` // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }
 
 type ContestProblem struct {

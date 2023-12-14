@@ -3,7 +3,6 @@ package runner
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"ocontest/pkg"
@@ -56,8 +55,6 @@ func (s *Dummy) Pwd() string {
 }
 
 func (s *Dummy) CreateFile(filename string, r io.Reader) error {
-	pkg.Log.Debug("Creating file ", filename)
-
 	f, err := os.Create(filename)
 	if err != nil {
 		pkg.Log.Debug("Error occurred while creating file ", err)
@@ -65,7 +62,6 @@ func (s *Dummy) CreateFile(filename string, r io.Reader) error {
 	}
 
 	if _, err := io.Copy(f, r); err != nil {
-		pkg.Log.Debug("Error occurred while populating it with its content: ", err)
 		f.Close()
 		return err
 	}
@@ -85,7 +81,6 @@ func (s *Dummy) GetFile(name string) (io.Reader, error) {
 func (s *Dummy) MakeExecutable(filename string) error {
 
 	err := os.Chmod(filename, 0777)
-	pkg.Log.Debug("Making executable: ", filename, " error: ", err)
 
 	return err
 }
@@ -142,7 +137,6 @@ func (s *Dummy) Run(prg string, needStatus bool) (structs.Verdict, error) {
 	go func() {
 		defer wg.Done()
 		errWait = cmd.Wait()
-		fmt.Println("RUN", errWait)
 		finish <- true
 	}()
 

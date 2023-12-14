@@ -22,6 +22,12 @@ func (h *handlers) CreateProblem(c *gin.Context) {
 	}
 
 	resp, status := h.problemsHandler.CreateProblem(c, reqData)
+	if status == http.StatusOK && reqData.ContestID != 0 {
+		var newReq structs.RequestAddProblemContest
+		newReq.ProblemID = resp.ProblemID
+		newReq.ContestID = reqData.ContestID
+		status = h.contestsHandler.AddProblemContest(c, newReq)
+	}
 	c.JSON(status, resp)
 }
 
