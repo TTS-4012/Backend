@@ -99,6 +99,12 @@ func RunServer() {
 	if err != nil {
 		log.Fatal("error on creating auth repo: ", err)
 	}
+
+	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating contest repo")
+	}
+
 	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, dbConn)
 	if err != nil {
 		log.Fatal("error on creating problems metadata repo: ", err)
@@ -124,7 +130,6 @@ func RunServer() {
 		log.Fatal("error on creating judge repo")
 	}
 
-	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
 	// initiating module handlers
 	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, judgeRepo)
 	if err != nil {
