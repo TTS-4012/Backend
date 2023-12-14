@@ -125,6 +125,7 @@ type ResponseListSubmissions struct {
 
 type SubmissionListMetadata struct {
 	ID        int64  `json:"submission_id"`
+	UserID    int64  `json:"user_id,omitempty"`
 	Language  string `json:"language"`
 	CreatedAt string `json:"created_at"`
 	FileName  string `json:"file_name"`

@@ -154,3 +154,7 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 		c.Status(status)
 	}
 }
+
+func (h *handlers) ListAllSubmissions(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}

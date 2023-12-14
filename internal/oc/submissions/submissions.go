@@ -17,6 +17,7 @@ type Handler interface {
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
 	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
+	ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
@@ -154,6 +155,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 	for _, sub := range submissions {
 		metadata := structs.SubmissionListMetadata{
 			ID:        sub.ID,
+			UserID:    0,
 			Language:  sub.Language,
 			CreatedAt: "", // TODO get created_at
 			FileName:  sub.FileName,
@@ -189,4 +191,8 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 		TotalCount:  total_count,
 		Submissions: ans,
 	}, http.StatusOK
+}
+
+func (s *SubmissionsHandlerImp) ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	panic("implement me!")
 }
