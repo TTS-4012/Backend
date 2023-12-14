@@ -13,6 +13,9 @@ func calcScore(results []structs.TestState, userError string) int {
 	if userError != "" {
 		return 0
 	}
+	if len(results) == 0 {
+		return 0
+	}
 
 	accepeted := 0
 	for _, t := range results {
