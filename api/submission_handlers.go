@@ -147,7 +147,7 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData, false)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {
@@ -192,7 +192,7 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.submissionsHandler.ListAllSubmission(c, reqData)
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData, true)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {
