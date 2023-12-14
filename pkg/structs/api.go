@@ -104,9 +104,8 @@ type ResponseGetSubmission struct {
 }
 
 type ResponseGetSubmissionResults struct {
-	TestStates []TestState `json:"test_states"`
-	Score      int         `json:"score"`
-	Message    string      `json:"message"`
+	Verdicts []Verdict `json:"verdicts"`
+	Message  string    `json:"message"`
 }
 
 type RequestListSubmissions struct {

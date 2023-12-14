@@ -25,9 +25,6 @@ type MinioHandlerImp struct {
 }
 
 func NewMinioHandler(ctx context.Context, conf configs.SectionMinIO) (MinioHandler, error) {
-	if !conf.Enabled {
-		return nil, nil
-	}
 	endpoint := conf.Endpoint
 	accessKeyID := conf.AccessKey
 	secretAccessKey := conf.SecretKey
