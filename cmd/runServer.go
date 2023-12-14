@@ -102,7 +102,7 @@ func RunServer() {
 
 	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
 	if err != nil {
-		log.Fatal("error on creating contest repo")
+		log.Fatal("error on creating contest repo", err)
 	}
 
 	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, dbConn)
