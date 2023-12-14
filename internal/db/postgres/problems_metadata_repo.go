@@ -38,7 +38,7 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
 	stmt := `
 	CREATE TABLE IF NOT EXISTS problems(
 	    id SERIAL PRIMARY KEY ,
-	    contest_id bigint,
+	    contest_id bigint DEFAULT NULL,
 	    created_by int NOT NULL ,
 		title varchar(70) NOT NULL ,
 	    document_id varchar(70) NOT NULL ,
@@ -46,7 +46,7 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
 		hardness int DEFAULT NULL,
 	    created_at TIMESTAMP DEFAULT NOW(),
 	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id),
-		CONSTRAINT fk_contests_id FOREIGN KEY(id) REFERENCES contests(id)
+		CONSTRAINT fk_contests_id FOREIGN KEY(contest_id) REFERENCES contests(id)
 	)
 	`
 

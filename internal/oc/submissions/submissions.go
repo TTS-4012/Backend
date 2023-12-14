@@ -61,7 +61,14 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return submissionID, http.StatusInternalServerError
 	}
 
-	go s.judge.Dispatch(ctx, submissionID)
+	go func() {
+		err = s.judge.Dispatch(context.Background(), submissionID) // ctx must not be passed to judge, because deadlines are different
+		if err != nil {
+			logger.Error("error on dispatching judge: ", err)
+			return
+		}
+	}()
+
 	return submissionID, http.StatusOK
 }
 

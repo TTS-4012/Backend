@@ -64,7 +64,7 @@ func RunServer() {
 	fmt.Println(c.Judge)
 	if c.Judge.EnableRunner {
 		pkg.Log.Info("runner part will be running too!")
-		go RunRunnerTaskHandler()
+		go RunRunnerTaskHandler(c)
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -113,13 +113,18 @@ func RunServer() {
 		log.Fatal("error on creating submission metadata repo: ", err)
 	}
 
+	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating testcase repo: ", err)
+	}
+
 	judgeRepo, err := mongodb.NewJudgeRepo(c.Mongo)
 	if err != nil {
 		log.Fatal("error on creating judge repo")
 	}
 
 	// initiating module handlers
-	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, problemsDescriptionRepo, problemsMetadataRepo, judgeRepo)
+	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, judgeRepo)
 	if err != nil {
 		log.Fatal("error on creating judge handler", err)
 	}

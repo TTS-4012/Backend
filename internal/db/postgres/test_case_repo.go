@@ -30,7 +30,7 @@ func (a *TestCaseRepoImp) Migrate(ctx context.Context) error {
 			unique(id),
 			primary key (problem_id, id),
 
-			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
+			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id)
 	)`
 
 	_, err := a.conn.Exec(ctx, stmt)

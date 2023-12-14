@@ -11,7 +11,6 @@ type User struct {
 type ProblemDescription struct {
 	ID          string
 	Description string
-	Testcases   []Testcase
 }
 
 type Problem struct {

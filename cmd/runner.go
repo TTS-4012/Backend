@@ -4,8 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
+	"log"
+	"ocontest/pkg"
+	"ocontest/pkg/configs"
+	"ocontest/runner"
 )
 
 // runnerCmd represents the runner command
@@ -19,7 +22,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("runner called")
+		configs.InitConf()
+		c := configs.Conf
+		pkg.InitLog(c.Log)
+		pkg.Log.Info("config and log modules initialized")
+
+		RunRunnerTaskHandler(c)
 	},
 }
 
@@ -37,6 +45,10 @@ func init() {
 	// runnerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func RunRunnerTaskHandler() {
-	panic("implement me!")
+func RunRunnerTaskHandler(c *configs.OContestConf) {
+	runnerHandler, err := runner.NewRunnerScheduler(c.Judge.Nats)
+	if err != nil {
+		log.Fatal("error on creating runner scheduler", err)
+	}
+	runnerHandler.StartListen()
 }

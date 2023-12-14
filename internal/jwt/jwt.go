@@ -51,7 +51,6 @@ func (t TokenGeneratorImp) ParseToken(token string) (int64, string, error) {
 		return -1, "", err
 	}
 
-	pkg.Log.Debug(mapClaims)
 	if exp, exists := mapClaims["exp"]; exists {
 		expInt, err := exp.(json.Number).Int64()
 		if err != nil || expInt < time.Now().Unix() {

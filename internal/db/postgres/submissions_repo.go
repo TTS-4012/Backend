@@ -65,7 +65,7 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, public FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(

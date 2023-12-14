@@ -15,7 +15,6 @@ var (
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
 	Mongo    SectionMongo    `yaml:"mongo"`
-	Nats     SectionNats     `yaml:"nats"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`

@@ -1,5 +1,5 @@
 // base code in this file is from https://github.com/mraron/njudge. give them a star if you like.
-package main
+package runner
 
 import (
 	"bytes"
