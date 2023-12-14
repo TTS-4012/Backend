@@ -23,26 +23,43 @@ type Problem struct {
 }
 
 type SubmissionMetadata struct {
-	ID        int64  `json:"id"`
-	ProblemID int64  `json:"problem_id"`
-	UserID    int64  `json:"user_id"`
-	FileName  string `json:"file_name"`
-	Score     int    `json:"score"`
-	Status    string `json:"status"`   // either 'new', 'processing', 'processed'
-	Language  string `json:"language"` // just 'python' for now
-	Public    bool   `json:"public"`
+	ID            int64  `json:"id"`
+	ProblemID     int64  `json:"problem_id"`
+	UserID        int64  `json:"user_id"`
+	FileName      string `json:"file_name"`
+	JudgeResultID string `json:"judge_result_id"`
+	Status        string `json:"status"`   // either 'new', 'processing', 'processed'
+	Language      string `json:"language"` // just 'python' for now
+	Public        bool   `json:"public"`
+	CreatedAT     string `json:"created_at"`
 }
 
 type Testcase struct {
-	Input  string `json:"input"`
-	Answer string `json:"answer"`
+	ProblemID int64 `json:"problem_id"`
+	ID        int64 `json:"id"`
+
+	Input          string `json:"input,omitempty"`
+	ExpectedOutput string `json:"expected_output,omitempty"`
 }
 
-type JudgeSubmissions struct {
-	ID         string     `json:"id"`
-	Code       []byte     `json:"code"`
-	Testcases  []Testcase `json:"testcases"`
-	TestStates []string   `json:"testStates"`
+type TestResult struct {
+	SubmissionID int64 `json:"submission_id"`
+	TestcaseID   int64 `json:"id"`
+
+	RunnerOutput string `json:"runner_output"`
+	RunnerError  string `json:"runner_error"`
+	Verdict
+}
+
+type JudgeRequest struct {
+	SubmissionID int64      `json:"submission_id"`
+	Code         string     `json:"code"`
+	Testcases    []Testcase `json:"testcases"`
+}
+
+type JudgeResponse struct {
+	ServerError string       `json:"server_error"` // for example, a database failure
+	TestResults []TestResult `json:"test_result"`  // 'Wrong', 'Success', 'Timelimit', 'Memorylimit'
 }
 
 type ContestProblem struct {

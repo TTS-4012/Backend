@@ -17,7 +17,9 @@ type AuthRepo interface {
 type ProblemsMetadataRepo interface {
 	InsertProblem(ctx context.Context, problem structs.Problem) (int64, error)
 	GetProblem(ctx context.Context, id int64) (structs.Problem, error)
-	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int) ([]structs.Problem, error)
+	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error)
+	UpdateProblem(ctx context.Context, id int64, title string) error
+	DeleteProblem(ctx context.Context, id int64) (string, error)
 }
 
 type ContestsMetadataRepo interface {
@@ -29,10 +31,31 @@ type ContestsMetadataRepo interface {
 }
 
 type ProblemDescriptionsRepo interface {
-	Save(description string) (string, error)
-	Get(id string) (string, error)
+	Insert(description string, testCases []string) (string, error)
+	Get(id string) (structs.ProblemDescription, error)
+	Update(id string, description string) error
+	Delete(id string) error
 }
+
+type TestCaseRepo interface {
+	Insert(ctx context.Context, testCase structs.Testcase) (int64, error)
+	GetByID(ctx context.Context, id int64) (structs.Testcase, error)
+	GetAllTestsOfProblem(ctx context.Context, problemID int64) ([]structs.Testcase, error)
+}
+
+type TestResultRepo interface {
+	Insert(ctx context.Context, testResult structs.TestResult) error
+	GetByID(ctx context.Context, submissionId int64, testcaseId int64) (structs.TestResult, error)
+}
+
 type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
+	AddJudgeResult(ctx context.Context, submissionID int64, judgeResultID string) error
+	ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
+}
+
+type JudgeRepo interface {
+	Insert(ctx context.Context, response structs.JudgeResponse) (string, error)
+	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
 }

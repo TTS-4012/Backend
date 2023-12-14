@@ -1,12 +1,13 @@
 // base code in this file is from https://github.com/mraron/njudge. give them a star if you like.
-package main
+package runner
 
 import (
 	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	"ocontest/pkg"
+	"ocontest/pkg/structs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,42 +16,12 @@ import (
 	"time"
 )
 
-type Verdict int
-
-const (
-	VerdictOK Verdict = 1 << iota
-	VerdictTL
-	VerdictML
-	VerdictRE
-	VerdictXX
-	VerdictCE
-)
-
-func (v Verdict) String() string {
-	switch v {
-	case VerdictOK:
-		return "OK"
-	case VerdictTL:
-		return "TL"
-	case VerdictML:
-		return "ML"
-	case VerdictRE:
-		return "RE"
-	case VerdictXX:
-		return "XX"
-	case VerdictCE:
-		return "CE"
-	}
-	return fmt.Sprintf("?? %d", v)
-}
-
 type Runner interface {
 	TimeLimit(duration time.Duration) Runner
 	MemoryLimit(limit int) Runner
 }
 
 type Dummy struct {
-	logger *log.Logger
 	tmpdir string
 	env    []string
 	tl     time.Duration
@@ -65,37 +36,36 @@ func NewDummy() *Dummy {
 	return &Dummy{}
 }
 
-func (s Dummy) Id() string {
+func (s *Dummy) Id() string {
 	return s.tmpdir
 }
 
-func (s *Dummy) Init(logger *log.Logger) error {
+func (s *Dummy) Init() error {
 	var err error
 	if s.tmpdir, err = os.MkdirTemp("", "dummysandbox"); err != nil {
 		return err
 	}
 
 	s.workingDir = s.tmpdir
-	s.logger = logger
-	os.Chdir(s.tmpdir)
-	return nil
+	err = os.Chdir(s.tmpdir)
+	return err
 }
 
-func (s Dummy) Pwd() string {
+func (s *Dummy) Pwd() string {
 	return s.tmpdir
 }
 
 func (s *Dummy) CreateFile(filename string, r io.Reader) error {
-	s.logger.Print("Creating file ", filename)
+	pkg.Log.Debug("Creating file ", filename)
 
 	f, err := os.Create(filename)
 	if err != nil {
-		s.logger.Print("Error occurred while creating file ", err)
+		pkg.Log.Debug("Error occurred while creating file ", err)
 		return err
 	}
 
 	if _, err := io.Copy(f, r); err != nil {
-		s.logger.Print("Error occurred while populating it with its content: ", err)
+		pkg.Log.Debug("Error occurred while populating it with its content: ", err)
 		f.Close()
 		return err
 	}
@@ -103,7 +73,7 @@ func (s *Dummy) CreateFile(filename string, r io.Reader) error {
 	return f.Close()
 }
 
-func (s Dummy) GetFile(name string) (io.Reader, error) {
+func (s *Dummy) GetFile(name string) (io.Reader, error) {
 	f, err := ioutil.ReadFile(filepath.Join(s.Pwd(), name))
 	if err != nil {
 		return nil, err
@@ -112,10 +82,10 @@ func (s Dummy) GetFile(name string) (io.Reader, error) {
 	return bytes.NewBuffer(f), nil
 }
 
-func (s Dummy) MakeExecutable(filename string) error {
+func (s *Dummy) MakeExecutable(filename string) error {
 
 	err := os.Chmod(filename, 0777)
-	s.logger.Print("Making executable: ", filename, " error: ", err)
+	pkg.Log.Debug("Making executable: ", filename, " error: ", err)
 
 	return err
 }
@@ -148,7 +118,7 @@ func (s *Dummy) Stdout(writer io.Writer) Runner {
 	return s
 }
 
-func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
+func (s *Dummy) Run(prg string, needStatus bool) (structs.Verdict, error) {
 	cmd := exec.Command("python3", prg)
 	cmd.Stdin = s.stdin
 	cmd.Stdout = s.stdout
@@ -164,7 +134,7 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 
 	start := time.NewTimer(s.tl)
 	if err := cmd.Start(); err != nil {
-		return VerdictXX, err
+		return structs.VerdictUnknown, err
 	}
 	defer start.Stop()
 
@@ -176,12 +146,12 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 		finish <- true
 	}()
 
-	v := VerdictOK
+	v := structs.VerdictOK
 	select {
 	case <-start.C:
-		v = VerdictTL
+		v = structs.VerdictTimeLimit
 		if errKill = cmd.Process.Kill(); errKill != nil {
-			v = VerdictXX
+			v = structs.VerdictUnknown
 		}
 	case <-finish:
 	}
@@ -190,8 +160,8 @@ func (s *Dummy) Run(prg string, needStatus bool) (Verdict, error) {
 
 	//if errWait != nil && (strings.HasPrefix(errWait.Error(), "exit status") || strings.HasPrefix(errWait.Error(), "signal:")) {
 	if _, ok := errWait.(*exec.ExitError); ok {
-		if v == VerdictOK {
-			v = VerdictRE
+		if v == structs.VerdictOK {
+			v = structs.VerdictRuntimeError
 		}
 		errWait = nil
 	}
@@ -207,19 +177,36 @@ func (s *Dummy) Cleanup() error {
 	return os.RemoveAll(s.tmpdir)
 }
 
-func main() {
+func RunTask(timeLimit time.Duration, memoryLimit int, code string, input io.Reader, output io.Writer, stderr io.Writer) (structs.Verdict, error) {
 	// runner for python
 	d := NewDummy()
-	d.Init(log.New(os.Stdout, "", 0))
-	d.TimeLimit(time.Second)
-	d.Stdout(os.Stdout)
-	d.Stderr(os.Stderr)
-	d.CreateFile("runner_test.py", strings.NewReader(`print("Hello World")`))
-	d.MakeExecutable("runner_test.py")
+	err := d.Init()
+	if err != nil {
+		return structs.VerdictUnknown, err
+	}
+
+	d.MemoryLimit(memoryLimit)
+	d.TimeLimit(timeLimit)
+	d.Stdin(input)
+	d.Stdout(output)
+	d.Stderr(stderr)
+	const fileName = "runner_test.py"
+	err = d.CreateFile(fileName, strings.NewReader(code))
+	if err != nil {
+		return structs.VerdictUnknown, err
+	}
+	err = d.MakeExecutable(fileName)
+	if err != nil {
+		return structs.VerdictUnknown, err
+	}
 
 	v, err := d.Run("runner_test.py", false)
 	if err != nil {
-		panic(err)
+		return v, err
 	}
-	fmt.Println("Verdict", v.String())
+	err = d.Cleanup()
+	if err != nil {
+		pkg.Log.Warning("error on doing cleanup of runner: ", err)
+	}
+	return v, nil
 }

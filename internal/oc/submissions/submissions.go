@@ -2,8 +2,10 @@ package submissions
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"ocontest/internal/db"
+	"ocontest/internal/judge"
 	"ocontest/internal/minio"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
@@ -14,18 +16,22 @@ import (
 type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
+	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
+	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
+	ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
-	Handler
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
+	judge                  judge.Judge
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler) Handler {
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
+		judge:                  judgeHandler,
 	}
 }
 
@@ -50,19 +56,27 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		return
 	}
 
-	objectName := getObjectName(request.UserID, request.ProblemID, submissionID)
+	objectName := s.minioHandler.GenCodeObjectname(request.UserID, request.ProblemID, submissionID)
 	err = s.minioHandler.UploadFile(ctx, request.Code, objectName, request.ContentType)
 	if err != nil {
 		logger.Error("error on uploading file from minio: ", err)
 		return submissionID, http.StatusInternalServerError
 	}
 
+	go func() {
+		err = s.judge.Dispatch(context.Background(), submissionID) // ctx must not be passed to judge, because deadlines are different
+		if err != nil {
+			logger.Error("error on dispatching judge: ", err)
+			return
+		}
+	}()
+
 	return submissionID, http.StatusOK
 }
 
 func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID int64) (ans structs.ResponseGetSubmission, contentType string, status int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "Get",
+		"method": "GetByID",
 		"module": "Submission",
 	})
 
@@ -95,4 +109,158 @@ func (s *SubmissionsHandlerImp) Get(ctx context.Context, userID, submissionID in
 	}
 
 	return
+}
+
+func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int64) (ans structs.ResponseGetSubmissionResults, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetResult",
+		"module": "Submissions",
+	})
+
+	submission, err := s.submissionMetadataRepo.Get(ctx, submissionID)
+	if err != nil {
+		logger.Error("error on getting submission from db:", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	testResultID := submission.JudgeResultID
+	judgeResult, err := s.judge.GetResults(ctx, testResultID)
+	if err != nil {
+		logger.Error("error on getting test results from judge: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	if judgeResult.ServerError != "" {
+		return structs.ResponseGetSubmissionResults{
+			Verdicts: nil,
+			Message:  "Something Went Wrong!, please try again later...",
+		}, http.StatusInternalServerError
+	}
+	message := `All tests ran successfully`
+	verdicts := make([]structs.Verdict, 0)
+	for _, t := range judgeResult.TestResults {
+		if t.RunnerError != "" {
+			message = fmt.Sprintf("Error: %v", t.RunnerError)
+		}
+		if t.Verdict != structs.VerdictOK {
+			message = "Failed"
+		}
+		verdicts = append(verdicts, t.Verdict)
+	}
+
+	return structs.ResponseGetSubmissionResults{
+		Verdicts: verdicts,
+		Message:  message,
+	}, http.StatusOK
+
+}
+
+func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListSubmission",
+		"module": "submissions",
+	})
+
+	submissions, total_count, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	if err != nil {
+		logger.Error("error on listing problems: ", err)
+		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseListSubmissionsItem, 0)
+	for _, sub := range submissions {
+		metadata := structs.SubmissionListMetadata{
+			ID:        sub.ID,
+			UserID:    0,
+			Language:  sub.Language,
+			CreatedAt: sub.CreatedAT,
+			FileName:  sub.FileName,
+		}
+		results := structs.ResponseGetSubmissionResults{}
+
+		testResults, err := s.judge.GetResults(ctx, sub.JudgeResultID)
+		if err != nil {
+			logger.Error("error on getting test results from judge: ", err)
+		}
+
+		if testResults.ServerError != "" && err != nil {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: nil,
+				Message:    "Something Went Wrong!, please try again later...",
+				Score:      0,
+			}
+		} else {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: testResults.TestStates,
+				Message:    testResults.UserError,
+				Score:      calcScore(testResults.TestStates, testResults.UserError),
+			}
+		}
+
+		ans = append(ans, structs.ResponseListSubmissionsItem{
+			Metadata: metadata,
+			Results:  results,
+		})
+	}
+
+	return structs.ResponseListSubmissions{
+		TotalCount:  total_count,
+		Submissions: ans,
+	}, http.StatusOK
+}
+
+func (s *SubmissionsHandlerImp) ListAllSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "ListAllSubmission",
+		"module": "submissions",
+	})
+
+	submissions, total_count, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	if err != nil {
+		logger.Error("error on listing problems: ", err)
+		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseListSubmissionsItem, 0)
+	for _, sub := range submissions {
+		metadata := structs.SubmissionListMetadata{
+			ID:        sub.ID,
+			UserID:    sub.UserID,
+			Language:  sub.Language,
+			CreatedAt: sub.CreatedAT,
+			FileName:  sub.FileName,
+		}
+		results := structs.ResponseGetSubmissionResults{}
+
+		testResults, err := s.judge.GetResults(ctx, sub.JudgeResultID)
+		if err != nil {
+			logger.Error("error on getting test results from judge: ", err)
+		}
+
+		if testResults.ServerError != "" && err != nil {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: nil,
+				Message:    "Something Went Wrong!, please try again later...",
+				Score:      0,
+			}
+		} else {
+			results = structs.ResponseGetSubmissionResults{
+				TestStates: testResults.TestStates,
+				Message:    testResults.UserError,
+				Score:      calcScore(testResults.TestStates, testResults.UserError),
+			}
+		}
+
+		ans = append(ans, structs.ResponseListSubmissionsItem{
+			Metadata: metadata,
+			Results:  results,
+		})
+	}
+
+	return structs.ResponseListSubmissions{
+		TotalCount:  total_count,
+		Submissions: ans,
+	}, http.StatusOK
 }

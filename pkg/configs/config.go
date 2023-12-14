@@ -15,7 +15,6 @@ var (
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
 	Mongo    SectionMongo    `yaml:"mongo"`
-	Nats     SectionNats     `yaml:"nats"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
 	Log      SectionLog      `yaml:"log"`
@@ -23,6 +22,7 @@ type OContestConf struct {
 	AESKey   string          `yaml:"AESKey"`
 	Auth     SectionAuth     `yaml:"auth"`
 	MinIO    SectionMinIO    `yaml:"minio"`
+	Judge    SectionJudge    `yaml:"judge"`
 }
 
 type SectionLog struct {
@@ -44,10 +44,10 @@ type SectionMongo struct {
 }
 
 type SectionNats struct {
-	Url               string `yaml:"url"`
-	Subject           string `yaml:"subject"`
-	Queue             string `yaml:"queue"`
-	SubscribeChanSize int    `yaml:"subscribe_chan_size"`
+	Url          string        `yaml:"url"`
+	Subject      string        `yaml:"subject"`
+	ReplyTimeout time.Duration `yaml:"reply_timeout"`
+	Queue        string        `yaml:"queue"`
 }
 
 type SectionJWT struct {
@@ -65,9 +65,9 @@ type SectionAuth struct {
 }
 
 type SectionAuthDuration struct {
-	AccessToken  time.Duration `yaml:"accesstoken"`
-	RefreshToken time.Duration `yaml:"refreshtoken"`
-	VerifyEmail  time.Duration `yaml:"verifyemail"`
+	AccessToken  time.Duration `yaml:"access_token"`
+	RefreshToken time.Duration `yaml:"refresh_token"`
+	VerifyEmail  time.Duration `yaml:"verify_email"`
 }
 
 type SectionServer struct {
@@ -78,11 +78,16 @@ type SectionServer struct {
 type SectionMinIO struct {
 	Enabled   bool   `yaml:"enabled"`
 	Endpoint  string `yaml:"endpoint"`
-	AccessKey string `yaml:"accesskey"`
-	SecretKey string `yaml:"secretkey"`
+	AccessKey string `yaml:"access_key"`
+	SecretKey string `yaml:"secret_key"`
 	Bucket    string `yaml:"bucket"`
 	Region    string `yaml:"region"`
 	Secure    bool   `yaml:"secure"`
+}
+
+type SectionJudge struct {
+	EnableRunner bool        `yaml:"enable_runner"` // if it is set, then there is no need for separate runner app. not recommended
+	Nats         SectionNats `yaml:"nats"`
 }
 
 func getElements(path string, ref reflect.Type) []string {
@@ -116,14 +121,25 @@ func BindEnvVariables() {
 	}
 }
 
+func AddVariablesWithUnderscore(c *OContestConf) {
+	c.Judge.EnableRunner = viper.GetBool("judge.enable_runner")
+	c.Judge.Nats.ReplyTimeout = viper.GetDuration("judge.nats.reply_timeout")
+	c.MinIO.AccessKey = viper.GetString("minio.access_key")
+	c.MinIO.SecretKey = viper.GetString("minio.secret_key")
+	c.Auth.Duration.AccessToken = viper.GetDuration("auth.duration.access_token")
+	c.Auth.Duration.RefreshToken = viper.GetDuration("auth.duration.refresh_token")
+	c.Auth.Duration.VerifyEmail = viper.GetDuration("auth.duration.verify_email")
+}
+
 // Loads the config
 func getConfig() *OContestConf {
 	viper.AutomaticEnv()           // reads from env
 	viper.SetEnvPrefix("ocontest") // automatically turns to capitalized
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 
 	conf := &OContestConf{}
 	BindEnvVariables()
+	AddVariablesWithUnderscore(conf)
 	err := viper.Unmarshal(conf)
 	if err != nil {
 		panic("Error on unmarshal " + err.Error())

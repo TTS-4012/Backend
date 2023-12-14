@@ -59,6 +59,12 @@ type RequestListProblems struct {
 	Descending bool   `json:"descending"`
 	Limit      int    `json:"limit"`
 	Offset     int    `json:"offset"`
+	GetCount   bool   `json:"get_count"`
+}
+
+type ResponseListProblems struct {
+	TotalCount int                        `json:"total_count,omitempty"`
+	Problems   []ResponseListProblemsItem `json:"problems"`
 }
 
 type ResponseListProblemsItem struct {
@@ -76,6 +82,12 @@ type ResponseGetProblem struct {
 	Description string `json:"description"`
 }
 
+type RequestUpdateProblem struct {
+	Id          int64
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 // SUBMISSIONS
 type RequestSubmit struct {
 	UserID      int64
@@ -90,8 +102,6 @@ type ResponseGetSubmission struct {
 	Metadata SubmissionMetadata
 	RawCode  []byte `json:"data"`
 }
-
-// Contests
 
 type RequestCreateContest struct {
 	Title     string `json:"title"`
@@ -125,4 +135,35 @@ type ResponseListContestsItem struct {
 type RequestAddProblemContest struct {
 	ContestID int64 `json:"contest_Id"`
 	ProblemID int64 `json:"problem_Id"`
+=======
+type ResponseGetSubmissionResults struct {
+	Verdicts []Verdict `json:"verdicts"`
+	Message  string    `json:"message"`
+}
+
+type RequestListSubmissions struct {
+	ProblemID  int64 `json:"problem_id"`
+	UserID     int64 `json:"user_id"`
+	Descending bool  `json:"descending"`
+	Limit      int   `json:"limit"`
+	Offset     int   `json:"offset"`
+	GetCount   bool  `json:"get_count"`
+}
+
+type ResponseListSubmissions struct {
+	TotalCount  int                           `json:"total_count,omitempty"`
+	Submissions []ResponseListSubmissionsItem `json:"submissions"`
+}
+
+type SubmissionListMetadata struct {
+	ID        int64  `json:"submission_id"`
+	UserID    int64  `json:"user_id,omitempty"`
+	Language  string `json:"language"`
+	CreatedAt string `json:"created_at"`
+	FileName  string `json:"file_name"`
+}
+
+type ResponseListSubmissionsItem struct {
+	Metadata SubmissionListMetadata       `json:"metadata"`
+	Results  ResponseGetSubmissionResults `json:"results"`
 }

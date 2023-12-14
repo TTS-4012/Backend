@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"ocontest/internal/db"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ProblemsMetadataRepoImp struct {
@@ -27,21 +28,29 @@ func NewProblemsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (db.Proble
 	return ans, ans.Migrate(ctx)
 }
 
-func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
+func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
+	// TODO: remove it if contest module is implemented.
+	_, err = a.conn.Exec(ctx, `create table if not exists contests(id bigint primary key);`)
+	if err != nil {
+		return err
+	}
+
 	stmt := `
 	CREATE TABLE IF NOT EXISTS problems(
 	    id SERIAL PRIMARY KEY ,
+	    contest_id bigint DEFAULT NULL,
 	    created_by int NOT NULL ,
 		title varchar(70) NOT NULL ,
 	    document_id varchar(70) NOT NULL ,
 	    solve_count int DEFAULT 0,
 		hardness int DEFAULT NULL,
 	    created_at TIMESTAMP DEFAULT NOW(),
-	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id)
+	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id),
+		CONSTRAINT fk_contests_id FOREIGN KEY(contest_id) REFERENCES contests(id)
 	)
 	`
 
-	_, err := a.conn.Exec(ctx, stmt)
+	_, err = a.conn.Exec(ctx, stmt)
 	return err
 }
 func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem structs.Problem) (int64, error) {
@@ -69,18 +78,23 @@ func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (str
 	return problem, err
 }
 
-func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn string, descending bool, limit, offset int) ([]structs.Problem, error) {
+func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error) {
 	stmt := `
-	SELECT id, created_by, title, document_id, solve_count, COALESCE(hardness, -1) FROM problems ORDER BY
+	SELECT id, created_by, title, document_id, solve_count, COALESCE(hardness, -1)
 	`
+	if getCount {
+		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
+	}
+	stmt = fmt.Sprintf("%s FROM problems ORDER BY", stmt)
+
 	colName, exists := SearchableColumns[searchColumn]
 	if !exists {
 		pkg.Log.Warning("tried to list problems with unregistered col name: ", searchColumn)
-		return nil, pkg.ErrBadRequest
+		return nil, 0, pkg.ErrBadRequest
 	}
 	stmt += " " + colName
 	if descending {
-		stmt += " DEC"
+		stmt += " DESC"
 	}
 	if limit != 0 {
 		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
@@ -91,18 +105,47 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 
 	rows, err := a.conn.Query(ctx, stmt)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	ans := make([]structs.Problem, 0)
+	var total_count int = 0
 	for rows.Next() {
 
 		var problem structs.Problem
-		err = rows.Scan(&problem.ID, &problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
+		if getCount {
+			err = rows.Scan(&problem.ID, &problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness, &total_count)
+		} else {
+			err = rows.Scan(&problem.ID, &problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
+		}
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		ans = append(ans, problem)
 	}
-	return ans, err
+	return ans, total_count, err
+}
+
+func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string) error {
+	stmt := `
+	UPDATE problems SET title = $1 WHERE id = $2
+	`
+
+	_, err := a.conn.Exec(ctx, stmt, title, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
+}
+
+func (a *ProblemsMetadataRepoImp) DeleteProblem(ctx context.Context, id int64) (string, error) {
+	stmt := `
+	DELETE FROM problems WHERE id = $1 RETURNING document_id
+	`
+	var documentId string
+	err := a.conn.QueryRow(ctx, stmt, id).Scan(documentId)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return documentId, err
 }

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Ocontest Auth Api
+  title: Ocontest Problems Api
   description: |-
     
   version: 1.0.0

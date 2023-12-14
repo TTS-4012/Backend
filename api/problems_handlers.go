@@ -1,11 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"ocontest/pkg"
 	"ocontest/pkg/structs"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (h *handlers) CreateProblem(c *gin.Context) {
@@ -53,6 +54,8 @@ func (h *handlers) ListProblems(c *gin.Context) {
 	}
 	reqData.Descending = c.Query("descending") == "true"
 
+	reqData.GetCount = c.Query("get_count") == "true"
+
 	limitStr := c.Query("limit")
 	offsetStr := c.Query("offset")
 	var errLimit, errOffset error
@@ -76,4 +79,46 @@ func (h *handlers) ListProblems(c *gin.Context) {
 	} else {
 		c.Status(status)
 	}
+}
+
+func (h *handlers) UpdateProblem(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "updateProblem")
+
+	var reqData structs.RequestUpdateProblem
+	var err error
+	reqData.Id, err = strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.problemsHandler.UpdateProblem(c, reqData)
+	c.Status(status)
+}
+
+func (h *handlers) DeleteProblem(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "deleteProblem")
+
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	status := h.problemsHandler.DeleteProblem(c, problemID)
+	c.Status(status)
 }
