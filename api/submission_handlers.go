@@ -2,10 +2,11 @@ package api
 
 import (
 	"fmt"
-	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/structs"
 	"net/http"
 	"strconv"
+
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +32,11 @@ func (h *handlers) Submit(c *gin.Context) {
 		return
 	}
 
+	file_name := c.GetHeader("Filename")
+	if file_name == "" {
+		file_name = "filename"
+	}
+
 	buffer, err := c.GetRawData()
 	if err != nil {
 		logger.Error("Failed reading file from request body: ", err)
@@ -44,7 +50,7 @@ func (h *handlers) Submit(c *gin.Context) {
 		UserID:      userID.(int64),
 		ProblemID:   problemID,
 		Code:        buffer,
-		FileName:    "filename", // File name currently not preserved
+		FileName:    file_name,
 		ContentType: c.GetHeader("Content-Type"),
 		Language:    "python", // For now just python
 	}
