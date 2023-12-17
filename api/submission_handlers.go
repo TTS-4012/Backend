@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -82,10 +81,16 @@ func (h *handlers) GetSubmission(c *gin.Context) {
 		return
 	}
 
-	resp, contentType, status := h.submissionsHandler.Get(c, userID.(int64), submissionID)
+	setDownloadHeaders := c.Query("download") == "true"
+
+	resp, _, status := h.submissionsHandler.Get(c, userID.(int64), submissionID)
 	if status == http.StatusOK {
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", resp.Metadata.FileName))
-		c.Data(status, contentType, resp.RawCode)
+		if setDownloadHeaders {
+			c.Header("Content-Description", "File Transfer")
+			c.Header("Content-Transfer-Encoding", "binary")
+			c.Header("Content-Disposition", "attachment; filename="+resp.Metadata.FileName)
+		}
+		c.Data(status, "application/octet-stream", resp.RawCode)
 	} else {
 		c.Status(status)
 	}
