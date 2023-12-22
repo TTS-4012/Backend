@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
@@ -26,14 +27,6 @@ func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
 		created_at TIMESTAMP DEFAULT NOW(),
 		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
 	);
-	
-	CREATE TABLE IF NOT EXISTS contest_problems (
-		contest_id int NOT NULL,
-		problem_id int NOT NULL,
-		CONSTRAINT pk_contest_problems PRIMARY KEY (contest_id, problem_id),
-		CONSTRAINT fk_contest FOREIGN KEY(contest_id) REFERENCES contests(id),
-		CONSTRAINT fk_problem FOREIGN KEY(problem_id) REFERENCES problems(id)
-	)
 	`
 
 	_, err := c.conn.Exec(ctx, stmt)
@@ -171,17 +164,4 @@ func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) e
 		err = pkg.ErrNotFound
 	}
 	return err
-}
-
-func (c *ContestsMetadataRepoImp) AddProblem(ctx context.Context, contestID int64, problemID int64) error {
-	insertContestProblemsStmt := `
-		INSERT INTO contest_problems(
-			contest_id, problem_id) 
-		VALUES($1, $2)
-	`
-	_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problemID)
-	if err != nil {
-		return err
-	}
-	return nil
 }

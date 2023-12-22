@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -62,6 +63,7 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 	var id int64
 	err := s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language).Scan(&id)
+	pkg.Log.Debug(err)
 	return id, err
 }
 

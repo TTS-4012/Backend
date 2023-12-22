@@ -23,12 +23,14 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
-	ContestsRepo db.ContestsMetadataRepo
+	ContestsRepo       db.ContestsMetadataRepo
+	ContestProblemRepo db.ContestsProblemsRepo
 }
 
-func NewContestsHandler(contestsRepo db.ContestsMetadataRepo) ContestsHandler {
+func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo) ContestsHandler {
 	return &ContestsHandlerImp{
-		ContestsRepo: contestsRepo,
+		ContestsRepo:       contestsRepo,
+		ContestProblemRepo: contestProblemRepo,
 	}
 }
 
@@ -104,7 +106,7 @@ func (c ContestsHandlerImp) DeleteContest() {}
 func (c ContestsHandlerImp) AddProblemContest(ctx *gin.Context, req structs.RequestAddProblemContest) int {
 	logger := pkg.Log.WithField("method", "add_problem_contest")
 
-	err := c.ContestsRepo.AddProblem(ctx, req.ContestID, req.ProblemID)
+	err := c.ContestProblemRepo.AddProblem(ctx, req.ContestID, req.ProblemID)
 	if err != nil {
 		logger.Error("error on adding problem to contest: ", err)
 		return http.StatusInternalServerError
@@ -112,9 +114,8 @@ func (c ContestsHandlerImp) AddProblemContest(ctx *gin.Context, req structs.Requ
 	return http.StatusOK
 }
 
-
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
 	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
 	status = http.StatusNotImplemented
-	return 
+	return
 }
