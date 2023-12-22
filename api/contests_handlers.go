@@ -1,11 +1,12 @@
 package api
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
-	"strconv"
 )
 
 func (h *handlers) CreateContest(c *gin.Context) {
@@ -92,4 +93,21 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 
 	status := h.contestsHandler.AddProblemContest(c, reqData)
 	c.Status(status)
+}
+
+func (h *handlers) GetContestScoreboard(c *gin.Context) {
+	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	resp, status := h.contestsHandler.GetContestScoreboard(c, contestID)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
 }

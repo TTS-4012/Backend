@@ -1,11 +1,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/ocontest/backend/internal/oc/auth"
 	"github.com/ocontest/backend/internal/oc/contests"
 	"github.com/ocontest/backend/internal/oc/problems"
 	"github.com/ocontest/backend/internal/oc/submissions"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,11 +61,12 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 		contestGroup := v1.Group("/contests", h.AuthMiddleware())
 		{
 			contestGroup.POST("", h.CreateContest)
-			contestGroup.GET("/:id", h.GetContest)
+			contestGroup.POST("/add_problem", h.AddProblemContest)
 			contestGroup.GET("", h.ListContests)
+			contestGroup.GET("/:id", h.GetContest)
+			contestGroup.GET("/:id/scoreboard", h.GetContestScoreboard)
 			contestGroup.PUT("/:id", h.UpdateContest)
 			contestGroup.DELETE("/:id", h.DeleteContest)
-			contestGroup.POST("/add_problem", h.AddProblemContest)
 		}
 		submissionGroup := v1.Group("/submissions", h.AuthMiddleware())
 		{
