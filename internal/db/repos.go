@@ -48,11 +48,6 @@ type TestCaseRepo interface {
 	GetAllTestsOfProblem(ctx context.Context, problemID int64) ([]structs.Testcase, error)
 }
 
-type TestResultRepo interface {
-	Insert(ctx context.Context, testResult structs.TestResult) error
-	GetByID(ctx context.Context, submissionId int64, testcaseId int64) (structs.TestResult, error)
-}
-
 type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
