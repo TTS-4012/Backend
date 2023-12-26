@@ -21,6 +21,11 @@ func (h *handlers) CreateProblem(c *gin.Context) {
 		return
 	}
 
+	reqData.IsPrivate = false
+	if reqData.ContestID != 0 {
+		reqData.IsPrivate = true
+	}
+
 	resp, status := h.problemsHandler.CreateProblem(c, reqData)
 	if status == http.StatusOK && reqData.ContestID != 0 {
 		var newReq structs.RequestAddProblemContest

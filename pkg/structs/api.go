@@ -49,6 +49,7 @@ type RequestCreateProblem struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	ContestID   int64  `json:"contest_id"`
+	IsPrivate   bool
 }
 
 type ResponseCreateProblem struct {
@@ -81,6 +82,7 @@ type ResponseGetProblem struct {
 	SolveCount  int64  `json:"solve_count"`
 	Hardness    int64  `json:"hardness"`
 	Description string `json:"description"`
+	IsOwned     bool   `json:"is_owned"`
 }
 
 type RequestUpdateProblem struct {
