@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/ocontest/backend/internal/oc/auth"
 	"github.com/ocontest/backend/internal/oc/contests"
+	contestsProblems "github.com/ocontest/backend/internal/oc/contestsProblems"
 	"github.com/ocontest/backend/internal/oc/problems"
 	"github.com/ocontest/backend/internal/oc/submissions"
 	"net/http"
@@ -11,19 +12,21 @@ import (
 )
 
 type handlers struct {
-	authHandler        auth.AuthHandler
-	problemsHandler    problems.ProblemsHandler
-	contestsHandler    contests.ContestsHandler
-	submissionsHandler submissions.Handler
+	authHandler             auth.AuthHandler
+	problemsHandler         problems.ProblemsHandler
+	contestsHandler         contests.ContestsHandler
+	submissionsHandler      submissions.Handler
+	contestsProblemsHandler contestsProblems.ContestsProblemsHandler
 }
 
 func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler problems.ProblemsHandler, submissionsHandler submissions.Handler,
-	contestsHandler contests.ContestsHandler) {
+	contestsHandler contests.ContestsHandler, contestsProblemsHandler contestsProblems.ContestsProblemsHandler) {
 	h := handlers{
-		authHandler:        authHandler,
-		problemsHandler:    problemHandler,
-		submissionsHandler: submissionsHandler,
-		contestsHandler:    contestsHandler,
+		authHandler:             authHandler,
+		problemsHandler:         problemHandler,
+		submissionsHandler:      submissionsHandler,
+		contestsHandler:         contestsHandler,
+		contestsProblemsHandler: contestsProblemsHandler,
 	}
 
 	r.Use(h.corsHandler)
