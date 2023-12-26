@@ -1,12 +1,14 @@
 package problems
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
 
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +18,7 @@ type ProblemsHandler interface {
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
 	ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int)
 	DeleteProblem(ctx context.Context, problemId int64) int
+	AddTestcase(ctx context.Context, problemID int64, data []byte) int
 	UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int
 }
 
@@ -173,4 +176,19 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 	}
 
 	return http.StatusAccepted
+}
+
+func (*ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, data []byte) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "AddTestcase",
+		"module": "Problems",
+	})
+
+	err := unzip(bytes.NewReader(data), int64(len(data)))
+	if err != nil{
+		logger.Error("error on unzip file: ", err)
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusNotImplemented
 }

@@ -23,7 +23,7 @@ func (h *handlers) Submit(c *gin.Context) {
 		return
 	}
 
-	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		logger.Error("error on getting problem_id from url: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{
