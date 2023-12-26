@@ -2,8 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/pkg"
 )
 
 type ContestsProblemsMetadataRepoImp struct {
@@ -69,4 +72,16 @@ func (c *ContestsProblemsMetadataRepoImp) GetContestProblems(ctx context.Context
 	}
 
 	return result, nil
+}
+
+func (c *ContestsProblemsMetadataRepoImp) RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) error {
+	stmt := `
+  DELETE FROM contest_problems
+  WHERE contest_id = $1 AND problem_id = $2
+  `
+	_, err := c.conn.Exec(ctx, stmt, contestID, problemID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
 }

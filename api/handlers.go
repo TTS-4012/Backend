@@ -68,6 +68,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			contestGroup.PUT("/:id", h.UpdateContest)
 			contestGroup.DELETE("/:id", h.DeleteContest)
 			contestGroup.POST("/add_problem", h.AddProblemContest)
+			contestGroup.POST("/remove_problem", h.RemoveProblemContest)
 		}
 		submissionGroup := v1.Group("/submissions", h.AuthMiddleware())
 		{

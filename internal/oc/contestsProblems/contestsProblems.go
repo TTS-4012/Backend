@@ -13,6 +13,7 @@ import (
 type ContestsProblemsHandler interface {
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int)
 	GetContestProblems(ctx *gin.Context, contestID int64) ([]int64, int)
+	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
 }
 
 type ContestsProblemsHandlerImp struct {
@@ -56,4 +57,18 @@ func (c ContestsProblemsHandlerImp) GetContestProblems(ctx *gin.Context, contest
 	}
 
 	return problems, http.StatusOK
+}
+
+func (c ContestsProblemsHandlerImp) RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int) {
+	logger := pkg.Log.WithField("method", "remove_problem_from_contest")
+
+	err := c.ContestsProblemsRepo.RemoveProblemFromContest(ctx, contestID, problemID)
+	if err != nil {
+		logger.Error("error on removing problem from contest: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	status = http.StatusOK
+	return
 }

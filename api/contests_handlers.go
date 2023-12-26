@@ -112,3 +112,19 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 	status := h.contestsProblemsHandler.AddProblemToContest(c, reqData.ContestID, reqData.ProblemID)
 	c.Status(status)
 }
+
+func (h *handlers) RemoveProblemContest(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "removeProblemContest")
+
+	var reqData structs.RequestRemoveProblemContest
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.contestsProblemsHandler.RemoveProblemFromContest(c, reqData.ContestID, reqData.ProblemID)
+	c.Status(status)
+}

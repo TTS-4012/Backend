@@ -39,6 +39,7 @@ type ProblemDescriptionsRepo interface {
 type ContestsProblemsRepo interface {
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) error
 	GetContestProblems(ctx context.Context, id int64) ([]int64, error)
+	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) error
 }
 
 type TestCaseRepo interface {
