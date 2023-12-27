@@ -101,34 +101,48 @@ func (h *handlers) UpdateContest(c *gin.Context) {}
 func (h *handlers) DeleteContest(c *gin.Context) {}
 
 func (h *handlers) AddProblemContest(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "addProblemContest")
+	_ = pkg.Log.WithField("handler", "addProblemContest")
 
-	var reqData structs.RequestAddProblemContest
-	if err := c.ShouldBindJSON(&reqData); err != nil {
-		logger.Warn("Failed to read request body", err)
+	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": pkg.ErrBadRequest.Error(),
+			"error": "invalid contest id, id should be an integer",
 		})
 		return
 	}
 
-	status := h.contestsProblemsHandler.AddProblemToContest(c, reqData.ContestID, reqData.ProblemID)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid problem id, id should be an integer",
+		})
+		return
+	}
+
+	status := h.contestsProblemsHandler.AddProblemToContest(c, contestID, problemID)
 	c.Status(status)
 }
 
 func (h *handlers) RemoveProblemContest(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "removeProblemContest")
+	_ = pkg.Log.WithField("handler", "removeProblemContest")
 
-	var reqData structs.RequestRemoveProblemContest
-	if err := c.ShouldBindJSON(&reqData); err != nil {
-		logger.Warn("Failed to read request body", err)
+	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": pkg.ErrBadRequest.Error(),
+			"error": "invalid contest id, id should be an integer",
 		})
 		return
 	}
 
-	status := h.contestsProblemsHandler.RemoveProblemFromContest(c, reqData.ContestID, reqData.ProblemID)
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid problem id, id should be an integer",
+		})
+		return
+	}
+
+	status := h.contestsProblemsHandler.RemoveProblemFromContest(c, contestID, problemID)
 	c.Status(status)
 }
 
