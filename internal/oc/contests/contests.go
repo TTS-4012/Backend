@@ -3,18 +3,20 @@ package contests
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
 	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
 	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
+	GetContestScoreboard(ctx context.Context, contestID int64) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest()
 	DeleteContest()
 }
@@ -97,3 +99,9 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 
 func (c ContestsHandlerImp) UpdateContest() {}
 func (c ContestsHandlerImp) DeleteContest() {}
+
+func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
+	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	status = http.StatusNotImplemented
+	return
+}
