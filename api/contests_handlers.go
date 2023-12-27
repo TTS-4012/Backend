@@ -26,8 +26,6 @@ func (h *handlers) CreateContest(c *gin.Context) {
 }
 
 func (h *handlers) GetContest(c *gin.Context) {
-	_ = pkg.Log.WithField("handler", "getContest")
-
 	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -105,8 +103,6 @@ func (h *handlers) DeleteContest(c *gin.Context) {
 }
 
 func (h *handlers) AddProblemContest(c *gin.Context) {
-	_ = pkg.Log.WithField("handler", "addProblemContest")
-
 	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -128,8 +124,6 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 }
 
 func (h *handlers) RemoveProblemContest(c *gin.Context) {
-	_ = pkg.Log.WithField("handler", "removeProblemContest")
-
 	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
