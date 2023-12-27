@@ -155,6 +155,9 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 		}
 		verdicts = append(verdicts, t.Verdict)
 	}
+	if len(verdicts) == 0 {
+		message = "There wasn't any test!"
+	}
 
 	return structs.ResponseGetSubmissionResults{
 		Verdicts: verdicts,
