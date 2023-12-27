@@ -15,7 +15,6 @@ import (
 	"github.com/ocontest/backend/internal/minio"
 	"github.com/ocontest/backend/internal/oc/auth"
 	"github.com/ocontest/backend/internal/oc/contests"
-	contestsProblemspackage "github.com/ocontest/backend/internal/oc/contestsProblems"
 	"github.com/ocontest/backend/internal/oc/problems"
 	"github.com/ocontest/backend/internal/oc/submissions"
 	"github.com/ocontest/backend/internal/otp"
@@ -144,11 +143,10 @@ func RunServer() {
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
-	contestHandler := contests.NewContestsHandler(contestRepo)
-	contestsProblemsHandler := contestsProblemspackage.NewContestsProblemsHandler(contestsProblemsRepo)
+	contestHandler := contests.NewContestsHandler(contestRepo, contestsProblemsRepo)
 
 	// starting http server
-	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestHandler, contestsProblemsHandler)
+	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestHandler)
 
 	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
 	pkg.Log.Info("Running on address: ", addr)

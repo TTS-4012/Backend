@@ -19,15 +19,20 @@ type ContestsHandler interface {
 	GetContestScoreboard(ctx context.Context, contestID int64) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest()
 	DeleteContest()
+	AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int)
+	GetContestProblems(ctx *gin.Context, contestID int64) ([]int64, int)
+	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
 }
 
 type ContestsHandlerImp struct {
-	ContestsRepo db.ContestsMetadataRepo
+	contestsRepo         db.ContestsMetadataRepo
+	contestsProblemsRepo db.ContestsProblemsRepo
 }
 
-func NewContestsHandler(contestsRepo db.ContestsMetadataRepo) ContestsHandler {
+func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemsRepo db.ContestsProblemsRepo) ContestsHandler {
 	return &ContestsHandlerImp{
-		ContestsRepo: contestsRepo,
+		contestsRepo:         contestsRepo,
+		contestsProblemsRepo: contestProblemsRepo,
 	}
 }
 
@@ -41,7 +46,7 @@ func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.Reque
 		Duration:  req.Duration,
 	}
 	var err error
-	res.ContestID, err = c.ContestsRepo.InsertContest(ctx, contest)
+	res.ContestID, err = c.contestsRepo.InsertContest(ctx, contest)
 	if err != nil {
 		logger.Error("error on inserting contest: ", err)
 		status = http.StatusInternalServerError
@@ -57,7 +62,7 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		"module": "Contests",
 	})
 
-	contest, err := c.ContestsRepo.GetContest(ctx, contestID)
+	contest, err := c.contestsRepo.GetContest(ctx, contestID)
 	if err != nil {
 		logger.Error("error on getting contest from repo: ", err)
 		status := http.StatusInternalServerError
@@ -81,7 +86,7 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 		"method": "ListContests",
 		"module": "Contests",
 	})
-	contests, err := c.ContestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
+	contests, err := c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
 	if err != nil {
 		logger.Error("error on listing contests: ", err)
 		return nil, http.StatusInternalServerError
@@ -99,6 +104,53 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 
 func (c ContestsHandlerImp) UpdateContest() {}
 func (c ContestsHandlerImp) DeleteContest() {}
+
+func (c ContestsHandlerImp) AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int) {
+	logger := pkg.Log.WithField("method", "add_problem_to_contest")
+
+	err := c.contestsProblemsRepo.AddProblemToContest(ctx, contestID, problemID)
+	if err != nil {
+		logger.Error("error on adding problem to contest: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	status = http.StatusOK
+	return
+}
+
+func (c ContestsHandlerImp) GetContestProblems(ctx *gin.Context, contestID int64) ([]int64, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetContestsProblem",
+		"module": "ContestsProblems",
+	})
+
+	problems, err := c.contestsProblemsRepo.GetContestProblems(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest problems from repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return make([]int64, 0), status
+	}
+
+	return problems, http.StatusOK
+}
+
+func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int) {
+	logger := pkg.Log.WithField("method", "remove_problem_from_contest")
+
+	err := c.contestsProblemsRepo.RemoveProblemFromContest(ctx, contestID, problemID)
+	if err != nil {
+		logger.Error("error on removing problem from contest: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	status = http.StatusOK
+	return
+}
 
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
 	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
