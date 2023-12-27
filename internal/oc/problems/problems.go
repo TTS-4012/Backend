@@ -43,6 +43,7 @@ func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.Reque
 		Title:      req.Title,
 		DocumentID: docID,
 		CreatedBy:  ctx.Value("user_id").(int64),
+		IsPrivate:  req.IsPrivate,
 	}
 	ans.ProblemID, err = p.problemMetadataRepo.InsertProblem(ctx, problem)
 	if err != nil {
@@ -82,6 +83,7 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 		SolveCount:  problem.SolvedCount,
 		Hardness:    problem.Hardness,
 		Description: doc.Description,
+		IsOwned:     problem.CreatedBy == ctx.Value("user_id").(int64),
 	}, http.StatusOK
 }
 

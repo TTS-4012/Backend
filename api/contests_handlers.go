@@ -35,18 +35,39 @@ func (h *handlers) GetContest(c *gin.Context) {
 		return
 	}
 	resp, status := h.contestsHandler.GetContest(c, contestID)
-	if status == http.StatusOK {
-		c.JSON(status, resp)
-	} else {
+	if status != http.StatusOK {
 		c.Status(status)
+		return
 	}
+	problemIDs, status := h.contestsProblemsHandler.GetContestProblems(c, contestID)
+	if status != http.StatusOK {
+		c.Status(status)
+		return
+	}
+
+	for _, problemID := range problemIDs {
+		problem, status := h.problemsHandler.GetProblem(c, problemID)
+		if status != http.StatusOK {
+			c.Status(status)
+			return
+		}
+
+		resp.Problems = append(resp.Problems, structs.ContestProblem{
+			ID:    problem.ProblemID,
+			Title: problem.Title,
+		})
+	}
+
+	c.JSON(status, resp)
 }
 
 func (h *handlers) ListContests(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "listContests")
+
 	var reqData structs.RequestListContests
 
 	reqData.Descending = c.Query("descending") == "true"
+	reqData.Started = c.Query("started") == "true"
 
 	limitStr := c.Query("limit")
 	offsetStr := c.Query("offset")
@@ -90,6 +111,22 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 		return
 	}
 
-	status := h.contestsHandler.AddProblemContest(c, reqData)
+	status := h.contestsProblemsHandler.AddProblemToContest(c, reqData.ContestID, reqData.ProblemID)
+	c.Status(status)
+}
+
+func (h *handlers) RemoveProblemContest(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "removeProblemContest")
+
+	var reqData structs.RequestRemoveProblemContest
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.contestsProblemsHandler.RemoveProblemFromContest(c, reqData.ContestID, reqData.ProblemID)
 	c.Status(status)
 }

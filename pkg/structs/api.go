@@ -49,6 +49,7 @@ type RequestCreateProblem struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	ContestID   int64  `json:"contest_id"`
+	IsPrivate   bool
 }
 
 type ResponseCreateProblem struct {
@@ -81,6 +82,7 @@ type ResponseGetProblem struct {
 	SolveCount  int64  `json:"solve_count"`
 	Hardness    int64  `json:"hardness"`
 	Description string `json:"description"`
+	IsOwned     bool   `json:"is_owned"`
 }
 
 type RequestUpdateProblem struct {
@@ -159,6 +161,7 @@ type RequestListContests struct {
 	Descending bool `json:"descending"`
 	Limit      int  `json:"limit"`
 	Offset     int  `json:"offset"`
+	Started    bool `json:"started"`
 }
 
 type ResponseListContestsItem struct {
@@ -167,6 +170,11 @@ type ResponseListContestsItem struct {
 }
 
 type RequestAddProblemContest struct {
+	ContestID int64 `json:"contest_Id"`
+	ProblemID int64 `json:"problem_Id"`
+}
+
+type RequestRemoveProblemContest struct {
 	ContestID int64 `json:"contest_Id"`
 	ProblemID int64 `json:"problem_Id"`
 }

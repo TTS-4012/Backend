@@ -17,7 +17,6 @@ type ContestsHandler interface {
 	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
 	UpdateContest()
 	DeleteContest()
-	AddProblemContest(ctx *gin.Context, req structs.RequestAddProblemContest) int
 }
 
 type ContestsHandlerImp struct {
@@ -80,7 +79,7 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 		"method": "ListContests",
 		"module": "Contests",
 	})
-	contests, err := c.ContestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset)
+	contests, err := c.ContestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
 	if err != nil {
 		logger.Error("error on listing contests: ", err)
 		return nil, http.StatusInternalServerError
@@ -98,14 +97,3 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 
 func (c ContestsHandlerImp) UpdateContest() {}
 func (c ContestsHandlerImp) DeleteContest() {}
-
-func (c ContestsHandlerImp) AddProblemContest(ctx *gin.Context, req structs.RequestAddProblemContest) int {
-	logger := pkg.Log.WithField("method", "add_problem_contest")
-
-	err := c.ContestsRepo.AddProblem(ctx, req.ContestID, req.ProblemID)
-	if err != nil {
-		logger.Error("error on adding problem to contest: ", err)
-		return http.StatusInternalServerError
-	}
-	return http.StatusOK
-}
