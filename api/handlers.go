@@ -65,7 +65,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			contestGroup.GET("/:id", h.GetContest)
 			contestGroup.GET("/:id/scoreboard", h.GetContestScoreboard)
 			contestGroup.PUT("/:id", h.UpdateContest)
-			contestGroup.DELETE("/:id", h.DeleteContest)
+			contestGroup.DELETE("/:contest_id", h.DeleteContest)
 			contestGroup.POST("/:contest_id/problems/:problem_id", h.AddProblemContest)
 			contestGroup.DELETE("/:contest_id/problems/:problem_id", h.RemoveProblemContest)
 		}
