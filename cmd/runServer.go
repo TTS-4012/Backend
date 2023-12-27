@@ -139,7 +139,7 @@ func RunServer() {
 		log.Fatal("error on creating judge handler", err)
 	}
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
-	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
+	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
 	contestHandler := contests.NewContestsHandler(contestRepo, contestProblemRepo)
 

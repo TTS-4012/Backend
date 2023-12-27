@@ -25,12 +25,17 @@ type ProblemsHandler interface {
 type ProblemsHandlerImp struct {
 	problemMetadataRepo     db.ProblemsMetadataRepo
 	problemsDescriptionRepo db.ProblemDescriptionsRepo
+	testcaseRepo            db.TestCaseRepo
 }
 
-func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptionRepo db.ProblemDescriptionsRepo) ProblemsHandler {
+func NewProblemsHandler(
+	problemsRepo db.ProblemsMetadataRepo, problemsDescriptionRepo db.ProblemDescriptionsRepo,
+	testcaseRepo db.TestCaseRepo,
+) ProblemsHandler {
 	return &ProblemsHandlerImp{
 		problemMetadataRepo:     problemsRepo,
 		problemsDescriptionRepo: problemsDescriptionRepo,
+		testcaseRepo:            testcaseRepo,
 	}
 }
 
@@ -178,17 +183,25 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 	return http.StatusAccepted
 }
 
-func (*ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, data []byte) int {
+func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, data []byte) int {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "AddTestcase",
 		"module": "Problems",
 	})
 
-	err := unzip(bytes.NewReader(data), int64(len(data)))
-	if err != nil{
+	testCases, err := unzip(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
 		logger.Error("error on unzip file: ", err)
 		return http.StatusInternalServerError
 	}
 
-	return http.StatusNotImplemented
+	for _, t := range testCases {
+		t.ProblemID = problemID
+		_, err := p.testcaseRepo.Insert(ctx, t)
+		if err != nil {
+			logger.Error("error on insert testcase to db")
+			return http.StatusInternalServerError
+		}
+	}
+	return http.StatusOK
 }

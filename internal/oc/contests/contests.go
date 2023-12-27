@@ -116,6 +116,9 @@ func (c ContestsHandlerImp) AddProblemContest(ctx *gin.Context, req structs.Requ
 
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
 	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	// TODO: GetProblems
+	// TODO: GetFinalAnswers
+	// TODO: serialize them and return
 	status = http.StatusNotImplemented
 	return
 }
