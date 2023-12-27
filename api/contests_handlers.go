@@ -115,7 +115,7 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 		return
 	}
 
-	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid problem id, id should be an integer",
@@ -138,7 +138,7 @@ func (h *handlers) RemoveProblemContest(c *gin.Context) {
 		return
 	}
 
-	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid problem id, id should be an integer",
