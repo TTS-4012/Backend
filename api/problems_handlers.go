@@ -28,7 +28,7 @@ func (h *handlers) CreateProblem(c *gin.Context) {
 
 	resp, status := h.problemsHandler.CreateProblem(c, reqData)
 	if status == http.StatusOK && reqData.ContestID != 0 {
-		status = h.contestsProblemsHandler.AddProblemToContest(c, reqData.ContestID, resp.ProblemID)
+		status = h.contestsHandler.AddProblemToContest(c, reqData.ContestID, resp.ProblemID)
 	}
 	c.JSON(status, resp)
 }

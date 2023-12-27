@@ -40,7 +40,7 @@ func (h *handlers) GetContest(c *gin.Context) {
 		c.Status(status)
 		return
 	}
-	problemIDs, status := h.contestsProblemsHandler.GetContestProblems(c, contestID)
+	problemIDs, status := h.contestsHandler.GetContestProblems(c, contestID)
 	if status != http.StatusOK {
 		c.Status(status)
 		return
@@ -96,9 +96,13 @@ func (h *handlers) ListContests(c *gin.Context) {
 	}
 }
 
-func (h *handlers) UpdateContest(c *gin.Context) {}
+func (h *handlers) UpdateContest(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}
 
-func (h *handlers) DeleteContest(c *gin.Context) {}
+func (h *handlers) DeleteContest(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}
 
 func (h *handlers) AddProblemContest(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "addProblemContest")
@@ -112,7 +116,7 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 		return
 	}
 
-	status := h.contestsProblemsHandler.AddProblemToContest(c, reqData.ContestID, reqData.ProblemID)
+	status := h.contestsHandler.AddProblemToContest(c, reqData.ContestID, reqData.ProblemID)
 	c.Status(status)
 }
 
@@ -128,7 +132,7 @@ func (h *handlers) RemoveProblemContest(c *gin.Context) {
 		return
 	}
 
-	status := h.contestsProblemsHandler.RemoveProblemFromContest(c, reqData.ContestID, reqData.ProblemID)
+	status := h.contestsHandler.RemoveProblemFromContest(c, reqData.ContestID, reqData.ProblemID)
 	c.Status(status)
 }
 
