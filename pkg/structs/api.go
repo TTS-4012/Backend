@@ -169,16 +169,6 @@ type ResponseListContestsItem struct {
 	Title     string `json:"title"`
 }
 
-type RequestAddProblemContest struct {
-	ContestID int64 `json:"contest_Id"`
-	ProblemID int64 `json:"problem_Id"`
-}
-
-type RequestRemoveProblemContest struct {
-	ContestID int64 `json:"contest_Id"`
-	ProblemID int64 `json:"problem_Id"`
-}
-
 type ScoreboardCell struct {
 	ProblemID int64 `json:"problem_id"`
 	Score     int   `json:"score"`
