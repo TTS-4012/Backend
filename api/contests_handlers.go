@@ -45,6 +45,7 @@ func (h *handlers) GetContest(c *gin.Context) {
 		return
 	}
 
+	resp.Problems = make([]structs.ContestProblem, 0)
 	for _, problemID := range problemIDs {
 		problem, status := h.problemsHandler.GetProblem(c, problemID)
 		if status != http.StatusOK {
