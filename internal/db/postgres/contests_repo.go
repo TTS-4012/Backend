@@ -9,6 +9,7 @@ import (
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
+	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -72,10 +73,19 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error) {
 	stmt := `
-	SELECT id, created_by, title, start_time, duration FROM contests ORDER BY id
+	SELECT id, created_by, title, start_time, duration FROM contests
 	`
+
+	now := time.Now().Unix()
+	if started {
+		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+	} else {
+		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	stmt += " ORDER BY id "
 
 	if descending {
 		stmt += " DESC"

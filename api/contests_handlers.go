@@ -63,9 +63,11 @@ func (h *handlers) GetContest(c *gin.Context) {
 
 func (h *handlers) ListContests(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "listContests")
+
 	var reqData structs.RequestListContests
 
 	reqData.Descending = c.Query("descending") == "true"
+	reqData.Started = c.Query("started") == "true"
 
 	limitStr := c.Query("limit")
 	offsetStr := c.Query("offset")

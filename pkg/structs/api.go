@@ -161,6 +161,7 @@ type RequestListContests struct {
 	Descending bool `json:"descending"`
 	Limit      int  `json:"limit"`
 	Offset     int  `json:"offset"`
+	Started    bool `json:"started"`
 }
 
 type ResponseListContestsItem struct {
