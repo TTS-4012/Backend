@@ -49,8 +49,8 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
 			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
 		}
-		//problemGroup := v1.Group("/problems", h.AuthMiddleware())
-		problemGroup := v1.Group("/problems")
+		problemGroup := v1.Group("/problems", h.AuthMiddleware())
+		//problemGroup := v1.Group("/problems")
 		{
 			problemGroup.POST("", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
