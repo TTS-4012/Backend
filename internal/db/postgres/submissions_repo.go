@@ -120,11 +120,19 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 	return ans, nil
 }
 
-func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID string) error {
+// UpdateJudgeResults will add judge_result_id, update status, and change is final
+func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string) error {
 	stmt := `
-	UPDATE submissions SET status='processed', judge_result_id = $1 where id = $2
+	UPDATE submissions SET is_final = false WHERE problem_id = $1 and user_id = $2 
 	`
-	_, err := s.conn.Exec(ctx, stmt, docID, id)
+	_, err := s.conn.Exec(ctx, stmt, problemID, userID)
+	if err != nil {
+		return err
+	}
+	stmt = `
+	UPDATE submissions SET status='processed', judge_result_id = $1, is_final = true where id = $2
+	`
+	_, err = s.conn.Exec(ctx, stmt, docID, submissionID)
 	return err
 }
 

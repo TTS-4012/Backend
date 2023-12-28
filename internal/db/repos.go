@@ -56,7 +56,7 @@ type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
 	GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error)
-	AddJudgeResult(ctx context.Context, submissionID int64, judgeResultID string) error
+	UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, judgeResultID string) error
 	ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
 }
 

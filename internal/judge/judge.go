@@ -80,7 +80,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	}
 
 	//lastScore :=
-	err = j.submissionMetadataRepo.AddJudgeResult(ctx, submissionID, docID)
+	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
 	}
