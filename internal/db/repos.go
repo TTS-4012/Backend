@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/ocontest/backend/pkg/structs"
 )
 
@@ -29,6 +30,12 @@ type ContestsMetadataRepo interface {
 	DeleteContest(ctx context.Context, id int64) error
 }
 
+type ContestsProblemsRepo interface {
+	GetContestProblems(ctx context.Context, contestID int64) ([]int64, error)
+	AddProblem(ctx context.Context, contestID int64, problemID int64) error
+
+}
+
 type ProblemDescriptionsRepo interface {
 	Insert(description string, testCases []string) (string, error)
 	Get(id string) (structs.ProblemDescription, error)
@@ -46,11 +53,6 @@ type TestCaseRepo interface {
 	Insert(ctx context.Context, testCase structs.Testcase) (int64, error)
 	GetByID(ctx context.Context, id int64) (structs.Testcase, error)
 	GetAllTestsOfProblem(ctx context.Context, problemID int64) ([]structs.Testcase, error)
-}
-
-type TestResultRepo interface {
-	Insert(ctx context.Context, testResult structs.TestResult) error
-	GetByID(ctx context.Context, submissionId int64, testcaseId int64) (structs.TestResult, error)
 }
 
 type SubmissionMetadataRepo interface {

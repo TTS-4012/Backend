@@ -25,16 +25,17 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
-	contestsRepo         db.ContestsMetadataRepo
-	contestsProblemsRepo db.ContestsProblemsRepo
+	ContestsRepo       db.ContestsMetadataRepo
+	ContestProblemRepo db.ContestsProblemsRepo
 }
 
-func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemsRepo db.ContestsProblemsRepo) ContestsHandler {
+func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo) ContestsHandler {
 	return &ContestsHandlerImp{
-		contestsRepo:         contestsRepo,
-		contestsProblemsRepo: contestProblemsRepo,
-	}
+		ContestsRepo:       contestsRepo,
+		ContestProblemRepo: contestProblemRepo,
+  }
 }
+
 
 func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int) {
 	logger := pkg.Log.WithField("method", "create_contest")
@@ -108,7 +109,8 @@ func (c ContestsHandlerImp) DeleteContest() {}
 func (c ContestsHandlerImp) AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int) {
 	logger := pkg.Log.WithField("method", "add_problem_to_contest")
 
-	err := c.contestsProblemsRepo.AddProblemToContest(ctx, contestID, problemID)
+	err := c.ContestProblemRepo.AddProblem(ctx, req.ContestID, req.ProblemID)
+
 	if err != nil {
 		logger.Error("error on adding problem to contest: ", err)
 		status = http.StatusInternalServerError
@@ -154,6 +156,15 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
 	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	status = http.StatusNotImplemented
+	return
+}
+
+func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
+	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	// TODO: GetProblems
+	// TODO: GetFinalAnswers
+	// TODO: serialize them and return
 	status = http.StatusNotImplemented
 	return
 }

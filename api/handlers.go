@@ -49,18 +49,21 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			authGroup.POST("/renew_token", h.AuthMiddleware(), h.renewToken)
 			authGroup.POST("/edit_user", h.AuthMiddleware(), h.editUser)
 		}
-		problemGroup := v1.Group("/problems", h.AuthMiddleware())
+		//problemGroup := v1.Group("/problems", h.AuthMiddleware())
+		problemGroup := v1.Group("/problems")
 		{
 			problemGroup.POST("", h.CreateProblem)
 			problemGroup.GET("/:id", h.GetProblem)
 			problemGroup.GET("", h.ListProblems)
 			problemGroup.PUT("/:id", h.UpdateProblem)
 			problemGroup.DELETE("/:id", h.DeleteProblem)
+			problemGroup.POST("/:id/testcase", h.AddTestCase)
 		}
 		//contestGroup := v1.Group("/contests")
 		contestGroup := v1.Group("/contests", h.AuthMiddleware())
 		{
 			contestGroup.POST("", h.CreateContest)
+			contestGroup.POST("/add_problem", h.AddProblemContest)
 			contestGroup.GET("", h.ListContests)
 			contestGroup.GET("/:id", h.GetContest)
 			contestGroup.GET("/:id/scoreboard", h.GetContestScoreboard)
@@ -75,7 +78,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			submissionGroup.POST("/", h.Submit)
 			submissionGroup.GET("/:id/results", h.GetSubmissionResult)
 		}
-		v1.POST("/problems/:problem_id/submit", h.AuthMiddleware(), h.Submit)
+		v1.POST("/problems/:id/submit", h.AuthMiddleware(), h.Submit)
 		v1.GET("/problems/:id/submissions", h.AuthMiddleware(), h.ListSubmissions)
 		v1.GET("/problems/:id/submissions/all", h.AuthMiddleware(), h.ListAllSubmissions)
 	}

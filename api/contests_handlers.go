@@ -123,6 +123,7 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 	c.Status(status)
 }
 
+
 func (h *handlers) RemoveProblemContest(c *gin.Context) {
 	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
 	if err != nil {

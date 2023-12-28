@@ -1,10 +1,13 @@
 package api
 
 import (
-	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/structs"
+	"bytes"
+	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -128,5 +131,33 @@ func (h *handlers) DeleteProblem(c *gin.Context) {
 	}
 
 	status := h.problemsHandler.DeleteProblem(c, problemID)
+	c.Status(status)
+}
+
+func (h *handlers) AddTestCase(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "addTestcase")
+
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	logger.Debug(c.GetHeader("Content-Length"))
+	body := c.Request.Body
+	buff := bytes.NewBuffer([]byte{})
+	_, err = io.Copy(buff, body)
+	if err != nil {
+		logger.Error("error on create io ReaderAt")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "something went wrong",
+		})
+		return
+	}
+
+	status := h.problemsHandler.AddTestcase(c, problemID, buff.Bytes())
 	c.Status(status)
 }

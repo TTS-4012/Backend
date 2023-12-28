@@ -6,6 +6,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/api"
 	"github.com/ocontest/backend/internal/db/mongodb"
@@ -22,7 +24,6 @@ import (
 	"github.com/ocontest/backend/pkg/aes"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/smtp"
-	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -141,7 +142,7 @@ func RunServer() {
 		log.Fatal("error on creating judge handler", err)
 	}
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
-	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo)
+	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
 	contestHandler := contests.NewContestsHandler(contestRepo, contestsProblemsRepo)
 

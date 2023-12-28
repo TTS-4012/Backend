@@ -24,8 +24,8 @@ func (a *TestCaseRepoImp) Migrate(ctx context.Context) error {
 			id SERIAL,
 			problem_id bigint not null,
 			
-			input text,
-			output text,
+			input text not null ,
+			output text not null ,
 
 			unique(id),
 			primary key (problem_id, id),

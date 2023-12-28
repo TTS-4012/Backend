@@ -174,6 +174,7 @@ type RequestAddProblemContest struct {
 	ProblemID int64 `json:"problem_Id"`
 }
 
+
 type RequestRemoveProblemContest struct {
 	ContestID int64 `json:"contest_Id"`
 	ProblemID int64 `json:"problem_Id"`
