@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -32,6 +31,11 @@ func (h *handlers) Submit(c *gin.Context) {
 		return
 	}
 
+	file_name := c.GetHeader("Filename")
+	if file_name == "" {
+		file_name = "filename"
+	}
+
 	buffer, err := c.GetRawData()
 	if err != nil {
 		logger.Error("Failed reading file from request body: ", err)
@@ -45,7 +49,7 @@ func (h *handlers) Submit(c *gin.Context) {
 		UserID:      userID.(int64),
 		ProblemID:   problemID,
 		Code:        buffer,
-		FileName:    "filename", // File name currently not preserved
+		FileName:    file_name,
 		ContentType: c.GetHeader("Content-Type"),
 		Language:    "python", // For now just python
 	}
@@ -77,10 +81,16 @@ func (h *handlers) GetSubmission(c *gin.Context) {
 		return
 	}
 
-	resp, contentType, status := h.submissionsHandler.Get(c, userID.(int64), submissionID)
+	setDownloadHeaders := c.Query("download") == "true"
+
+	resp, _, status := h.submissionsHandler.Get(c, userID.(int64), submissionID)
 	if status == http.StatusOK {
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", resp.Metadata.FileName))
-		c.Data(status, contentType, resp.RawCode)
+		if setDownloadHeaders {
+			c.Header("Content-Description", "File Transfer")
+			c.Header("Content-Transfer-Encoding", "binary")
+			c.Header("Content-Disposition", "attachment; filename="+resp.Metadata.FileName)
+		}
+		c.Data(status, "application/octet-stream", resp.RawCode)
 	} else {
 		c.Status(status)
 	}
