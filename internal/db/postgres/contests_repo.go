@@ -10,6 +10,7 @@ import (
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
+	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -53,19 +54,6 @@ func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest str
 		return 0, err
 	}
 
-	insertContestProblemsStmt := `
-		INSERT INTO contest_problems(
-			contest_id, problem_id) 
-		VALUES($1, $2)
-	`
-
-	for _, problem := range contest.Problems {
-		_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problem.ID)
-		if err != nil {
-			return 0, err
-		}
-	}
-
 	return contestID, nil
 }
 
@@ -83,47 +71,23 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 		return structs.Contest{}, err
 	}
 
-	selectContestProblemsStmt := `
-		SELECT problem_id FROM contest_problems WHERE contest_id = $1
-	`
-
-	rows, err := c.conn.Query(ctx, selectContestProblemsStmt, id)
-	if err != nil {
-		return structs.Contest{}, err
-	}
-	defer rows.Close()
-
-	problemsRespo, err := NewProblemsMetadataRepo(ctx, c.conn)
-	if err != nil {
-		return structs.Contest{}, err
-	}
-
-	for rows.Next() {
-		var problemID int64
-		err := rows.Scan(&problemID)
-		if err != nil {
-			return structs.Contest{}, err
-		}
-
-		problem, err := problemsRespo.GetProblem(ctx, problemID)
-		if err != nil {
-			return structs.Contest{}, err
-		}
-		contestProblem := structs.ContestProblem{
-			ID:    problemID,
-			Title: problem.Title,
-		}
-
-		contest.Problems = append(contest.Problems, contestProblem)
-	}
-
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error) {
 	stmt := `
-	SELECT id, created_by, title FROM contests ORDER BY id
+	SELECT id, created_by, title, start_time, duration FROM contests
 	`
+
+	now := time.Now().Unix()
+	if started {
+		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+	} else {
+		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	stmt += " ORDER BY id "
+
 	if descending {
 		stmt += " DESC"
 	}
@@ -146,7 +110,10 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 		err = rows.Scan(
 			&contest.ID,
 			&contest.CreatedBy,
-			&contest.Title)
+			&contest.Title,
+			&contest.StartTime,
+			&contest.Duration,
+		)
 		if err != nil {
 			return nil, err
 		}

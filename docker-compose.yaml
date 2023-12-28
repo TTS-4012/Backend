@@ -1,0 +1,65 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: hub.hamdocker.ir/postgres:16-alpine
+    container_name: ocontest_postgres
+    environment:
+      - POSTGRES_USER=ocontest
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=ocontest
+    volumes:
+      - type: volume
+        source: ocontest_postgres_data
+        target: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  mongo:
+    image: hub.hamdocker.ir/mongo:7
+    container_name: ocontest_mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017"
+    volumes:
+      - type: volume
+        source: ocontest_mongodb_data
+        target: /bitnami/mongodb
+
+  minio:
+    container_name: ocontest_minio
+    image: hub.hamdocker.ir/minio/minio
+    command: server --address ":9000" --console-address ":9001" /data
+    restart: unless-stopped
+    expose:
+      - 9000
+      - 9001
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ACCESS_KEY: test1
+      MINIO_SECRET_KEY: testtest2
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    hostname: minio
+    volumes:
+      - ocontest_minio:/data
+
+  nats:
+    image: hub.hamdocker.ir/nats:2.10-alpine
+    container_name: ocontest_nats
+    ports:
+      - "4222:4222"
+
+volumes:
+  ocontest_postgres_data:
+  ocontest_mongodb_data:
+  ocontest_nats:
+  ocontest_minio:
+

@@ -24,12 +24,14 @@ func (h *handlers) CreateProblem(c *gin.Context) {
 		return
 	}
 
+	reqData.IsPrivate = false
+	if reqData.ContestID != 0 {
+		reqData.IsPrivate = true
+	}
+
 	resp, status := h.problemsHandler.CreateProblem(c, reqData)
 	if status == http.StatusOK && reqData.ContestID != 0 {
-		var newReq structs.RequestAddProblemContest
-		newReq.ProblemID = resp.ProblemID
-		newReq.ContestID = reqData.ContestID
-		status = h.contestsHandler.AddProblemContest(c, newReq)
+		status = h.contestsHandler.AddProblemToContest(c, reqData.ContestID, resp.ProblemID)
 	}
 	c.JSON(status, resp)
 }

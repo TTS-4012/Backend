@@ -20,6 +20,7 @@ type Problem struct {
 	DocumentID  string
 	SolvedCount int64
 	Hardness    int64
+	IsPrivate   bool
 }
 
 type SubmissionMetadata struct {

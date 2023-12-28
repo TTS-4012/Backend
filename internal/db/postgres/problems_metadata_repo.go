@@ -41,19 +41,26 @@ func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
 	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id)
 	)
 	`
-
 	_, err = a.conn.Exec(ctx, stmt)
+
+	stmt = `
+	ALTER TABLE problems
+	ADD COLUMN IF NOT EXISTS is_private BOOL NOT NULL DEFAULT FALSE;
+	`
+	_, err = a.conn.Exec(ctx, stmt)
+
 	return err
 }
+
 func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem structs.Problem) (int64, error) {
 
 	stmt := `
 	INSERT INTO problems(
-		created_by, title, document_id) 
-		VALUES($1, $2, $3) RETURNING id
+		created_by, title, document_id, is_private) 
+		VALUES($1, $2, $3, $4) RETURNING id
 	`
 	var id int64
-	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID).Scan(&id)
+	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID, problem.IsPrivate).Scan(&id)
 	return id, err
 }
 
@@ -77,7 +84,7 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	if getCount {
 		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
 	}
-	stmt = fmt.Sprintf("%s FROM problems ORDER BY", stmt)
+	stmt = fmt.Sprintf("%s FROM problems WHERE is_private = false ORDER BY", stmt)
 
 	colName, exists := SearchableColumns[searchColumn]
 	if !exists {
