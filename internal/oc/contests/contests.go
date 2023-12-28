@@ -25,17 +25,16 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
-	ContestsRepo       db.ContestsMetadataRepo
-	ContestProblemRepo db.ContestsProblemsRepo
+	contestsRepo       db.ContestsMetadataRepo
+	contestProblemRepo db.ContestsProblemsRepo
 }
 
 func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo) ContestsHandler {
 	return &ContestsHandlerImp{
-		ContestsRepo:       contestsRepo,
-		ContestProblemRepo: contestProblemRepo,
-  }
+		contestsRepo:       contestsRepo,
+		contestProblemRepo: contestProblemRepo,
+	}
 }
-
 
 func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int) {
 	logger := pkg.Log.WithField("method", "create_contest")
@@ -109,7 +108,7 @@ func (c ContestsHandlerImp) DeleteContest() {}
 func (c ContestsHandlerImp) AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int) {
 	logger := pkg.Log.WithField("method", "add_problem_to_contest")
 
-	err := c.ContestProblemRepo.AddProblem(ctx, req.ContestID, req.ProblemID)
+	err := c.contestProblemRepo.AddProblemToContest(ctx, contestID, problemID)
 
 	if err != nil {
 		logger.Error("error on adding problem to contest: ", err)
@@ -127,7 +126,7 @@ func (c ContestsHandlerImp) GetContestProblems(ctx *gin.Context, contestID int64
 		"module": "ContestsProblems",
 	})
 
-	problems, err := c.contestsProblemsRepo.GetContestProblems(ctx, contestID)
+	problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
 	if err != nil {
 		logger.Error("error on getting contest problems from repo: ", err)
 		status := http.StatusInternalServerError
@@ -143,7 +142,7 @@ func (c ContestsHandlerImp) GetContestProblems(ctx *gin.Context, contestID int64
 func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int) {
 	logger := pkg.Log.WithField("method", "remove_problem_from_contest")
 
-	err := c.contestsProblemsRepo.RemoveProblemFromContest(ctx, contestID, problemID)
+	err := c.contestProblemRepo.RemoveProblemFromContest(ctx, contestID, problemID)
 	if err != nil {
 		logger.Error("error on removing problem from contest: ", err)
 		status = http.StatusInternalServerError
@@ -151,12 +150,6 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 	}
 
 	status = http.StatusOK
-	return
-}
-
-func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
-	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
-	status = http.StatusNotImplemented
 	return
 }
 
