@@ -180,9 +180,14 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 }
 
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
-	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	//logger := pkg.Log.WithField("method", "get_contest_scoreboard")
 	// TODO: GetProblems
-	//problems, err := c.contestsRepo.GetContest()
+	//problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
+	//if err != nil {
+	//	logger.Error("error on get problems from ContestProblem repo: ", err)
+	//	status = http.StatusInternalServerError
+	//	return
+	//}
 	// TODO: GetFinalAnswers
 	// TODO: serialize them and return
 	status = http.StatusNotImplemented

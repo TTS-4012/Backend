@@ -133,7 +133,7 @@ func RunServer() {
 
 	contestsProblemsRepo, err := postgres.NewContestsProblemsMetadataRepo(ctx, dbConn)
 	if err != nil {
-		log.Fatal("error on creating contest repo", err)
+		log.Fatal("error on creating contest problems repo: ", err)
 	}
 
 	// initiating module handlers

@@ -146,7 +146,6 @@ func (h *handlers) AddTestCase(c *gin.Context) {
 		return
 	}
 
-	logger.Debug(c.GetHeader("Content-Length"))
 	body := c.Request.Body
 	buff := bytes.NewBuffer([]byte{})
 	_, err = io.Copy(buff, body)
