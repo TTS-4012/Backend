@@ -31,8 +31,9 @@ type Dummy struct {
 	workingDir string
 }
 
-func NewDummy() *Dummy {
-	return &Dummy{}
+func NewDummy() (*Dummy, error) {
+	d := &Dummy{}
+	return d, d.Init()
 }
 
 func (s *Dummy) Id() string {
@@ -173,8 +174,7 @@ func (s *Dummy) Cleanup() error {
 
 func RunTask(timeLimit time.Duration, memoryLimit int, code string, input io.Reader, output io.Writer, stderr io.Writer) (structs.Verdict, error) {
 	// runner for python
-	d := NewDummy()
-	err := d.Init()
+	d, err := NewDummy()
 	if err != nil {
 		return structs.VerdictUnknown, err
 	}
