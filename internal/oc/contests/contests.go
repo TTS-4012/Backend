@@ -236,11 +236,10 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 				})
 			}
 
-			res, err := c.judge.GetResults(ctx, s.JudgeResultID)
+			score, err := c.judge.GetScore(ctx, s.JudgeResultID)
 			if err != nil {
 				logger.Error("error on get judge result: ", err)
 			}
-			score := calcScore(res.TestResults)
 			var cell structs.ScoreboardCell
 			cell.ProblemID = p
 			cell.Score = score
