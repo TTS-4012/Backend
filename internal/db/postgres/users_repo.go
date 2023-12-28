@@ -8,16 +8,16 @@ import (
 	"github.com/ocontest/backend/pkg/structs"
 )
 
-type AuthRepoImp struct {
+type UsersRepoImp struct {
 	conn *pgxpool.Pool
 }
 
-func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (db.AuthRepo, error) {
-	ans := &AuthRepoImp{conn: conn}
+func NewAuthRepo(ctx context.Context, conn *pgxpool.Pool) (db.UsersRepo, error) {
+	ans := &UsersRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }
 
-func (a *AuthRepoImp) Migrate(ctx context.Context) error {
+func (a *UsersRepoImp) Migrate(ctx context.Context) error {
 	stmt := `
 	CREATE TABLE IF NOT EXISTS users(
 	    id SERIAL PRIMARY KEY ,
@@ -34,7 +34,7 @@ func (a *AuthRepoImp) Migrate(ctx context.Context) error {
 	_, err := a.conn.Exec(ctx, stmt)
 	return err
 }
-func (a *AuthRepoImp) InsertUser(ctx context.Context, user structs.User) (int64, error) {
+func (a *UsersRepoImp) InsertUser(ctx context.Context, user structs.User) (int64, error) {
 	stmt := `
 	INSERT INTO users(username, password, email) VALUES($1, $2, $3) RETURNING id 
 	`
@@ -43,7 +43,7 @@ func (a *AuthRepoImp) InsertUser(ctx context.Context, user structs.User) (int64,
 	return id, err
 }
 
-func (a *AuthRepoImp) VerifyUser(ctx context.Context, userID int64) error {
+func (a *UsersRepoImp) VerifyUser(ctx context.Context, userID int64) error {
 	stmt := `
 	UPDATE users SET is_verified = true WHERE id = $1
 	`
@@ -51,7 +51,7 @@ func (a *AuthRepoImp) VerifyUser(ctx context.Context, userID int64) error {
 	return err
 }
 
-func (a *AuthRepoImp) GetByUsername(ctx context.Context, username string) (structs.User, error) {
+func (a *UsersRepoImp) GetByUsername(ctx context.Context, username string) (structs.User, error) {
 	stmt := `
 	SELECT id, username, password, email, is_verified FROM users WHERE username = $1 
 	`
@@ -60,7 +60,7 @@ func (a *AuthRepoImp) GetByUsername(ctx context.Context, username string) (struc
 	return user, err
 }
 
-func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, error) {
+func (a *UsersRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, error) {
 	stmt := `
 	SELECT id, username, password, email, is_verified FROM users WHERE id = $1 
 	`
@@ -69,7 +69,7 @@ func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, 
 	return user, err
 }
 
-func (a *AuthRepoImp) GetUsername(ctx context.Context, userID int64) (string, error) {
+func (a *UsersRepoImp) GetUsername(ctx context.Context, userID int64) (string, error) {
 	stmt := `
 	SELECT username FROM users WHERE id = $1 
 	`
@@ -78,7 +78,7 @@ func (a *AuthRepoImp) GetUsername(ctx context.Context, userID int64) (string, er
 	return username, err
 }
 
-func (a *AuthRepoImp) GetByEmail(ctx context.Context, email string) (structs.User, error) {
+func (a *UsersRepoImp) GetByEmail(ctx context.Context, email string) (structs.User, error) {
 	stmt := `
 	SELECT id, username, password, email, is_verified FROM users WHERE email = $1 
 	`
@@ -88,7 +88,7 @@ func (a *AuthRepoImp) GetByEmail(ctx context.Context, email string) (structs.Use
 }
 
 // TODO: find a suitable query builder to do this shit. sorry for this shitty code you are gonna see, I had no other idea.
-func (a *AuthRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
+func (a *UsersRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
 	args := make([]interface{}, 0)
 	args = append(args, user.ID)
 

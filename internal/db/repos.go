@@ -6,7 +6,7 @@ import (
 	"github.com/ocontest/backend/pkg/structs"
 )
 
-type AuthRepo interface {
+type UsersRepo interface {
 	InsertUser(ctx context.Context, user structs.User) (int64, error)
 	VerifyUser(ctx context.Context, userID int64) error
 	GetByUsername(ctx context.Context, username string) (structs.User, error)
@@ -62,4 +62,9 @@ type SubmissionMetadataRepo interface {
 type JudgeRepo interface {
 	Insert(ctx context.Context, response structs.JudgeResponse) (string, error)
 	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
+}
+
+type ContestsUsersRepo interface {
+	Add(ctx context.Context, contestID, userID int64) error
+	Delete(ctx context.Context, contestID, userID int64) error
 }

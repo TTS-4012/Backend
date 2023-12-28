@@ -23,14 +23,17 @@ type ContestsHandler interface {
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int)
 	GetContestProblems(ctx *gin.Context, contestID int64) ([]int64, int)
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
+	RegisterUser(ctx context.Context, contestID, userID int64) int
+	UnregisterUser(ctx context.Context, contestID, userID int64) int
 }
 
 type ContestsHandlerImp struct {
-	usersRepo          db.AuthRepo
+	usersRepo          db.UsersRepo
 	problemsRepo       db.ProblemsMetadataRepo
 	submissionsRepo    db.SubmissionMetadataRepo
 	contestsRepo       db.ContestsMetadataRepo
 	contestProblemRepo db.ContestsProblemsRepo
+	contestsUsersRepo  db.ContestsUsersRepo
 
 	judge judge.Judge
 }
@@ -38,7 +41,7 @@ type ContestsHandlerImp struct {
 func NewContestsHandler(
 	contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo,
 	problemsRepo db.ProblemsMetadataRepo, submissionsRepo db.SubmissionMetadataRepo,
-	authRepo db.AuthRepo,
+	authRepo db.UsersRepo, contestUsersRepo db.ContestsUsersRepo,
 	judge judge.Judge,
 ) ContestsHandler {
 	return &ContestsHandlerImp{
@@ -46,6 +49,7 @@ func NewContestsHandler(
 		submissionsRepo:    submissionsRepo,
 		contestsRepo:       contestsRepo,
 		contestProblemRepo: contestProblemRepo,
+		contestsUsersRepo:  contestUsersRepo,
 		usersRepo:          authRepo,
 		judge:              judge,
 	}

@@ -190,11 +190,14 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 func (h *handlers) PatchContest(c *gin.Context) {
 	action := c.Query("action")
 
+	userID := c.Value("user_id").(int64)
+	contestID := c.Value("user_id").(int64)
+	pkg.Log.Debug(userID, contestID)
 	switch action {
 	case "register":
-		c.Status(http.StatusNotImplemented)
+		c.Status(h.contestsHandler.RegisterUser(c, contestID, userID))
 	case "unregister":
-		c.Status(http.StatusNotImplemented)
+		c.Status(h.contestsHandler.UnregisterUser(c, contestID, userID))
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "action " + action + " not defined",
