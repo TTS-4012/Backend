@@ -129,7 +129,13 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 		"method": "ListContests",
 		"module": "Contests",
 	})
-	contests, err := c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
+	var contests []structs.Contest
+	var err error
+	if req.MyContest {
+		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, ctx.Value("user_id").(int64))
+	} else {
+		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
+	}
 	if err != nil {
 		logger.Error("error on listing contests: ", err)
 		return nil, http.StatusInternalServerError

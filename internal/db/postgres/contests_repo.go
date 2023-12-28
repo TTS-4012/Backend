@@ -122,9 +122,20 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 	return ans, err
 }
 
+func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) error {
+	stmt := `
+	DELETE FROM contests WHERE id = $1
+	`
+	_, err := c.conn.Exec(ctx, stmt, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
+}
+
 func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error) {
 	stmt := `
-	SELECT id, created_by, title, start_time, duration FROM contests
+	SELECT id, created_by, title, start_time, duration FROM contests JOIN contests_users ON contests_users.contest_id = contests.id WHERE contests_users.user_id = $1
 	`
 
 	now := time.Now().Unix()
@@ -146,7 +157,7 @@ func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending
 		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
 	}
 
-	rows, err := c.conn.Query(ctx, stmt)
+	rows, err := c.conn.Query(ctx, stmt, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -168,15 +179,4 @@ func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending
 		ans = append(ans, contest)
 	}
 	return ans, err
-}
-
-func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) error {
-	stmt := `
-	DELETE FROM contests WHERE id = $1
-	`
-	_, err := c.conn.Exec(ctx, stmt, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		err = pkg.ErrNotFound
-	}
-	return err
 }
