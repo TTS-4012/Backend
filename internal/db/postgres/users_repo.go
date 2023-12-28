@@ -69,6 +69,15 @@ func (a *AuthRepoImp) GetByID(ctx context.Context, userID int64) (structs.User, 
 	return user, err
 }
 
+func (a *AuthRepoImp) GetUsername(ctx context.Context, userID int64) (string, error) {
+	stmt := `
+	SELECT username FROM users WHERE id = $1 
+	`
+	var username string
+	err := a.conn.QueryRow(ctx, stmt, userID).Scan(&username)
+	return username, err
+}
+
 func (a *AuthRepoImp) GetByEmail(ctx context.Context, email string) (structs.User, error) {
 	stmt := `
 	SELECT id, username, password, email, is_verified FROM users WHERE email = $1 

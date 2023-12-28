@@ -3,6 +3,7 @@ package contests
 import (
 	"context"
 	"errors"
+	"github.com/ocontest/backend/internal/judge"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,20 +26,28 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
+	usersRepo          db.AuthRepo
 	problemsRepo       db.ProblemsMetadataRepo
 	submissionsRepo    db.SubmissionMetadataRepo
 	contestsRepo       db.ContestsMetadataRepo
 	contestProblemRepo db.ContestsProblemsRepo
+
+	judge judge.Judge
 }
 
 func NewContestsHandler(
 	contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo,
-	problemsRepo db.ProblemsMetadataRepo, submissionsRepo db.SubmissionMetadataRepo) ContestsHandler {
+	problemsRepo db.ProblemsMetadataRepo, submissionsRepo db.SubmissionMetadataRepo,
+	authRepo db.AuthRepo,
+	judge judge.Judge,
+) ContestsHandler {
 	return &ContestsHandlerImp{
 		problemsRepo:       problemsRepo,
 		submissionsRepo:    submissionsRepo,
 		contestsRepo:       contestsRepo,
 		contestProblemRepo: contestProblemRepo,
+		usersRepo:          authRepo,
+		judge:              judge,
 	}
 }
 
@@ -192,15 +201,64 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		status = http.StatusInternalServerError
 		return
 	}
-	// TODO: GetFinalAnswers
+
+	userStandings := make([]structs.ScoreboardUserStanding, 0)
+	userScores := make([]int, 0)
+	userIDtoStandingIndex := make(map[int64]int)
 	for _, p := range problems {
 		submissions, err := c.submissionsRepo.GetByProblem(ctx, p)
 		if err != nil {
 			logger.Error("error on get submissions: ", err)
 		}
 		pkg.Log.Debug(submissions)
+		for _, s := range submissions {
+			if _, exists := userIDtoStandingIndex[s.UserID]; !exists {
+				userIDtoStandingIndex[s.UserID] = len(userStandings)
+				username, err := c.usersRepo.GetUsername(ctx, s.UserID)
+				if err != nil {
+					logger.Error("error on get username: ", username)
+				}
+
+				userStandings = append(userStandings, structs.ScoreboardUserStanding{
+					UserID:      s.UserID,
+					Username:    username,
+					Submissions: make([]structs.ScoreboardCell, 0),
+				})
+			}
+
+			res, err := c.judge.GetResults(ctx, s.JudgeResultID)
+			if err != nil {
+				logger.Error("error on get judge result: ", err)
+			}
+			score := calcScore(res.TestResults)
+			var cell structs.ScoreboardCell
+			cell.ProblemID = p
+			cell.Score = score
+
+			userStandings[userIDtoStandingIndex[s.UserID]].Submissions = append(userStandings[userIDtoStandingIndex[s.UserID]].Submissions, cell)
+		}
 	}
-	// TODO: serialize them and return
+
+	for i := range userStandings {
+		sumScore := 0
+		for _, s := range userStandings[i].Submissions {
+			sumScore += s.Score
+		}
+		userScores[i] = sumScore
+	}
+
+	userStandings = assoaciateSort(userScores, userStandings)
+
+	if req.GetCount {
+		ans.Count = len(userStandings)
+	}
+	if req.Limit == -1 {
+		req.Limit = len(userStandings)
+	}
+	if req.Offset == -1 {
+		req.Offset = 0
+	}
+	ans.Users = userStandings[req.Offset:req.Limit]
 	status = http.StatusNotImplemented
 	return
 }
