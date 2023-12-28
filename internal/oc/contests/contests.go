@@ -25,12 +25,14 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
+	problemsRepo       db.ProblemsMetadataRepo
 	contestsRepo       db.ContestsMetadataRepo
 	contestProblemRepo db.ContestsProblemsRepo
 }
 
-func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo) ContestsHandler {
+func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo, problemsRepo db.ProblemsMetadataRepo) ContestsHandler {
 	return &ContestsHandlerImp{
+		problemsRepo:       problemsRepo,
 		contestsRepo:       contestsRepo,
 		contestProblemRepo: contestProblemRepo,
 	}
@@ -41,7 +43,6 @@ func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.Reque
 	contest := structs.Contest{
 		CreatedBy: ctx.Value("user_id").(int64),
 		Title:     req.Title,
-		Problems:  nil,
 		StartTime: req.StartTime,
 		Duration:  req.Duration,
 	}
@@ -72,10 +73,35 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		return structs.ResponseGetContest{}, status
 	}
 
+	problemIDs, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest problems from repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return structs.ResponseGetContest{}, status
+	}
+
+	problems := make([]structs.ContestProblem, len(problemIDs))
+	for i := 0; i < len(problemIDs); i++ {
+		title, err := c.problemsRepo.GetProblemTitle(ctx, problemIDs[i])
+		if err != nil {
+			logger.Error("error on get problem title: ", err)
+			status := http.StatusInternalServerError
+			if errors.Is(err, pkg.ErrNotFound) {
+				status = http.StatusNotFound
+			}
+			return structs.ResponseGetContest{}, status
+		}
+		problems[i].ID = problemIDs[i]
+		problems[i].Title = title
+	}
+
 	return structs.ResponseGetContest{
 		ContestID: contestID,
 		Title:     contest.Title,
-		Problems:  contest.Problems,
+		Problems:  problems,
 		StartTime: contest.StartTime,
 		Duration:  contest.Duration,
 	}, http.StatusOK
@@ -156,6 +182,7 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
 	// logger := pkg.Log.WithField("method", "get_contest_scoreboard")
 	// TODO: GetProblems
+	//problems, err := c.contestsRepo.GetContest()
 	// TODO: GetFinalAnswers
 	// TODO: serialize them and return
 	status = http.StatusNotImplemented
