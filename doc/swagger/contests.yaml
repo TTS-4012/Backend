@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: Ocontest Problems Api
+  description: |-
+    
+  version: 1.0.0
+servers:
+  - url: https://ocontest.ir/v1
+
+paths:
+  /contests/{contest_id}/scoreboard):
+    get:
+      summary: Get Contest scoreboard
+      parameters:
+        - in: path
+          name: contest_id
+          schema:
+              type: integer
+          required: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          required: false
+        - in: query
+          name: get_count
+          schema:
+            type: boolean
+          required: false
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 100
+                    description: number of all users in contest
+
+                  users:
+                    type: array
+                    description: list of users and their submissions
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 1
+                        username:
+                          type: string
+                          example: "Ali"
+                        submissions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              problem_id:
+                                type: integer
+                                example: 1
+                              score:
+                                type: integer
+                                example: 100
+
+
+
+
+
+        '403':
+          description: UnAuthorized
+        '503':
+          description: Internal Server Error

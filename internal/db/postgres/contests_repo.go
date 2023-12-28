@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
+	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -26,14 +28,6 @@ func (c *ContestsMetadataRepoImp) Migrate(ctx context.Context) error {
 		created_at TIMESTAMP DEFAULT NOW(),
 		CONSTRAINT fk_created_by_contest FOREIGN KEY(created_by) REFERENCES users(id)
 	);
-	
-	CREATE TABLE IF NOT EXISTS contest_problems (
-		contest_id int NOT NULL,
-		problem_id int NOT NULL,
-		CONSTRAINT pk_contest_problems PRIMARY KEY (contest_id, problem_id),
-		CONSTRAINT fk_contest FOREIGN KEY(contest_id) REFERENCES contests(id),
-		CONSTRAINT fk_problem FOREIGN KEY(problem_id) REFERENCES problems(id)
-	)
 	`
 
 	_, err := c.conn.Exec(ctx, stmt)
@@ -60,19 +54,6 @@ func (c *ContestsMetadataRepoImp) InsertContest(ctx context.Context, contest str
 		return 0, err
 	}
 
-	insertContestProblemsStmt := `
-		INSERT INTO contest_problems(
-			contest_id, problem_id) 
-		VALUES($1, $2)
-	`
-
-	for _, problem := range contest.Problems {
-		_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problem.ID)
-		if err != nil {
-			return 0, err
-		}
-	}
-
 	return contestID, nil
 }
 
@@ -90,47 +71,23 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 		return structs.Contest{}, err
 	}
 
-	selectContestProblemsStmt := `
-		SELECT problem_id FROM contest_problems WHERE contest_id = $1
-	`
-
-	rows, err := c.conn.Query(ctx, selectContestProblemsStmt, id)
-	if err != nil {
-		return structs.Contest{}, err
-	}
-	defer rows.Close()
-
-	problemsRespo, err := NewProblemsMetadataRepo(ctx, c.conn)
-	if err != nil {
-		return structs.Contest{}, err
-	}
-
-	for rows.Next() {
-		var problemID int64
-		err := rows.Scan(&problemID)
-		if err != nil {
-			return structs.Contest{}, err
-		}
-
-		problem, err := problemsRespo.GetProblem(ctx, problemID)
-		if err != nil {
-			return structs.Contest{}, err
-		}
-		contestProblem := structs.ContestProblem{
-			ID:    problemID,
-			Title: problem.Title,
-		}
-
-		contest.Problems = append(contest.Problems, contestProblem)
-	}
-
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error) {
 	stmt := `
-	SELECT id, created_by, title FROM contests ORDER BY id
+	SELECT id, created_by, title, start_time, duration FROM contests
 	`
+
+	now := time.Now().Unix()
+	if started {
+		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+	} else {
+		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	stmt += " ORDER BY id "
+
 	if descending {
 		stmt += " DESC"
 	}
@@ -153,7 +110,10 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 		err = rows.Scan(
 			&contest.ID,
 			&contest.CreatedBy,
-			&contest.Title)
+			&contest.Title,
+			&contest.StartTime,
+			&contest.Duration,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -173,15 +133,50 @@ func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) e
 	return err
 }
 
-func (c *ContestsMetadataRepoImp) AddProblem(ctx context.Context, contestID int64, problemID int64) error {
-	insertContestProblemsStmt := `
-		INSERT INTO contest_problems(
-			contest_id, problem_id) 
-		VALUES($1, $2)
+func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error) {
+	stmt := `
+	SELECT id, created_by, title, start_time, duration FROM contests JOIN contests_users ON contests_users.contest_id = contests.id WHERE contests_users.user_id = $1
 	`
-	_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problemID)
-	if err != nil {
-		return err
+
+	now := time.Now().Unix()
+	if started {
+		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+	} else {
+		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
 	}
-	return nil
+
+	stmt += " ORDER BY id "
+
+	if descending {
+		stmt += " DESC"
+	}
+	if limit != 0 {
+		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
+	}
+	if offset != 0 {
+		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
+	}
+
+	rows, err := c.conn.Query(ctx, stmt, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	ans := make([]structs.Contest, 0)
+	for rows.Next() {
+
+		var contest structs.Contest
+		err = rows.Scan(
+			&contest.ID,
+			&contest.CreatedBy,
+			&contest.Title,
+			&contest.StartTime,
+			&contest.Duration,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ans = append(ans, contest)
+	}
+	return ans, err
 }

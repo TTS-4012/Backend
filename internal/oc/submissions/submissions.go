@@ -131,7 +131,7 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 	}
 
 	testResultID := submission.JudgeResultID
-	judgeResult, err := s.judge.GetResults(ctx, testResultID)
+	judgeResult, err := s.judge.GetTestresults(ctx, testResultID)
 	if err != nil {
 		logger.Error("error on getting test results from judge: ", err)
 		status = http.StatusInternalServerError
@@ -154,6 +154,9 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 			message = "Failed, verdict: " + t.Verdict.String()
 		}
 		verdicts = append(verdicts, t.Verdict)
+	}
+	if len(verdicts) == 0 {
+		message = "There wasn't any test!"
 	}
 
 	return structs.ResponseGetSubmissionResults{
@@ -192,7 +195,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 		results := structs.ResponseGetSubmissionResults{}
 
 		testResultID := sub.JudgeResultID
-		judgeResult, err := s.judge.GetResults(ctx, testResultID)
+		judgeResult, err := s.judge.GetTestresults(ctx, testResultID)
 		if err != nil {
 			logger.Error("error on getting test results from judge: ", err)
 		}

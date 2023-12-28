@@ -1,11 +1,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/ocontest/backend/internal/oc/auth"
 	"github.com/ocontest/backend/internal/oc/contests"
 	"github.com/ocontest/backend/internal/oc/problems"
 	"github.com/ocontest/backend/internal/oc/submissions"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,24 +56,29 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 			problemGroup.GET("", h.ListProblems)
 			problemGroup.PUT("/:id", h.UpdateProblem)
 			problemGroup.DELETE("/:id", h.DeleteProblem)
+			problemGroup.POST("/:id/testcase", h.AddTestCase)
 		}
-		//contestGroup := v1.Group("/contests")
 		contestGroup := v1.Group("/contests", h.AuthMiddleware())
 		{
 			contestGroup.POST("", h.CreateContest)
-			contestGroup.GET("/:id", h.GetContest)
-			contestGroup.GET("", h.ListContests)
-			contestGroup.PUT("/:id", h.UpdateContest)
-			contestGroup.DELETE("/:id", h.DeleteContest)
 			contestGroup.POST("/add_problem", h.AddProblemContest)
+			contestGroup.GET("", h.ListContests)
+			contestGroup.GET("/:id", h.GetContest)
+			contestGroup.GET("/:id/scoreboard", h.GetContestScoreboard)
+			contestGroup.PUT("/:id", h.UpdateContest)
+			contestGroup.DELETE("/:contest_id", h.DeleteContest)
+			contestGroup.POST("/:contest_id/problems/:problem_id", h.AddProblemContest)
+			contestGroup.DELETE("/:contest_id/problems/:problem_id", h.RemoveProblemContest)
+			contestGroup.PATCH("/:contest_id", h.PatchContest)
 		}
+
 		submissionGroup := v1.Group("/submissions", h.AuthMiddleware())
 		{
 			submissionGroup.GET("/:id", h.GetSubmission)
 			submissionGroup.POST("/", h.Submit)
 			submissionGroup.GET("/:id/results", h.GetSubmissionResult)
 		}
-		v1.POST("/problems/:problem_id/submit", h.AuthMiddleware(), h.Submit)
+		v1.POST("/problems/:id/submit", h.AuthMiddleware(), h.Submit)
 		v1.GET("/problems/:id/submissions", h.AuthMiddleware(), h.ListSubmissions)
 		v1.GET("/problems/:id/submissions/all", h.AuthMiddleware(), h.ListAllSubmissions)
 	}

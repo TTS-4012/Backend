@@ -1,12 +1,14 @@
 package problems
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
 
 	"github.com/sirupsen/logrus"
 )
@@ -16,18 +18,24 @@ type ProblemsHandler interface {
 	GetProblem(ctx context.Context, problemID int64) (structs.ResponseGetProblem, int)
 	ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int)
 	DeleteProblem(ctx context.Context, problemId int64) int
+	AddTestcase(ctx context.Context, problemID int64, data []byte) int
 	UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int
 }
 
 type ProblemsHandlerImp struct {
 	problemMetadataRepo     db.ProblemsMetadataRepo
 	problemsDescriptionRepo db.ProblemDescriptionsRepo
+	testcaseRepo            db.TestCaseRepo
 }
 
-func NewProblemsHandler(problemsRepo db.ProblemsMetadataRepo, problemsDescriptionRepo db.ProblemDescriptionsRepo) ProblemsHandler {
+func NewProblemsHandler(
+	problemsRepo db.ProblemsMetadataRepo, problemsDescriptionRepo db.ProblemDescriptionsRepo,
+	testcaseRepo db.TestCaseRepo,
+) ProblemsHandler {
 	return &ProblemsHandlerImp{
 		problemMetadataRepo:     problemsRepo,
 		problemsDescriptionRepo: problemsDescriptionRepo,
+		testcaseRepo:            testcaseRepo,
 	}
 }
 
@@ -43,6 +51,7 @@ func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.Reque
 		Title:      req.Title,
 		DocumentID: docID,
 		CreatedBy:  ctx.Value("user_id").(int64),
+		IsPrivate:  req.IsPrivate,
 	}
 	ans.ProblemID, err = p.problemMetadataRepo.InsertProblem(ctx, problem)
 	if err != nil {
@@ -82,6 +91,7 @@ func (p ProblemsHandlerImp) GetProblem(ctx context.Context, problemID int64) (st
 		SolveCount:  problem.SolvedCount,
 		Hardness:    problem.Hardness,
 		Description: doc.Description,
+		IsOwned:     problem.CreatedBy == ctx.Value("user_id").(int64),
 	}, http.StatusOK
 }
 
@@ -173,4 +183,27 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 	}
 
 	return http.StatusAccepted
+}
+
+func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, data []byte) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "AddTestcase",
+		"module": "Problems",
+	})
+
+	testCases, err := unzip(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		logger.Error("error on unzip file: ", err)
+		return http.StatusInternalServerError
+	}
+
+	for _, t := range testCases {
+		t.ProblemID = problemID
+		_, err := p.testcaseRepo.Insert(ctx, t)
+		if err != nil {
+			logger.Error("error on insert testcase to db", err)
+			return http.StatusInternalServerError
+		}
+	}
+	return http.StatusOK
 }

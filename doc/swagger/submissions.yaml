@@ -7,7 +7,7 @@ info:
 servers:
   - url: https://ocontest.ir/v1
 
-path:
+paths:
   /problems/(problem_id)/submit:
     post:
       summary: Submit code for a problem
@@ -53,7 +53,7 @@ path:
           description: Internal Server Error
 
 
-  /submissions/(submission_id):
+  /submissions/{submission_id}:
     get:
       summary: Get submission code
       description: Download the file associated with a submission
@@ -62,7 +62,10 @@ path:
           name: Authorization
           type: string
           required: true
-
+        - in: path
+          name: submission_id
+          schema:
+            type: integer
 
       responses:
         '200':
@@ -81,7 +84,8 @@ path:
           description: Internal Server Error
 
 
-  /submissions/(submission_id)/results:
+
+  /submissions/{submission_id}/results:
     get:
       summary: Get submission results
       description: return judge results of a submission
@@ -90,6 +94,10 @@ path:
           name: Authorization
           type: string
           required: true
+        - in: path
+          name: submission_id
+          schema:
+            type: integer
 
 
       responses:

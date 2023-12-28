@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/internal/minio"
+	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/structs"
 
@@ -12,7 +13,8 @@ import (
 
 type Judge interface {
 	Dispatch(ctx context.Context, submissionID int64) (err error)
-	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
+	GetTestresults(ctx context.Context, id string) (structs.JudgeResponse, error)
+	GetScore(ctx context.Context, id string) (int, error)
 }
 
 type JudgeImp struct {
@@ -77,7 +79,8 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 		return errors.Wrap(err, "couldn't insert judge result to judge repo")
 	}
 
-	err = j.submissionMetadataRepo.AddJudgeResult(ctx, submissionID, docID)
+	//lastScore :=
+	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
 	}
@@ -85,6 +88,28 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	return nil
 }
 
-func (j JudgeImp) GetResults(ctx context.Context, id string) (structs.JudgeResponse, error) {
+func (j JudgeImp) GetTestresults(ctx context.Context, id string) (structs.JudgeResponse, error) {
 	return j.judgeRepo.GetResults(ctx, id)
+}
+
+func (j JudgeImp) GetScore(ctx context.Context, id string) (int, error) {
+	results, err := j.judgeRepo.GetResults(ctx, id)
+	if err != nil {
+		pkg.Log.Error("error on get score: ", err)
+		return 0, err
+	}
+
+	total := len(results.TestResults)
+	if total == 0 {
+		return 0, nil
+	}
+
+	correct := 0
+	for _, r := range results.TestResults {
+		if r.Verdict == structs.VerdictOK {
+			correct++
+		}
+	}
+
+	return 100 * correct / 100, nil
 }
