@@ -201,7 +201,7 @@ func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, da
 		t.ProblemID = problemID
 		_, err := p.testcaseRepo.Insert(ctx, t)
 		if err != nil {
-			logger.Error("error on insert testcase to db")
+			logger.Error("error on insert testcase to db", err)
 			return http.StatusInternalServerError
 		}
 	}

@@ -161,6 +161,7 @@ type RequestListContests struct {
 	Descending bool `json:"descending"`
 	Limit      int  `json:"limit"`
 	Offset     int  `json:"offset"`
+	MyContest  bool `json:"my_contest"`
 	Started    bool `json:"started"`
 }
 
@@ -174,6 +175,12 @@ type RequestAddProblemContest struct {
 	ProblemID int64 `json:"problem_Id"`
 }
 
+type RequestGetScoreboard struct {
+	ContestID int64
+	GetCount  bool
+	Limit     int
+	Offset    int
+}
 
 type RequestRemoveProblemContest struct {
 	ContestID int64 `json:"contest_Id"`

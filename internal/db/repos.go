@@ -6,11 +6,12 @@ import (
 	"github.com/ocontest/backend/pkg/structs"
 )
 
-type AuthRepo interface {
+type UsersRepo interface {
 	InsertUser(ctx context.Context, user structs.User) (int64, error)
 	VerifyUser(ctx context.Context, userID int64) error
 	GetByUsername(ctx context.Context, username string) (structs.User, error)
 	GetByID(ctx context.Context, userID int64) (structs.User, error)
+	GetUsername(ctx context.Context, userID int64) (string, error)
 	GetByEmail(ctx context.Context, email string) (structs.User, error)
 	UpdateUser(ctx context.Context, user structs.User) error
 }
@@ -28,6 +29,7 @@ type ContestsMetadataRepo interface {
 	InsertContest(ctx context.Context, contest structs.Contest) (int64, error)
 	GetContest(ctx context.Context, id int64) (structs.Contest, error)
 	ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error)
+	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error)
 	DeleteContest(ctx context.Context, id int64) error
 }
 
@@ -53,6 +55,7 @@ type TestCaseRepo interface {
 type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
+	GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error)
 	AddJudgeResult(ctx context.Context, submissionID int64, judgeResultID string) error
 	ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
 }
@@ -60,4 +63,9 @@ type SubmissionMetadataRepo interface {
 type JudgeRepo interface {
 	Insert(ctx context.Context, response structs.JudgeResponse) (string, error)
 	GetResults(ctx context.Context, id string) (structs.JudgeResponse, error)
+}
+
+type ContestsUsersRepo interface {
+	Add(ctx context.Context, contestID, userID int64) error
+	Delete(ctx context.Context, contestID, userID int64) error
 }

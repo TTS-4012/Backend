@@ -132,3 +132,51 @@ func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) e
 	}
 	return err
 }
+
+func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error) {
+	stmt := `
+	SELECT id, created_by, title, start_time, duration FROM contests JOIN contests_users ON contests_users.contest_id = contests.id WHERE contests_users.user_id = $1
+	`
+
+	now := time.Now().Unix()
+	if started {
+		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+	} else {
+		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	stmt += " ORDER BY id "
+
+	if descending {
+		stmt += " DESC"
+	}
+	if limit != 0 {
+		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
+	}
+	if offset != 0 {
+		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
+	}
+
+	rows, err := c.conn.Query(ctx, stmt, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	ans := make([]structs.Contest, 0)
+	for rows.Next() {
+
+		var contest structs.Contest
+		err = rows.Scan(
+			&contest.ID,
+			&contest.CreatedBy,
+			&contest.Title,
+			&contest.StartTime,
+			&contest.Duration,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ans = append(ans, contest)
+	}
+	return ans, err
+}

@@ -28,7 +28,7 @@ type AuthHandler interface {
 }
 
 type AuthHandlerImp struct {
-	authRepo   db.AuthRepo
+	authRepo   db.UsersRepo
 	jwtHandler jwt.TokenGenerator
 	smtpSender smtp.Sender
 	configs    *configs.OContestConf
@@ -37,7 +37,7 @@ type AuthHandlerImp struct {
 }
 
 func NewAuthHandler(
-	authRepo db.AuthRepo, jwtHandler jwt.TokenGenerator,
+	authRepo db.UsersRepo, jwtHandler jwt.TokenGenerator,
 	smtpSender smtp.Sender, config *configs.OContestConf,
 	aesHandler aes.AESHandler, otpStorage otp.OTPStorage) AuthHandler {
 	return &AuthHandlerImp{

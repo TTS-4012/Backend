@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/ocontest/backend/internal/db"
@@ -36,6 +36,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			judge_result_id varchar(70),
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
+			is_final boolean DEFAULT FALSE,
 			public boolean DEFAULT FALSE,
 			created_at TIMESTAMP DEFAULT NOW(),
 
@@ -69,18 +70,54 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, public, created_at FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, is_final, public, created_at FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	var t time.Time
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.Public, &t)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	ans.CreatedAT = t.Format(time.RFC3339)
 	return ans, err
+}
+
+func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error) {
+	stmt := `
+	SELECT 
+		id, problem_id, user_id, file_name, coalesce(judge_result_id, ''),
+			status, language, is_final, public, created_at 
+		FROM submissions WHERE problem_id = $1 and is_final = true
+	`
+
+	rows, err := s.conn.Query(ctx, stmt, problemID)
+
+	if err != nil {
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, pkg.ErrNotFound
+		}
+		return nil, errors.WithStack(err)
+
+	}
+
+	var t time.Time
+	ans := make([]structs.SubmissionMetadata, 0)
+	for rows.Next() {
+		var row structs.SubmissionMetadata
+		err = rows.Scan(&row.ID, &row.ProblemID, &row.UserID, &row.FileName, &row.JudgeResultID, &row.Status, &row.Language, &row.IsFinal, &row.Public, &t)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		row.CreatedAT = t.Format(time.RFC3339)
+
+		ans = append(ans, row)
+	}
+
+	return ans, nil
 }
 
 func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID string) error {

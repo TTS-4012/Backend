@@ -133,7 +133,12 @@ func RunServer() {
 
 	contestsProblemsRepo, err := postgres.NewContestsProblemsMetadataRepo(ctx, dbConn)
 	if err != nil {
-		log.Fatal("error on creating contest repo", err)
+		log.Fatal("error on creating contest problems repo: ", err)
+	}
+
+	contestsUsersRepo, err := postgres.NewContestsUsersRepo(ctx, dbConn)
+	if err != nil {
+		log.Fatal("error on creating contest users repo: ", err)
 	}
 
 	// initiating module handlers
@@ -144,7 +149,9 @@ func RunServer() {
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
-	contestHandler := contests.NewContestsHandler(contestRepo, contestsProblemsRepo, problemsMetadataRepo)
+	contestHandler := contests.NewContestsHandler(
+		contestRepo, contestsProblemsRepo, problemsMetadataRepo,
+		submissionsRepo, authRepo, contestsUsersRepo, judgeHandler)
 
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestHandler)
