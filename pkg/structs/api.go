@@ -174,6 +174,12 @@ type RequestAddProblemContest struct {
 	ProblemID int64 `json:"problem_Id"`
 }
 
+type RequestGetScoreboard struct {
+	ContestID int64
+	GetCount  bool
+	Limit     int
+	Offset    int
+}
 
 type RequestRemoveProblemContest struct {
 	ContestID int64 `json:"contest_Id"`

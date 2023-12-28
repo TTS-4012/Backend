@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 
@@ -123,7 +124,6 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 	c.Status(status)
 }
 
-
 func (h *handlers) RemoveProblemContest(c *gin.Context) {
 	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
 	if err != nil {
@@ -146,6 +146,7 @@ func (h *handlers) RemoveProblemContest(c *gin.Context) {
 }
 
 func (h *handlers) GetContestScoreboard(c *gin.Context) {
+	logger := logrus.WithField("handler", "GetContestScoreboard")
 	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -154,7 +155,29 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.contestsHandler.GetContestScoreboard(c, contestID)
+	var reqData structs.RequestGetScoreboard
+	reqData.ContestID = contestID
+
+	reqData.GetCount = c.Query("get_count") == "true"
+
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+	var errLimit, errOffset error
+	if limitStr != "" {
+		reqData.Limit, errLimit = strconv.Atoi(limitStr)
+	}
+	if offsetStr != "" {
+		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
+	}
+	if errLimit != nil || errOffset != nil {
+		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid limit or offset, limit and offset should be integers",
+		})
+		return
+	}
+
+	resp, status := h.contestsHandler.GetContestScoreboard(c, reqData)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {

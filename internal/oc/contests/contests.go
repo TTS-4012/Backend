@@ -16,7 +16,7 @@ type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
 	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
 	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
-	GetContestScoreboard(ctx context.Context, contestID int64) (structs.ResponseGetContestScoreboard, int)
+	GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest()
 	DeleteContest()
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int)
@@ -26,13 +26,17 @@ type ContestsHandler interface {
 
 type ContestsHandlerImp struct {
 	problemsRepo       db.ProblemsMetadataRepo
+	submissionsRepo    db.SubmissionMetadataRepo
 	contestsRepo       db.ContestsMetadataRepo
 	contestProblemRepo db.ContestsProblemsRepo
 }
 
-func NewContestsHandler(contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo, problemsRepo db.ProblemsMetadataRepo) ContestsHandler {
+func NewContestsHandler(
+	contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo,
+	problemsRepo db.ProblemsMetadataRepo, submissionsRepo db.SubmissionMetadataRepo) ContestsHandler {
 	return &ContestsHandlerImp{
 		problemsRepo:       problemsRepo,
+		submissionsRepo:    submissionsRepo,
 		contestsRepo:       contestsRepo,
 		contestProblemRepo: contestProblemRepo,
 	}
@@ -179,16 +183,23 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 	return
 }
 
-func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, contestID int64) (ans structs.ResponseGetContestScoreboard, status int) {
-	//logger := pkg.Log.WithField("method", "get_contest_scoreboard")
-	// TODO: GetProblems
-	//problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
-	//if err != nil {
-	//	logger.Error("error on get problems from ContestProblem repo: ", err)
-	//	status = http.StatusInternalServerError
-	//	return
-	//}
+// GetContestScoreboard TODO: when I have time I should do it in a way like I care a shit about pagination performance
+func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (ans structs.ResponseGetContestScoreboard, status int) {
+	logger := pkg.Log.WithField("method", "get_contest_scoreboard")
+	problems, err := c.contestProblemRepo.GetContestProblems(ctx, req.ContestID)
+	if err != nil {
+		logger.Error("error on get problems from ContestProblem repo: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
 	// TODO: GetFinalAnswers
+	for _, p := range problems {
+		submissions, err := c.submissionsRepo.GetByProblem(ctx, p)
+		if err != nil {
+			logger.Error("error on get submissions: ", err)
+		}
+		pkg.Log.Debug(submissions)
+	}
 	// TODO: serialize them and return
 	status = http.StatusNotImplemented
 	return

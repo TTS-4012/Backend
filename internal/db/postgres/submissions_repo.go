@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/ocontest/backend/internal/db"
@@ -84,29 +84,40 @@ func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.Submissi
 	return ans, err
 }
 
-func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64, justFinal bool) (structs.SubmissionMetadata, error) {
+func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error) {
 	stmt := `
 	SELECT 
 		id, problem_id, user_id, file_name, coalesce(judge_result_id, ''),
 			status, language, is_final, public, created_at 
-		FROM submissions WHERE problem_id = $1
+		FROM submissions WHERE problem_id = $1 and is_final = true
 	`
 
-	if justFinal {
-		stmt += " and is_final = true"
-	}
+	rows, err := s.conn.Query(ctx, stmt, problemID)
 
-	var ans structs.SubmissionMetadata
+	if err != nil {
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, pkg.ErrNotFound
+		}
+		return nil, errors.WithStack(err)
+
+	}
 
 	var t time.Time
-	err := s.conn.QueryRow(ctx, stmt, problemID).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	ans := make([]structs.SubmissionMetadata, 0)
+	for rows.Next() {
+		var row structs.SubmissionMetadata
+		err = rows.Scan(&row.ID, &row.ProblemID, &row.UserID, &row.FileName, &row.JudgeResultID, &row.Status, &row.Language, &row.IsFinal, &row.Public, &t)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 
-	if errors.Is(err, pgx.ErrNoRows) {
-		err = pkg.ErrNotFound
+		row.CreatedAT = t.Format(time.RFC3339)
+
+		ans = append(ans, row)
 	}
-	ans.CreatedAT = t.Format(time.RFC3339)
-	return ans, err
+
+	return ans, nil
 }
 
 func (s *SubmissionRepoImp) AddJudgeResult(ctx context.Context, id int64, docID string) error {
