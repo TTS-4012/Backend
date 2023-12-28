@@ -259,6 +259,6 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		req.Offset = 0
 	}
 	ans.Users = userStandings[req.Offset:req.Limit]
-	status = http.StatusNotImplemented
+	status = http.StatusOK
 	return
 }
