@@ -18,6 +18,7 @@ type AuthRepo interface {
 type ProblemsMetadataRepo interface {
 	InsertProblem(ctx context.Context, problem structs.Problem) (int64, error)
 	GetProblem(ctx context.Context, id int64) (structs.Problem, error)
+	GetProblemTitle(ctx context.Context, id int64) (string, error)
 	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error)
 	UpdateProblem(ctx context.Context, id int64, title string) error
 	DeleteProblem(ctx context.Context, id int64) (string, error)

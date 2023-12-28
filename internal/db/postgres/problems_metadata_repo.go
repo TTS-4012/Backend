@@ -77,6 +77,18 @@ func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (str
 	return problem, err
 }
 
+func (a *ProblemsMetadataRepoImp) GetProblemTitle(ctx context.Context, id int64) (string, error) {
+	stmt := `
+	SELECT title FROM problems WHERE id = $1
+	`
+	var ans string
+	err := a.conn.QueryRow(ctx, stmt, id).Scan(&ans)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return ans, err
+}
+
 func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error) {
 	stmt := `
 	SELECT id, created_by, title, document_id, solve_count, COALESCE(hardness, -1)

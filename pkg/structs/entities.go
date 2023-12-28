@@ -74,5 +74,4 @@ type Contest struct {
 	Title     string
 	StartTime int64
 	Duration  int
-	Problems  []ContestProblem
 }
