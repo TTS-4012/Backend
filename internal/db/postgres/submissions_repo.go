@@ -36,6 +36,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			judge_result_id varchar(70),
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
+			is_final boolean DEFAULT FALSE,
 			public boolean DEFAULT FALSE,
 			created_at TIMESTAMP DEFAULT NOW(),
 
@@ -69,12 +70,37 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, public, created_at FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, is_final, public, created_at FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	var t time.Time
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.Public, &t)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	ans.CreatedAT = t.Format(time.RFC3339)
+	return ans, err
+}
+
+func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64, justFinal bool) (structs.SubmissionMetadata, error) {
+	stmt := `
+	SELECT 
+		id, problem_id, user_id, file_name, coalesce(judge_result_id, ''),
+			status, language, is_final, public, created_at 
+		FROM submissions WHERE problem_id = $1
+	`
+
+	if justFinal {
+		stmt += " and is_final = true"
+	}
+
+	var ans structs.SubmissionMetadata
+
+	var t time.Time
+	err := s.conn.QueryRow(ctx, stmt, problemID).Scan(
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
