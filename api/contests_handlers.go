@@ -186,3 +186,18 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 		c.Status(status)
 	}
 }
+
+func (h *handlers) PatchContest(c *gin.Context) {
+	action := c.Query("action")
+
+	switch action {
+	case "register":
+		c.Status(http.StatusNotImplemented)
+	case "unregister":
+		c.Status(http.StatusNotImplemented)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "action " + action + " not defined",
+		})
+	}
+}
