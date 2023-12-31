@@ -31,6 +31,9 @@ paths:
                 descriptions:
                   type: string
                   example: "This is a hard problem, you should print \"Hello \"World "
+                hardness:
+                  type: int
+                  example: 1000
             # since schema is not unique, can't provide it.
 
       responses:
