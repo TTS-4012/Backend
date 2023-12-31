@@ -50,6 +50,7 @@ type RequestCreateProblem struct {
 	Description string `json:"description"`
 	ContestID   int64  `json:"contest_id"`
 	IsPrivate   bool
+	Hardness    int64 `json:"hardness"`
 }
 
 type ResponseCreateProblem struct {
