@@ -40,6 +40,9 @@ jobs:
         with:
           mongodb-version: 7
 
+      - name: fix go module
+        run: ./scripts/fix_go_module
+
       # Runs go fmt
       - name: formatting
         run: go fmt ./...
