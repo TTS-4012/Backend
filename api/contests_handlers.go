@@ -102,7 +102,19 @@ func (h *handlers) UpdateContest(c *gin.Context) {
 }
 
 func (h *handlers) DeleteContest(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "deleteContest")
+
+	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	status := h.contestsHandler.DeleteContest(c, contestID)
+	c.Status(status)
 }
 
 func (h *handlers) AddProblemContest(c *gin.Context) {
