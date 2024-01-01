@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
@@ -56,11 +57,11 @@ func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem str
 
 	stmt := `
 	INSERT INTO problems(
-		created_by, title, document_id, is_private) 
-		VALUES($1, $2, $3, $4) RETURNING id
+		created_by, title, document_id, hardness, is_private) 
+		VALUES($1, $2, $3, $4, $5) RETURNING id
 	`
 	var id int64
-	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID, problem.IsPrivate).Scan(&id)
+	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID, problem.Hardness, problem.IsPrivate).Scan(&id)
 	return id, err
 }
 

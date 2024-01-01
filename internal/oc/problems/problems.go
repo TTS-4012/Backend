@@ -52,6 +52,7 @@ func (p ProblemsHandlerImp) CreateProblem(ctx context.Context, req structs.Reque
 		DocumentID: docID,
 		CreatedBy:  ctx.Value("user_id").(int64),
 		IsPrivate:  req.IsPrivate,
+		Hardness:   req.Hardness,
 	}
 	ans.ProblemID, err = p.problemMetadataRepo.InsertProblem(ctx, problem)
 	if err != nil {
