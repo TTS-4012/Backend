@@ -40,10 +40,5 @@ jobs:
         with:
           mongodb-version: 7
 
-      # Runs go fmt
-      - name: formatting
-        run: go fmt ./...
-
-      # Runs tests
-      - name: test
-        run: go test ./...
+      - name: running tests...
+        run: ./scripts/run_tests
