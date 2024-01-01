@@ -124,7 +124,7 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 
 func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "DeleteProblem",
+		"method": "UpdateProblem",
 		"module": "Problems",
 	})
 

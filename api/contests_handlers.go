@@ -98,7 +98,28 @@ func (h *handlers) ListContests(c *gin.Context) {
 }
 
 func (h *handlers) UpdateContest(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "updateContest")
+
+	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	var reqData structs.RequestUpdateContest
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		logger.Warn("Failed to read request body", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": pkg.ErrBadRequest.Error(),
+		})
+		return
+	}
+
+	status := h.contestsHandler.UpdateContest(c, contestID, reqData)
+	c.Status(status)
 }
 
 func (h *handlers) DeleteContest(c *gin.Context) {
