@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
@@ -188,16 +189,33 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 }
 
 func (h *handlers) PatchContest(c *gin.Context) {
+	logger := logrus.WithField("handler", "PatchContest")
+
+	contestID, err := strconv.ParseInt(c.Param("contest_id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting contest_id from request: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid contest id, id should be an integer",
+		})
+		return
+	}
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
 	action := c.Query("action")
 
-	userID := c.Value("user_id").(int64)
-	contestID := c.Value("user_id").(int64)
-	pkg.Log.Debug(userID, contestID)
 	switch action {
 	case "register":
-		c.Status(h.contestsHandler.RegisterUser(c, contestID, userID))
+		c.Status(h.contestsHandler.RegisterUser(c, contestID, userID.(int64)))
 	case "unregister":
-		c.Status(h.contestsHandler.UnregisterUser(c, contestID, userID))
+		c.Status(h.contestsHandler.UnregisterUser(c, contestID, userID.(int64)))
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "action " + action + " not defined",
