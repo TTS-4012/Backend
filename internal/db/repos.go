@@ -68,4 +68,5 @@ type JudgeRepo interface {
 type ContestsUsersRepo interface {
 	Add(ctx context.Context, contestID, userID int64) error
 	Delete(ctx context.Context, contestID, userID int64) error
+	IsRegistered(ctx context.Context, contestID, userID int64) (bool, error)
 }

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
@@ -58,4 +59,20 @@ func (c *ContestsUsersRepoImp) Delete(ctx context.Context, contestID, userID int
 		err = pkg.ErrNotFound
 	}
 	return err
+}
+
+func (c *ContestsUsersRepoImp) IsRegistered(ctx context.Context, contestID, userID int64) (bool, error) {
+	stmt := `
+	SELECT contest_id, user_id FROM contests_users
+	WHERE contest_id = $1 AND user_id = $2
+	`
+	_, err := c.conn.Exec(ctx, stmt, contestID, userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
