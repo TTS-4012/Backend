@@ -63,16 +63,14 @@ func (c *ContestsUsersRepoImp) Delete(ctx context.Context, contestID, userID int
 
 func (c *ContestsUsersRepoImp) IsRegistered(ctx context.Context, contestID, userID int64) (bool, error) {
 	stmt := `
-	SELECT contest_id, user_id FROM contests_users
-	WHERE contest_id = $1 AND user_id = $2
+	SELECT EXISTS (SELECT 1 FROM contests_users WHERE contest_id = $1 AND user_id = $2)	
 	`
-	_, err := c.conn.Exec(ctx, stmt, contestID, userID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
-	}
+
+	var exists bool
+	err := c.conn.QueryRow(ctx, stmt, contestID, userID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
 
-	return true, nil
+	return exists, nil
 }
