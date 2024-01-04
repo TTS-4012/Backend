@@ -26,6 +26,7 @@ type ContestsHandler interface {
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
 	RegisterUser(ctx context.Context, contestID, userID int64) int
 	UnregisterUser(ctx context.Context, contestID, userID int64) int
+	IsContestOwner(ctx context.Context, contestID, userID int64) (bool, error)
 }
 
 type ContestsHandlerImp struct {
@@ -287,4 +288,18 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 	ans.Users = userStandings[req.Offset:req.Limit]
 	status = http.StatusOK
 	return
+}
+
+func (c ContestsHandlerImp) IsContestOwner(ctx context.Context, contestID, userID int64) (bool, error) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "IsContestOwner",
+		"module": "Contests",
+	})
+
+	contest, err := c.contestsRepo.GetContest(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest from repo: ", err)
+		return false, err
+	}
+	return (contest.CreatedBy == userID), nil
 }
