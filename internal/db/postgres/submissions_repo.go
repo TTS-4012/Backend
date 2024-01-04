@@ -121,6 +121,21 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 	return ans, nil
 }
 
+func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, problemID int64) (structs.SubmissionMetadata, error) {
+	stmt := `
+	SELECT 
+		id, problem_id, user_id, file_name, score, coalesce(judge_result_id, ''),
+			status, language, is_final, public, created_at 
+		FROM submissions WHERE user_id = $1 and problem_id = $2 and is_final = true
+	`
+
+	var ans structs.SubmissionMetadata
+	var t time.Time
+	err := s.conn.QueryRow(ctx, stmt, userID, problemID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	ans.CreatedAT = t.Format(time.RFC3339)
+	return ans, err
+}
+
 // UpdateJudgeResults will add judge_result_id, update status, and change is final
 func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int) error {
 	stmt := `
