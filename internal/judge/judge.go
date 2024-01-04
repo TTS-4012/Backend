@@ -13,7 +13,7 @@ import (
 
 type Judge interface {
 	Dispatch(ctx context.Context, submissionID int64) (err error)
-	GetTestresults(ctx context.Context, id string) (structs.JudgeResponse, error)
+	GetTestResults(ctx context.Context, id string) (structs.JudgeResponse, error)
 	GetScore(ctx context.Context, id string) (int, error)
 }
 
@@ -88,7 +88,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	return nil
 }
 
-func (j JudgeImp) GetTestresults(ctx context.Context, id string) (structs.JudgeResponse, error) {
+func (j JudgeImp) GetTestResults(ctx context.Context, id string) (structs.JudgeResponse, error) {
 	return j.judgeRepo.GetResults(ctx, id)
 }
 
