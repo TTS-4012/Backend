@@ -34,6 +34,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			user_id bigint not null ,
 			file_name varchar(50),
 			judge_result_id varchar(70),
+			score int,
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
 			is_final boolean DEFAULT FALSE,
@@ -121,7 +122,7 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 }
 
 // UpdateJudgeResults will add judge_result_id, update status, and change is final
-func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string) error {
+func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int) error {
 	stmt := `
 	UPDATE submissions SET is_final = false WHERE problem_id = $1 and user_id = $2 
 	`
@@ -129,10 +130,11 @@ func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, u
 	if err != nil {
 		return err
 	}
+
 	stmt = `
-	UPDATE submissions SET status='processed', judge_result_id = $1, is_final = true where id = $2
+	UPDATE submissions SET status='processed', score=$1 judge_result_id = $2, is_final = true where id = $3
 	`
-	_, err = s.conn.Exec(ctx, stmt, docID, submissionID)
+	_, err = s.conn.Exec(ctx, stmt, score, docID, submissionID)
 	return err
 }
 

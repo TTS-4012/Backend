@@ -80,7 +80,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 	}
 
 	//lastScore :=
-	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID)
+	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID, j.CalcScore(resp.TestResults))
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
 	}
@@ -92,24 +92,28 @@ func (j JudgeImp) GetTestresults(ctx context.Context, id string) (structs.JudgeR
 	return j.judgeRepo.GetResults(ctx, id)
 }
 
+func (j JudgeImp) CalcScore(t []structs.TestResult) int {
+	total := len(t)
+	if total == 0 {
+		return 0
+	}
+
+	correct := 0
+	for _, r := range t {
+		if r.Verdict == structs.VerdictOK {
+			correct++
+		}
+	}
+
+	return 100 * correct / 100
+}
+
 func (j JudgeImp) GetScore(ctx context.Context, id string) (int, error) {
 	results, err := j.judgeRepo.GetResults(ctx, id)
 	if err != nil {
 		pkg.Log.Error("error on get score: ", err)
 		return 0, err
 	}
+	return j.CalcScore(results.TestResults), nil
 
-	total := len(results.TestResults)
-	if total == 0 {
-		return 0, nil
-	}
-
-	correct := 0
-	for _, r := range results.TestResults {
-		if r.Verdict == structs.VerdictOK {
-			correct++
-		}
-	}
-
-	return 100 * correct / 100, nil
 }
