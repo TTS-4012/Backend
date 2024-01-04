@@ -125,6 +125,28 @@ func (h *handlers) AddProblemContest(c *gin.Context) {
 		return
 	}
 
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	isOwner, err := h.contestsHandler.IsContestOwner(c, contestID, userID.(int64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	if !isOwner {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "user is not authorized to modify the contest",
+		})
+		return
+	}
+
 	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -142,6 +164,28 @@ func (h *handlers) RemoveProblemContest(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid contest id, id should be an integer",
+		})
+		return
+	}
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	isOwner, err := h.contestsHandler.IsContestOwner(c, contestID, userID.(int64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	if !isOwner {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "user is not authorized to modify the contest",
 		})
 		return
 	}
