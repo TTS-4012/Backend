@@ -3,8 +3,9 @@ package contests
 import (
 	"context"
 	"errors"
-	"github.com/ocontest/backend/internal/judge"
 	"net/http"
+
+	"github.com/ocontest/backend/internal/judge"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/internal/db"
@@ -132,7 +133,7 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 	var contests []structs.Contest
 	var err error
 	if req.MyContest {
-		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, ctx.Value("user_id").(int64))
+		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID)
 	} else {
 		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
 	}
@@ -143,9 +144,25 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 
 	res := make([]structs.ResponseListContestsItem, 0)
 	for _, contest := range contests {
+		var status structs.RegistrationStatus
+		if !req.MyContest {
+			if contest.CreatedBy == req.UserID {
+				status = structs.Owner
+			} else {
+				// TODO: change it so it doesn't generate another request PER CONTEST, error handling
+				r, _ := c.contestsUsersRepo.IsRegistered(ctx, contest.ID, req.UserID)
+				if r {
+					status = structs.Registered
+				} else {
+					status = structs.NonRegistered
+				}
+			}
+		}
+
 		res = append(res, structs.ResponseListContestsItem{
-			ContestID: contest.ID,
-			Title:     contest.Title,
+			ContestID:      contest.ID,
+			Title:          contest.Title,
+			RegisterStatus: status,
 		})
 	}
 	return res, http.StatusOK

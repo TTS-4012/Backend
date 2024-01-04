@@ -67,6 +67,16 @@ func (h *handlers) ListContests(c *gin.Context) {
 
 	var reqData structs.RequestListContests
 
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	reqData.UserID = userID.(int64)
+
 	reqData.Descending = c.Query("descending") == "true"
 	reqData.Started = c.Query("started") == "true"
 

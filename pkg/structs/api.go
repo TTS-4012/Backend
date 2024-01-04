@@ -159,16 +159,18 @@ type ResponseGetContest struct {
 }
 
 type RequestListContests struct {
-	Descending bool `json:"descending"`
-	Limit      int  `json:"limit"`
-	Offset     int  `json:"offset"`
-	MyContest  bool `json:"my_contest"`
-	Started    bool `json:"started"`
+	UserID     int64 `json:"user_id"`
+	Descending bool  `json:"descending"`
+	Limit      int   `json:"limit"`
+	Offset     int   `json:"offset"`
+	MyContest  bool  `json:"my_contest"`
+	Started    bool  `json:"started"`
 }
 
 type ResponseListContestsItem struct {
-	ContestID int64  `json:"contest_Id"`
-	Title     string `json:"title"`
+	ContestID      int64              `json:"contest_Id"`
+	Title          string             `json:"title"`
+	RegisterStatus RegistrationStatus `json:"register_status,omitempty"`
 }
 
 type RequestAddProblemContest struct {
