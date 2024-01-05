@@ -124,9 +124,22 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 
 func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int {
 	logger := pkg.Log.WithFields(logrus.Fields{
-		"method": "DeleteProblem",
+		"method": "UpdateProblem",
 		"module": "Problems",
 	})
+
+	problem, err := p.problemMetadataRepo.GetProblem(ctx, req.Id)
+	if err != nil {
+		logger.Error("error on getting problem from problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+	if problem.CreatedBy != ctx.Value("user_id").(int64) {
+		return http.StatusForbidden
+	}
 
 	if req.Title != "" {
 		err := p.problemMetadataRepo.UpdateProblem(ctx, req.Id, req.Title)
@@ -166,6 +179,19 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 		"method": "DeleteProblem",
 		"module": "Problems",
 	})
+
+	problem, err := p.problemMetadataRepo.GetProblem(ctx, problemID)
+	if err != nil {
+		logger.Error("error on getting problem from problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+	if problem.CreatedBy != ctx.Value("user_id").(int64) {
+		return http.StatusForbidden
+	}
 
 	documentID, err := p.problemMetadataRepo.DeleteProblem(ctx, problemID)
 	if err != nil {

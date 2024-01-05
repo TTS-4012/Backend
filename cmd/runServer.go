@@ -142,7 +142,7 @@ func RunServer() {
 	}
 
 	// initiating module handlers
-	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, judgeRepo)
+	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, contestsUsersRepo, judgeRepo)
 	if err != nil {
 		log.Fatal("error on creating judge handler", err)
 	}

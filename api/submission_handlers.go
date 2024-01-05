@@ -45,9 +45,24 @@ func (h *handlers) Submit(c *gin.Context) {
 		return
 	}
 
+	var contestID int64
+	contestIDStr := c.Query("contest_id")
+	if contestIDStr == "" {
+		contestID = -1
+	} else {
+		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "coudn't get contestID",
+			})
+		}
+	}
+
 	reqData := structs.RequestSubmit{
 		UserID:      userID.(int64),
 		ProblemID:   problemID,
+		ContestID:   contestID,
 		Code:        buffer,
 		FileName:    file_name,
 		ContentType: c.GetHeader("Content-Type"),

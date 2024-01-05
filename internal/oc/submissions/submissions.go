@@ -63,7 +63,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 	}
 
 	go func() {
-		err = s.judge.Dispatch(context.Background(), submissionID) // ctx must not be passed to judge, because deadlines are different
+		err = s.judge.Dispatch(context.Background(), submissionID, request.ContestID) // ctx must not be passed to judge, because deadlines are different
 		if err != nil {
 			logger.Error("error on dispatching judge: ", err)
 			return
@@ -131,7 +131,7 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 	}
 
 	testResultID := submission.JudgeResultID
-	judgeResult, err := s.judge.GetTestresults(ctx, testResultID)
+	judgeResult, err := s.judge.GetTestResults(ctx, testResultID)
 	if err != nil {
 		logger.Error("error on getting test results from judge: ", err)
 		status = http.StatusInternalServerError
@@ -195,7 +195,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 		results := structs.ResponseGetSubmissionResults{}
 
 		testResultID := sub.JudgeResultID
-		judgeResult, err := s.judge.GetTestresults(ctx, testResultID)
+		judgeResult, err := s.judge.GetTestResults(ctx, testResultID)
 		if err != nil {
 			logger.Error("error on getting test results from judge: ", err)
 		}

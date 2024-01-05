@@ -150,6 +150,51 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 	return ans, total_count, err
 }
 
+func (c *ContestsMetadataRepoImp) UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error {
+	existCheckingStmnt := `SELECT id FROM contests WHERE id = $1`
+	if err := c.conn.QueryRow(ctx, existCheckingStmnt, id).Scan(&id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = pkg.ErrNotFound
+		}
+		return err
+	}
+
+	if newContest.Title != "" {
+
+		stmt := `
+			UPDATE contests SET title = $1
+			WHERE id = $2
+			RETURNING id;
+		`
+		_, err := c.conn.Exec(ctx, stmt, newContest.Title, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	if newContest.StartTime != 0 {
+		stmt := `
+		UPDATE contests SET start_time = $1 WHERE id = $2
+		`
+		_, err := c.conn.Exec(ctx, stmt, newContest.StartTime, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	if newContest.Duration != 0 {
+		stmt := `
+		UPDATE contests SET duration = $1 WHERE id = $2
+		`
+		_, err := c.conn.Exec(ctx, stmt, newContest.Duration, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) error {
 	stmt := `
 	DELETE FROM contests WHERE id = $1

@@ -96,6 +96,7 @@ type RequestUpdateProblem struct {
 type RequestSubmit struct {
 	UserID      int64
 	ProblemID   int64
+	ContestID   int64
 	Code        []byte
 	FileName    string
 	ContentType string
@@ -170,6 +171,12 @@ type RequestListContests struct {
 	GetCount     bool  `json:"get_count"`
 }
 
+type RequestUpdateContest struct {
+	Title     string `json:"title"`
+	StartTime int64  `json:"start_time"`
+	Duration  int    `json:"duration"`
+}
+
 type ResponseListContestsItem struct {
 	ContestID      int64              `json:"contest_Id"`
 	Title          string             `json:"title"`
@@ -198,17 +205,18 @@ type RequestRemoveProblemContest struct {
 	ProblemID int64 `json:"problem_Id"`
 }
 
-type ScoreboardCell struct {
-	ProblemID int64 `json:"problem_id"`
-	Score     int   `json:"score"`
+type ScoreboardProblem struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
 }
 
 type ScoreboardUserStanding struct {
-	UserID      int64            `json:"user_id"`
-	Username    string           `json:"user_name"`
-	Submissions []ScoreboardCell `json:"submissions"`
+	UserID   int64  `json:"user_id"`
+	Username string `json:"user_name"`
+	Scores   []int  `json:"scores"`
 }
 type ResponseGetContestScoreboard struct {
-	Count int                      `json:"count,omitempty"`
-	Users []ScoreboardUserStanding `json:"users"`
+	Count    int                      `json:"count,omitempty"`
+	Users    []ScoreboardUserStanding `json:"users"`
+	Problems []ScoreboardProblem      `json:"problems"`
 }

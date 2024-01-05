@@ -34,6 +34,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			user_id bigint not null ,
 			file_name varchar(50),
 			judge_result_id varchar(70),
+			score int,
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
 			is_final boolean DEFAULT FALSE,
@@ -70,12 +71,12 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, coalesce(judge_result_id, ''), status, language, is_final, public, created_at FROM submissions WHERE id = $1
+	SELECT id, problem_id, user_id, file_name, score, coalesce(judge_result_id, ''), status, language, is_final, public, created_at FROM submissions WHERE id = $1
 	`
 	var ans structs.SubmissionMetadata
 	var t time.Time
 	err := s.conn.QueryRow(ctx, stmt, id).Scan(
-		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+		&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
@@ -87,7 +88,7 @@ func (s *SubmissionRepoImp) Get(ctx context.Context, id int64) (structs.Submissi
 func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error) {
 	stmt := `
 	SELECT 
-		id, problem_id, user_id, file_name, coalesce(judge_result_id, ''),
+		id, problem_id, user_id, file_name, score, coalesce(judge_result_id, ''),
 			status, language, is_final, public, created_at 
 		FROM submissions WHERE problem_id = $1 and is_final = true
 	`
@@ -107,7 +108,7 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 	ans := make([]structs.SubmissionMetadata, 0)
 	for rows.Next() {
 		var row structs.SubmissionMetadata
-		err = rows.Scan(&row.ID, &row.ProblemID, &row.UserID, &row.FileName, &row.JudgeResultID, &row.Status, &row.Language, &row.IsFinal, &row.Public, &t)
+		err = rows.Scan(&row.ID, &row.ProblemID, &row.UserID, &row.FileName, &row.Score, &row.JudgeResultID, &row.Status, &row.Language, &row.IsFinal, &row.Public, &t)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -120,25 +121,48 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 	return ans, nil
 }
 
+func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, problemID int64) (structs.SubmissionMetadata, error) {
+	stmt := `
+	SELECT 
+		id, problem_id, user_id, file_name, score, coalesce(judge_result_id, ''),
+			status, language, is_final, public, created_at 
+		FROM submissions WHERE user_id = $1 and problem_id = $2 and is_final = true
+	`
+
+	var ans structs.SubmissionMetadata
+	var t time.Time
+	err := s.conn.QueryRow(ctx, stmt, userID, problemID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	ans.CreatedAT = t.Format(time.RFC3339)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ans, pkg.ErrNotFound
+	}
+	return ans, err
+}
+
 // UpdateJudgeResults will add judge_result_id, update status, and change is final
-func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string) error {
+func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int, isFinal bool) error {
+
 	stmt := `
 	UPDATE submissions SET is_final = false WHERE problem_id = $1 and user_id = $2 
 	`
-	_, err := s.conn.Exec(ctx, stmt, problemID, userID)
-	if err != nil {
-		return err
+	var err error
+	if isFinal {
+		_, err = s.conn.Exec(ctx, stmt, problemID, userID)
+		if err != nil {
+			return err
+		}
 	}
+
 	stmt = `
-	UPDATE submissions SET status='processed', judge_result_id = $1, is_final = true where id = $2
+	UPDATE submissions SET status='processed', score=$1 judge_result_id = $2, is_final = $3 where id = $4
 	`
-	_, err = s.conn.Exec(ctx, stmt, docID, submissionID)
+	_, err = s.conn.Exec(ctx, stmt, score, docID, isFinal, submissionID)
 	return err
 }
 
 func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, judge_result_id, status, language, public, created_at
+	SELECT id, problem_id, user_id, file_name, score, judge_result_id, status, language, public, created_at
 	`
 	if getCount {
 		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
@@ -178,9 +202,9 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 		var submission structs.SubmissionMetadata
 		var t time.Time
 		if getCount {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
 		} else {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
 		}
 		if err != nil {
 			return nil, 0, err
