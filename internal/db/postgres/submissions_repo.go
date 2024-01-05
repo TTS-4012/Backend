@@ -133,6 +133,9 @@ func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, prob
 	var t time.Time
 	err := s.conn.QueryRow(ctx, stmt, userID, problemID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
 	ans.CreatedAT = t.Format(time.RFC3339)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ans, pkg.ErrNotFound
+	}
 	return ans, err
 }
 

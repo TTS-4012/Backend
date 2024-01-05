@@ -60,32 +60,29 @@ func (c *ContestsUsersRepoImp) Delete(ctx context.Context, contestID, userID int
 	return err
 }
 
-func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, []int, error) {
+func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error) {
 	stmt := `
-  	SELECT user_id, score FROM contests_users WHERE contest_id = $1 AND ORDER BY score LIMIT $2 OFFSET $3
+  	SELECT user_id FROM contests_users WHERE contest_id = $1 AND ORDER BY score LIMIT $2 OFFSET $3
   	`
 
 	rows, err := c.conn.Query(ctx, stmt, contestID, limit, offset)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "coudn't run query stmt")
+		return nil, errors.Wrap(err, "coudn't run query stmt")
 	}
 	defer rows.Close()
 
 	ids := make([]int64, 0)
-	scores := make([]int, 0)
 	for rows.Next() {
 		var id int64
-		var score int
 
-		err = rows.Scan(&id, &score)
+		err = rows.Scan(&id)
 		if err != nil {
-			return ids, scores, errors.Wrap(err, "error on scan")
+			return ids, errors.Wrap(err, "error on scan")
 		}
 
 		ids = append(ids, id)
-		scores = append(scores, score)
 	}
-	return ids, scores, nil
+	return ids, nil
 }
 
 // AddUserScore will add delta to current score of user.

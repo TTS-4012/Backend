@@ -202,72 +202,68 @@ func (c ContestsHandlerImp) RemoveProblemFromContest(ctx context.Context, contes
 	return
 }
 
+func (c ContestsHandlerImp) GetScoreboardProblem(ctx context.Context, contestID int64) ([]structs.ScoreboardProblem, error) {
+	logger := pkg.Log.WithField("method", "get_contest_scoreboard_problems")
+
+	problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
+	if err != nil {
+		logger.Error("error on get problems from ContestProblem repo: ", err)
+		return nil, err
+	}
+
+	ans := make([]structs.ScoreboardProblem, 0)
+	for _, p := range problems {
+		title, err := c.problemsRepo.GetProblemTitle(ctx, p)
+		if err != nil {
+			logger.Error("error on get problem title: ", err)
+		}
+		ans = append(ans, structs.ScoreboardProblem{
+			ID:    p,
+			Title: title,
+		})
+	}
+	return ans, nil
+}
+
 // GetContestScoreboard TODO: when I have time I should do it in a way like I care a shit about pagination performance
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (ans structs.ResponseGetContestScoreboard, status int) {
 	logger := pkg.Log.WithField("method", "get_contest_scoreboard")
-	problems, err := c.contestProblemRepo.GetContestProblems(ctx, req.ContestID)
+
+	var err error
+	ans.Problems, err = c.GetScoreboardProblem(ctx, req.ContestID)
 	if err != nil {
-		logger.Error("error on get problems from ContestProblem repo: ", err)
 		status = http.StatusInternalServerError
 		return
 	}
 
-	userStandings := make([]structs.ScoreboardUserStanding, 0)
-	userScores := make([]int, 0)
-	userIDtoStandingIndex := make(map[int64]int)
-	for _, p := range problems {
-		submissions, err := c.submissionsRepo.GetByProblem(ctx, p)
-		if err != nil {
-			logger.Error("error on get submissions: ", err)
-		}
-		pkg.Log.Debug(submissions)
-		for _, s := range submissions {
-			if _, exists := userIDtoStandingIndex[s.UserID]; !exists {
-				userIDtoStandingIndex[s.UserID] = len(userStandings)
-				username, err := c.usersRepo.GetUsername(ctx, s.UserID)
+	userIDs, err := c.contestsUsersRepo.ListUsersByScore(ctx, req.ContestID, req.Limit, req.Offset) // TODO: handle cases where limit/offset has not been set
+	if err != nil {
+		logger.Error("coudn't get contest users: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	ans.Users = make([]structs.ScoreboardUserStanding, 0)
+	for i := range userIDs {
+		var user structs.ScoreboardUserStanding
+		user.Scores = make([]int, len(ans.Problems))
+		for problemIndex, p := range ans.Problems {
+			s, err := c.submissionsRepo.GetFinalSubmission(ctx, userIDs[i], p.ID)
+			if err != nil && !errors.Is(err, pkg.ErrNotFound) {
+				logger.Error("coudn't get submission from db: ", err)
+			}
+			var score int
+			if errors.Is(err, pkg.ErrNotFound) {
+				score = 0
+			} else {
+				score, err = c.judge.GetScore(ctx, s.JudgeResultID)
 				if err != nil {
-					logger.Error("error on get username: ", username)
+					logger.Error("coudn't get score: ", err)
 				}
-
-				userStandings = append(userStandings, structs.ScoreboardUserStanding{
-					UserID:      s.UserID,
-					Username:    username,
-					Submissions: make([]structs.ScoreboardCell, 0),
-				})
 			}
-
-			score, err := c.judge.GetScore(ctx, s.JudgeResultID)
-			if err != nil {
-				logger.Error("error on get judge result: ", err)
-			}
-			var cell structs.ScoreboardCell
-			cell.ProblemID = p
-			cell.Score = score
-
-			userStandings[userIDtoStandingIndex[s.UserID]].Submissions = append(userStandings[userIDtoStandingIndex[s.UserID]].Submissions, cell)
+			user.Scores[problemIndex] = score
 		}
+		ans.Users = append(ans.Users, user)
 	}
-
-	for i := range userStandings {
-		sumScore := 0
-		for _, s := range userStandings[i].Submissions {
-			sumScore += s.Score
-		}
-		userScores[i] = sumScore
-	}
-
-	userStandings = assoaciateSort(userScores, userStandings)
-
-	if req.GetCount {
-		ans.Count = len(userStandings)
-	}
-	if req.Limit == -1 {
-		req.Limit = len(userStandings)
-	}
-	if req.Offset == -1 {
-		req.Offset = 0
-	}
-	ans.Users = userStandings[req.Offset:req.Limit]
-	status = http.StatusOK
 	return
 }
