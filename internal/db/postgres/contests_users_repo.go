@@ -2,8 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
-
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -75,6 +73,7 @@ func (c *ContestsUsersRepoImp) IsRegistered(ctx context.Context, contestID, user
 	}
 
 	return exists, nil
+}
 
 func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error) {
 	stmt := `
