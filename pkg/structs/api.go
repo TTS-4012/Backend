@@ -167,12 +167,18 @@ type RequestListContests struct {
 	MyContest    bool  `json:"my_contest"`
 	Started      bool  `json:"started"`
 	OwnedContest bool  `json:"owned_contest"`
+	GetCount     bool  `json:"get_count"`
 }
 
 type ResponseListContestsItem struct {
 	ContestID      int64              `json:"contest_Id"`
 	Title          string             `json:"title"`
 	RegisterStatus RegistrationStatus `json:"register_status,omitempty"`
+}
+
+type ResponseListContests struct {
+	TotalCount int                        `json:"total_count,omitempty"`
+	Contests   []ResponseListContestsItem `json:"contests"`
 }
 
 type RequestAddProblemContest struct {

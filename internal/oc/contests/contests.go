@@ -17,7 +17,7 @@ import (
 type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
 	GetContest(ctx *gin.Context, contestID, userID int64) (structs.ResponseGetContest, int)
-	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
+	ListContests(ctx context.Context, req structs.RequestListContests) (structs.ResponseListContests, int)
 	GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest()
 	DeleteContest()
@@ -140,21 +140,22 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64
 	}, http.StatusOK
 }
 
-func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int) {
+func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.RequestListContests) (structs.ResponseListContests, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListContests",
 		"module": "Contests",
 	})
 	var contests []structs.Contest
 	var err error
+	var total_count int
 	if req.MyContest {
-		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID)
+		contests, total_count, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.GetCount)
 	} else {
-		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.OwnedContest)
+		contests, total_count, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.OwnedContest, req.GetCount)
 	}
 	if err != nil {
 		logger.Error("error on listing contests: ", err)
-		return nil, http.StatusInternalServerError
+		return structs.ResponseListContests{}, http.StatusInternalServerError
 	}
 
 	res := make([]structs.ResponseListContestsItem, 0)
@@ -183,7 +184,11 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 			RegisterStatus: status,
 		})
 	}
-	return res, http.StatusOK
+
+	return structs.ResponseListContests{
+		TotalCount: total_count,
+		Contests:   res,
+	}, http.StatusOK
 }
 
 func (c ContestsHandlerImp) UpdateContest() {}

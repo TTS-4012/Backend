@@ -112,6 +112,8 @@ func (h *handlers) ListContests(c *gin.Context) {
 	reqData.MyContest = c.Query("my_contest") == "true"
 	reqData.OwnedContest = c.Query("owned_contest") == "true"
 
+	reqData.GetCount = c.Query("get_count") == "true"
+
 	resp, status := h.contestsHandler.ListContests(c, reqData)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
