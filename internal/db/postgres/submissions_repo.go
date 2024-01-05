@@ -137,19 +137,23 @@ func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, prob
 }
 
 // UpdateJudgeResults will add judge_result_id, update status, and change is final
-func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int) error {
+func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int, isFinal bool) error {
+
 	stmt := `
 	UPDATE submissions SET is_final = false WHERE problem_id = $1 and user_id = $2 
 	`
-	_, err := s.conn.Exec(ctx, stmt, problemID, userID)
-	if err != nil {
-		return err
+	var err error
+	if isFinal {
+		_, err = s.conn.Exec(ctx, stmt, problemID, userID)
+		if err != nil {
+			return err
+		}
 	}
 
 	stmt = `
-	UPDATE submissions SET status='processed', score=$1 judge_result_id = $2, is_final = true where id = $3
+	UPDATE submissions SET status='processed', score=$1 judge_result_id = $2, is_final = $3 where id = $4
 	`
-	_, err = s.conn.Exec(ctx, stmt, score, docID, submissionID)
+	_, err = s.conn.Exec(ctx, stmt, score, docID, isFinal, submissionID)
 	return err
 }
 

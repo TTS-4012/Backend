@@ -12,13 +12,14 @@ import (
 )
 
 type Judge interface {
-	Dispatch(ctx context.Context, submissionID int64) (err error)
+	Dispatch(ctx context.Context, submissionID, contestID int64) (err error)
 	GetTestResults(ctx context.Context, id string) (structs.JudgeResponse, error)
 	GetScore(ctx context.Context, id string) (int, error)
 }
 
 type JudgeImp struct {
 	queue                  JudgeQueue
+	contestUsersRepo       db.ContestsUsersRepo
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	testcaseRepo           db.TestCaseRepo
@@ -26,7 +27,7 @@ type JudgeImp struct {
 }
 
 func NewJudge(c configs.SectionJudge, submissionMetadataRepo db.SubmissionMetadataRepo,
-	minioHandler minio.MinioHandler, testcaseRepo db.TestCaseRepo, judgeRepo db.JudgeRepo) (Judge, error) {
+	minioHandler minio.MinioHandler, testcaseRepo db.TestCaseRepo, contestUsersRepo db.ContestsUsersRepo, judgeRepo db.JudgeRepo) (Judge, error) {
 	queue, err := NewJudgeQueue(c.Nats)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create judge queue for judge")
@@ -38,10 +39,11 @@ func NewJudge(c configs.SectionJudge, submissionMetadataRepo db.SubmissionMetada
 		minioHandler:           minioHandler,
 		judgeRepo:              judgeRepo,
 		testcaseRepo:           testcaseRepo,
+		contestUsersRepo:       contestUsersRepo,
 	}, nil
 }
 
-func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) {
+func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (err error) {
 	submission, err := j.submissionMetadataRepo.Get(ctx, submissionID)
 	if err != nil {
 		err = errors.Wrap(err, "couldn't get submission from db")
@@ -79,10 +81,27 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID int64) (err error) 
 		return errors.Wrap(err, "couldn't insert judge result to judge repo")
 	}
 
-	//lastScore :=
-	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID, j.CalcScore(resp.TestResults))
+	currentScore := j.CalcScore(resp.TestResults)
+	lastSub, err := j.submissionMetadataRepo.GetFinalSubmission(ctx, submission.UserID, submission.ProblemID)
+	if err != nil {
+		return errors.Wrap(err, "coudn't get last submission")
+	}
+
+	isFinal := true
+	if lastSub.Score > currentScore {
+		isFinal = false
+	}
+
+	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID, currentScore, isFinal)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
+	}
+
+	if isFinal && contestID != -1 {
+		err = j.contestUsersRepo.AddUserScore(ctx, submission.UserID, contestID, currentScore-lastSub.Score)
+		if err != nil {
+			return errors.Wrap(err, "couldn't update contest score")
+		}
 	}
 
 	return nil

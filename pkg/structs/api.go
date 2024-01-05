@@ -96,6 +96,7 @@ type RequestUpdateProblem struct {
 type RequestSubmit struct {
 	UserID      int64
 	ProblemID   int64
+	ContestID   int64
 	Code        []byte
 	FileName    string
 	ContentType string
