@@ -75,7 +75,7 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, owned bool) ([]structs.Contest, error) {
 	stmt := `
 	SELECT id, created_by, title, start_time, duration FROM contests
 	`
@@ -85,6 +85,10 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
 	} else {
 		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	if owned {
+		stmt = fmt.Sprintf("%s AND created_by = $1", stmt)
 	}
 
 	stmt += " ORDER BY id "
@@ -99,7 +103,13 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
 	}
 
-	rows, err := c.conn.Query(ctx, stmt)
+	var rows pgx.Rows
+	var err error
+	if owned {
+		rows, err = c.conn.Query(ctx, stmt, userID)
+	} else {
+		rows, err = c.conn.Query(ctx, stmt)
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -150,7 +150,7 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 	if req.MyContest {
 		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID)
 	} else {
-		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
+		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.OwnedContest)
 	}
 	if err != nil {
 		logger.Error("error on listing contests: ", err)

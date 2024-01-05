@@ -108,7 +108,9 @@ func (h *handlers) ListContests(c *gin.Context) {
 		return
 	}
 
+	//TODO: collapse both of these into one query
 	reqData.MyContest = c.Query("my_contest") == "true"
+	reqData.OwnedContest = c.Query("owned_contest") == "true"
 
 	resp, status := h.contestsHandler.ListContests(c, reqData)
 	if status == http.StatusOK {
