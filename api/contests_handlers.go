@@ -272,7 +272,8 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		c.JSON(status, string(respData))
+		c.Writer.Write(respData)
+		c.Status(status)
 	} else {
 		c.Status(status)
 	}
