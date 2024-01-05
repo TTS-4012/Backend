@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -18,7 +19,11 @@ func (h *handlers) AuthMiddleware() gin.HandlerFunc {
 		userId, typ, err := h.authHandler.ParseAuthToken(c, authHeader)
 
 		if err != nil {
-			logger.Error("error on parsing token", err)
+			logger.WithFields(logrus.Fields{
+				"error":  err.Error(),
+				"header": authHeader,
+			}).Error("error on parsing token")
+
 			c.AbortWithStatusJSON(401, gin.H{"message": "invalid token"})
 			return
 		}
