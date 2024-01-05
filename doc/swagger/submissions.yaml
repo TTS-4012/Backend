@@ -21,8 +21,17 @@ paths:
         - in: header
           name: File_Name
           description: name of the sent file
-          type: string
+          schema:
+            type: string
           required: true
+
+        - in: query
+          name: contest_id
+          description: contest id if we are in a contest
+          type: int
+          schema:
+            type: integer
+          required: false
 
 
       requestBody:
@@ -60,7 +69,8 @@ paths:
       parameters:
         - in: header
           name: Authorization
-          type: string
+          schema:
+            type: string
           required: true
         - in: path
           name: submission_id
@@ -92,7 +102,8 @@ paths:
       parameters:
         - in: header
           name: Authorization
-          type: string
+          schema:
+            type: string
           required: true
         - in: path
           name: submission_id
