@@ -34,7 +34,7 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			user_id bigint not null ,
 			file_name varchar(50),
 			judge_result_id varchar(70),
-			score int,
+			score int DEFAULT 0,
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
 			is_final boolean DEFAULT FALSE,
