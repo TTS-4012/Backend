@@ -157,6 +157,7 @@ type ResponseGetContest struct {
 	Problems  []ContestProblem `json:"problems"`
 	StartTime int64            `json:"start_time"`
 	Duration  int              `json:"duration"`
+	IsOwned   bool             `json:"is_owned"`
 }
 
 type RequestListContests struct {

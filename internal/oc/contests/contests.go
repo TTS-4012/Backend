@@ -121,6 +121,7 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		Problems:  problems,
 		StartTime: contest.StartTime,
 		Duration:  contest.Duration,
+		IsOwned:   contest.CreatedBy == ctx.Value("user_id").(int64),
 	}, http.StatusOK
 }
 
