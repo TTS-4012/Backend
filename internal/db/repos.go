@@ -70,5 +70,6 @@ type ContestsUsersRepo interface {
 	Add(ctx context.Context, contestID, userID int64) error
 	Delete(ctx context.Context, contestID, userID int64) error
 	ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error)
+	GetContestUsersCount(ctx context.Context, contestID int64) (int, error)
 	AddUserScore(ctx context.Context, userID, contestID int64, delta int) error
 }

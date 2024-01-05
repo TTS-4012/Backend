@@ -264,5 +264,14 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		}
 		ans.Users = append(ans.Users, user)
 	}
+
+	if req.GetCount {
+		ans.Count, err = c.contestsUsersRepo.GetContestUsersCount(ctx, req.ContestID)
+		if err != nil {
+			logger.Error("error on get contest users count: ", err)
+			status = http.StatusInternalServerError
+			return
+		}
+	}
 	return
 }

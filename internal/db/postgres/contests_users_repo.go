@@ -85,6 +85,19 @@ func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID i
 	return ids, nil
 }
 
+func (c *ContestsUsersRepoImp) GetContestUsersCount(ctx context.Context, contestID int64) (int, error) {
+	stmt := `
+  	SELECT count(*) FROM contests_users WHERE contest_id = $1 
+  	`
+
+	var ans int
+	err := c.conn.QueryRow(ctx, stmt, contestID).Scan(&ans)
+	if err != nil {
+		return 0, errors.Wrap(err, "coudn't run query stmt")
+	}
+	return ans, nil
+}
+
 // AddUserScore will add delta to current score of user.
 func (c *ContestsUsersRepoImp) AddUserScore(ctx context.Context, userID, contestID int64, delta int) error {
 	stmt := `
