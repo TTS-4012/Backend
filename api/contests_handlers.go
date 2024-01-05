@@ -39,25 +39,6 @@ func (h *handlers) GetContest(c *gin.Context) {
 		c.Status(status)
 		return
 	}
-	problemIDs, status := h.contestsHandler.GetContestProblems(c, contestID)
-	if status != http.StatusOK {
-		c.Status(status)
-		return
-	}
-
-	for _, problemID := range problemIDs {
-		problem, status := h.problemsHandler.GetProblem(c, problemID)
-		if status != http.StatusOK {
-			c.Status(status)
-			return
-		}
-
-		resp.Problems = append(resp.Problems, structs.ContestProblem{
-			ID:    problem.ProblemID,
-			Title: problem.Title,
-		})
-	}
-
 	c.JSON(status, resp)
 }
 
