@@ -16,7 +16,7 @@ import (
 
 type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
-	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
+	GetContest(ctx *gin.Context, contestID, userID int64) (structs.ResponseGetContest, int)
 	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
 	GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest()
@@ -76,7 +76,7 @@ func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.Reque
 	return
 }
 
-func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int) {
+func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64) (structs.ResponseGetContest, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "GetContest",
 		"module": "Contests",
@@ -117,12 +117,26 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		problems[i].Title = title
 	}
 
+	//TODO : fix generating an extra query (same as before)
+	var status structs.RegistrationStatus
+	if contest.CreatedBy == userID {
+		status = structs.Owner
+	} else {
+		r, _ := c.contestsUsersRepo.IsRegistered(ctx, contestID, userID)
+		if r {
+			status = structs.Registered
+		} else {
+			status = structs.NonRegistered
+		}
+	}
+
 	return structs.ResponseGetContest{
-		ContestID: contestID,
-		Title:     contest.Title,
-		Problems:  problems,
-		StartTime: contest.StartTime,
-		Duration:  contest.Duration,
+		ContestID:      contestID,
+		Title:          contest.Title,
+		Problems:       problems,
+		StartTime:      contest.StartTime,
+		Duration:       contest.Duration,
+		RegisterStatus: status,
 	}, http.StatusOK
 }
 

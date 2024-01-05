@@ -151,11 +151,12 @@ type ResponseCreateContest struct {
 }
 
 type ResponseGetContest struct {
-	ContestID int64            `json:"contest_Id"`
-	Title     string           `json:"title"`
-	Problems  []ContestProblem `json:"problems"`
-	StartTime int64            `json:"start_time"`
-	Duration  int              `json:"duration"`
+	ContestID      int64              `json:"contest_Id"`
+	Title          string             `json:"title"`
+	Problems       []ContestProblem   `json:"problems"`
+	StartTime      int64              `json:"start_time"`
+	Duration       int                `json:"duration"`
+	RegisterStatus RegistrationStatus `json:"register_status,omitempty"`
 }
 
 type RequestListContests struct {

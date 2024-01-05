@@ -35,11 +35,21 @@ func (h *handlers) GetContest(c *gin.Context) {
 		})
 		return
 	}
-	resp, status := h.contestsHandler.GetContest(c, contestID)
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	resp, status := h.contestsHandler.GetContest(c, contestID, userID.(int64))
 	if status != http.StatusOK {
 		c.Status(status)
 		return
 	}
+
 	problemIDs, status := h.contestsHandler.GetContestProblems(c, contestID)
 	if status != http.StatusOK {
 		c.Status(status)
