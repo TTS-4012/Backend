@@ -1,6 +1,8 @@
 package kvstorages
 
+import "context"
+
 type KVStorage interface {
-	Save(key, value string) error
-	Get(key string) (string, error)
+	Save(ctx context.Context, key, value string) error
+	Get(ctx context.Context, key string) (string, error)
 }

@@ -1,15 +1,17 @@
 package otp
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
+
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/kvstorages"
-	"math/rand"
 )
 
 type OTPHandler interface {
-	GenOTP(userID, typ string) (string, error)
-	CheckOTP(userID, typ, val string) error
+	GenOTP(ctx context.Context, userID, typ string) (string, error)
+	CheckOTP(ctx context.Context, userID, typ, val string) error
 }
 
 func NewOTPHandler(storage kvstorages.KVStorage) OTPHandler {
@@ -23,15 +25,15 @@ type OTPHandlerImp struct {
 	storage kvstorages.KVStorage
 }
 
-func (o *OTPHandlerImp) GenOTP(userID, typ string) (string, error) {
+func (o *OTPHandlerImp) GenOTP(ctx context.Context, userID, typ string) (string, error) {
 	k := fmt.Sprintf("%s/%s", typ, userID)
 	v := fmt.Sprintf("%06d", rand.Intn(1000000))
-	return v, o.storage.Save(k, v)
+	return v, o.storage.Save(ctx, k, v)
 }
 
-func (o *OTPHandlerImp) CheckOTP(userID, typ, val string) error {
+func (o *OTPHandlerImp) CheckOTP(ctx context.Context, userID, typ, val string) error {
 	k := fmt.Sprintf("%s/%s", typ, userID)
-	ans, err := o.storage.Get(k)
+	ans, err := o.storage.Get(ctx, k)
 	if err != nil {
 		return err
 	}
