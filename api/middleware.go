@@ -1,10 +1,11 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const UserIDKey = "user_id"
@@ -15,6 +16,10 @@ func (h *handlers) AuthMiddleware() gin.HandlerFunc {
 		logger := pkg.Log.WithField("middleware", "Auth")
 
 		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			authHeader = c.GetHeader("X-Authorization")
+		}
+
 		authHeader = strings.Replace(authHeader, "Bearer ", "", 1)
 		userId, typ, err := h.authHandler.ParseAuthToken(c, authHeader)
 
