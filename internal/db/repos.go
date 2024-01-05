@@ -30,6 +30,7 @@ type ContestsMetadataRepo interface {
 	GetContest(ctx context.Context, id int64) (structs.Contest, error)
 	ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error)
 	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error)
+	UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error
 	DeleteContest(ctx context.Context, id int64) error
 }
 

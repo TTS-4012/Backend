@@ -167,6 +167,12 @@ type RequestListContests struct {
 	Started    bool `json:"started"`
 }
 
+type RequestUpdateContest struct {
+	Title     string `json:"title"`
+	StartTime int64  `json:"start_time"`
+	Duration  int    `json:"duration"`
+}
+
 type ResponseListContestsItem struct {
 	ContestID int64  `json:"contest_Id"`
 	Title     string `json:"title"`

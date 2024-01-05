@@ -18,8 +18,8 @@ type ContestsHandler interface {
 	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
 	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
 	GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (structs.ResponseGetContestScoreboard, int)
-	UpdateContest()
-	DeleteContest()
+	UpdateContest(ctx context.Context, contestID int64, reqData structs.RequestUpdateContest) int
+	DeleteContest(ctx context.Context, contestID int64) int
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int)
 	GetContestProblems(ctx *gin.Context, contestID int64) ([]int64, int)
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
@@ -151,8 +151,43 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 	return res, http.StatusOK
 }
 
-func (c ContestsHandlerImp) UpdateContest() {}
-func (c ContestsHandlerImp) DeleteContest() {}
+func (c ContestsHandlerImp) UpdateContest(ctx context.Context, contestID int64, reqData structs.RequestUpdateContest) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "UpdateContest",
+		"module": "Contests",
+	})
+
+	err := c.contestsRepo.UpdateContests(ctx, contestID, reqData)
+	if err != nil {
+		logger.Error("error on updating contest in repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+
+	return http.StatusAccepted
+}
+
+func (c ContestsHandlerImp) DeleteContest(ctx context.Context, contestID int64) int {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "DeleteContest",
+		"module": "Contests",
+	})
+
+	err := c.contestsRepo.DeleteContest(ctx, contestID)
+	if err != nil {
+		logger.Error("error on deleting contest from repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+
+	return http.StatusAccepted
+}
 
 func (c ContestsHandlerImp) AddProblemToContest(ctx context.Context, contestID, problemID int64) (status int) {
 	logger := pkg.Log.WithField("method", "add_problem_to_contest")
