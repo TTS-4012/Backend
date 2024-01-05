@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -73,16 +75,25 @@ func (c *ContestsMetadataRepoImp) GetContest(ctx context.Context, id int64) (str
 	return contest, nil
 }
 
-func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, owned, getCount bool) ([]structs.Contest, int, error) {
 	stmt := `
-	SELECT id, created_by, title, start_time, duration FROM contests
+	SELECT id, created_by, title, start_time, duration
 	`
+	if getCount {
+		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
+	}
+
+	stmt = fmt.Sprintf("%s FROM contests", stmt)
 
 	now := time.Now().Unix()
 	if started {
 		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
 	} else {
 		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+	}
+
+	if owned {
+		stmt = fmt.Sprintf("%s AND created_by = $1", stmt)
 	}
 
 	stmt += " ORDER BY id "
@@ -97,28 +108,46 @@ func (c *ContestsMetadataRepoImp) ListContests(ctx context.Context, descending b
 		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
 	}
 
-	rows, err := c.conn.Query(ctx, stmt)
+	var rows pgx.Rows
+	var err error
+	if owned {
+		rows, err = c.conn.Query(ctx, stmt, userID)
+	} else {
+		rows, err = c.conn.Query(ctx, stmt)
+	}
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	ans := make([]structs.Contest, 0)
+	var total_count int = 0
 	for rows.Next() {
 
 		var contest structs.Contest
-		err = rows.Scan(
-			&contest.ID,
-			&contest.CreatedBy,
-			&contest.Title,
-			&contest.StartTime,
-			&contest.Duration,
-		)
+		if getCount {
+			err = rows.Scan(
+				&contest.ID,
+				&contest.CreatedBy,
+				&contest.Title,
+				&contest.StartTime,
+				&contest.Duration,
+				&total_count,
+			)
+		} else {
+			err = rows.Scan(
+				&contest.ID,
+				&contest.CreatedBy,
+				&contest.Title,
+				&contest.StartTime,
+				&contest.Duration,
+			)
+		}
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		ans = append(ans, contest)
 	}
-	return ans, err
+	return ans, total_count, err
 }
 
 func (c *ContestsMetadataRepoImp) UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error {
@@ -177,16 +206,22 @@ func (c *ContestsMetadataRepoImp) DeleteContest(ctx context.Context, id int64) e
 	return err
 }
 
-func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error) {
+func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, getCount bool) ([]structs.Contest, int, error) {
 	stmt := `
-	SELECT id, created_by, title, start_time, duration FROM contests JOIN contests_users ON contests_users.contest_id = contests.id WHERE contests_users.user_id = $1
+	SELECT id, created_by, title, start_time, duration
 	`
+
+	if getCount {
+		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
+	}
+
+	stmt = fmt.Sprintf("%s FROM contests JOIN contests_users ON contests_users.contest_id = contests.id WHERE contests_users.user_id = $1", stmt)
 
 	now := time.Now().Unix()
 	if started {
-		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+		stmt = fmt.Sprintf("%s AND start_time <= %d", stmt, now)
 	} else {
-		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+		stmt = fmt.Sprintf("%s AND start_time > %d", stmt, now)
 	}
 
 	stmt += " ORDER BY id "
@@ -203,24 +238,36 @@ func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending
 
 	rows, err := c.conn.Query(ctx, stmt, userID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	ans := make([]structs.Contest, 0)
+	var total_count int = 0
 	for rows.Next() {
 
 		var contest structs.Contest
-		err = rows.Scan(
-			&contest.ID,
-			&contest.CreatedBy,
-			&contest.Title,
-			&contest.StartTime,
-			&contest.Duration,
-		)
+		if getCount {
+			err = rows.Scan(
+				&contest.ID,
+				&contest.CreatedBy,
+				&contest.Title,
+				&contest.StartTime,
+				&contest.Duration,
+				&total_count,
+			)
+		} else {
+			err = rows.Scan(
+				&contest.ID,
+				&contest.CreatedBy,
+				&contest.Title,
+				&contest.StartTime,
+				&contest.Duration,
+			)
+		}
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		ans = append(ans, contest)
 	}
-	return ans, err
+	return ans, total_count, err
 }

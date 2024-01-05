@@ -3,8 +3,9 @@ package contests
 import (
 	"context"
 	"errors"
-	"github.com/ocontest/backend/internal/judge"
 	"net/http"
+
+	"github.com/ocontest/backend/internal/judge"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/internal/db"
@@ -15,8 +16,8 @@ import (
 
 type ContestsHandler interface {
 	CreateContest(ctx context.Context, req structs.RequestCreateContest) (res structs.ResponseCreateContest, status int)
-	GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int)
-	ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int)
+	GetContest(ctx *gin.Context, contestID, userID int64) (structs.ResponseGetContest, int)
+	ListContests(ctx context.Context, req structs.RequestListContests) (structs.ResponseListContests, int)
 	GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (structs.ResponseGetContestScoreboard, int)
 	UpdateContest(ctx context.Context, contestID int64, reqData structs.RequestUpdateContest) int
 	DeleteContest(ctx context.Context, contestID int64) int
@@ -25,6 +26,7 @@ type ContestsHandler interface {
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) (status int)
 	RegisterUser(ctx context.Context, contestID, userID int64) int
 	UnregisterUser(ctx context.Context, contestID, userID int64) int
+	IsContestOwner(ctx context.Context, contestID, userID int64) (bool, error)
 }
 
 type ContestsHandlerImp struct {
@@ -74,7 +76,7 @@ func (c ContestsHandlerImp) CreateContest(ctx context.Context, req structs.Reque
 	return
 }
 
-func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (structs.ResponseGetContest, int) {
+func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64) (structs.ResponseGetContest, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "GetContest",
 		"module": "Contests",
@@ -115,40 +117,78 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID int64) (struc
 		problems[i].Title = title
 	}
 
+	//TODO : fix generating an extra query (same as before)
+	var status structs.RegistrationStatus
+	if contest.CreatedBy == userID {
+		status = structs.Owner
+	} else {
+		r, _ := c.contestsUsersRepo.IsRegistered(ctx, contestID, userID)
+		if r {
+			status = structs.Registered
+		} else {
+			status = structs.NonRegistered
+		}
+	}
+
 	return structs.ResponseGetContest{
-		ContestID: contestID,
-		Title:     contest.Title,
-		Problems:  problems,
-		StartTime: contest.StartTime,
-		Duration:  contest.Duration,
+		ContestID:      contestID,
+		Title:          contest.Title,
+		Problems:       problems,
+		StartTime:      contest.StartTime,
+		Duration:       contest.Duration,
+		RegisterStatus: status,
 	}, http.StatusOK
 }
 
-func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.RequestListContests) ([]structs.ResponseListContestsItem, int) {
+func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.RequestListContests) (structs.ResponseListContests, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListContests",
 		"module": "Contests",
 	})
 	var contests []structs.Contest
 	var err error
+	var total_count int
 	if req.MyContest {
-		contests, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, ctx.Value("user_id").(int64))
+		contests, total_count, err = c.contestsRepo.ListMyContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.GetCount)
 	} else {
-		contests, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started)
+		contests, total_count, err = c.contestsRepo.ListContests(ctx, req.Descending, req.Limit, req.Offset, req.Started, req.UserID, req.OwnedContest, req.GetCount)
 	}
 	if err != nil {
 		logger.Error("error on listing contests: ", err)
-		return nil, http.StatusInternalServerError
+		return structs.ResponseListContests{}, http.StatusInternalServerError
 	}
 
 	res := make([]structs.ResponseListContestsItem, 0)
 	for _, contest := range contests {
+		var status structs.RegistrationStatus
+		// TODO: actually do this right!!!
+		if req.MyContest {
+			status = structs.Registered
+		} else {
+			if contest.CreatedBy == req.UserID {
+				status = structs.Owner
+			} else {
+				// TODO: change it so it doesn't generate another request PER CONTEST, error handling
+				r, _ := c.contestsUsersRepo.IsRegistered(ctx, contest.ID, req.UserID)
+				if r {
+					status = structs.Registered
+				} else {
+					status = structs.NonRegistered
+				}
+			}
+		}
+
 		res = append(res, structs.ResponseListContestsItem{
-			ContestID: contest.ID,
-			Title:     contest.Title,
+			ContestID:      contest.ID,
+			Title:          contest.Title,
+			RegisterStatus: status,
 		})
 	}
-	return res, http.StatusOK
+
+	return structs.ResponseListContests{
+		TotalCount: total_count,
+		Contests:   res,
+	}, http.StatusOK
 }
 
 func (c ContestsHandlerImp) UpdateContest(ctx context.Context, contestID int64, reqData structs.RequestUpdateContest) int {
@@ -335,4 +375,18 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		}
 	}
 	return
+}
+
+func (c ContestsHandlerImp) IsContestOwner(ctx context.Context, contestID, userID int64) (bool, error) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "IsContestOwner",
+		"module": "Contests",
+	})
+
+	contest, err := c.contestsRepo.GetContest(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest from repo: ", err)
+		return false, err
+	}
+	return (contest.CreatedBy == userID), nil
 }

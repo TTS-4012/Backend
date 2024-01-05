@@ -152,19 +152,23 @@ type ResponseCreateContest struct {
 }
 
 type ResponseGetContest struct {
-	ContestID int64            `json:"contest_Id"`
-	Title     string           `json:"title"`
-	Problems  []ContestProblem `json:"problems"`
-	StartTime int64            `json:"start_time"`
-	Duration  int              `json:"duration"`
+	ContestID      int64              `json:"contest_Id"`
+	Title          string             `json:"title"`
+	Problems       []ContestProblem   `json:"problems"`
+	StartTime      int64              `json:"start_time"`
+	Duration       int                `json:"duration"`
+	RegisterStatus RegistrationStatus `json:"register_status,omitempty"`
 }
 
 type RequestListContests struct {
-	Descending bool `json:"descending"`
-	Limit      int  `json:"limit"`
-	Offset     int  `json:"offset"`
-	MyContest  bool `json:"my_contest"`
-	Started    bool `json:"started"`
+	UserID       int64 `json:"user_id"`
+	Descending   bool  `json:"descending"`
+	Limit        int   `json:"limit"`
+	Offset       int   `json:"offset"`
+	MyContest    bool  `json:"my_contest"`
+	Started      bool  `json:"started"`
+	OwnedContest bool  `json:"owned_contest"`
+	GetCount     bool  `json:"get_count"`
 }
 
 type RequestUpdateContest struct {
@@ -174,8 +178,14 @@ type RequestUpdateContest struct {
 }
 
 type ResponseListContestsItem struct {
-	ContestID int64  `json:"contest_Id"`
-	Title     string `json:"title"`
+	ContestID      int64              `json:"contest_Id"`
+	Title          string             `json:"title"`
+	RegisterStatus RegistrationStatus `json:"register_status,omitempty"`
+}
+
+type ResponseListContests struct {
+	TotalCount int                        `json:"total_count,omitempty"`
+	Contests   []ResponseListContestsItem `json:"contests"`
 }
 
 type RequestAddProblemContest struct {

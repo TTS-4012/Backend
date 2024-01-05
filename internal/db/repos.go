@@ -28,8 +28,8 @@ type ProblemsMetadataRepo interface {
 type ContestsMetadataRepo interface {
 	InsertContest(ctx context.Context, contest structs.Contest) (int64, error)
 	GetContest(ctx context.Context, id int64) (structs.Contest, error)
-	ListContests(ctx context.Context, descending bool, limit, offset int, started bool) ([]structs.Contest, error)
-	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64) ([]structs.Contest, error)
+	ListContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, owned, getCount bool) ([]structs.Contest, int, error)
+	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, getCount bool) ([]structs.Contest, int, error)
 	UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error
 	DeleteContest(ctx context.Context, id int64) error
 }
@@ -70,6 +70,7 @@ type JudgeRepo interface {
 type ContestsUsersRepo interface {
 	Add(ctx context.Context, contestID, userID int64) error
 	Delete(ctx context.Context, contestID, userID int64) error
+	IsRegistered(ctx context.Context, contestID, userID int64) (bool, error)
 	ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error)
 	GetContestUsersCount(ctx context.Context, contestID int64) (int, error)
 	AddUserScore(ctx context.Context, userID, contestID int64, delta int) error

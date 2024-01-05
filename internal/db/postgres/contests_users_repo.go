@@ -61,6 +61,20 @@ func (c *ContestsUsersRepoImp) Delete(ctx context.Context, contestID, userID int
 	return err
 }
 
+func (c *ContestsUsersRepoImp) IsRegistered(ctx context.Context, contestID, userID int64) (bool, error) {
+	stmt := `
+	SELECT EXISTS (SELECT 1 FROM contests_users WHERE contest_id = $1 AND user_id = $2)	
+	`
+
+	var exists bool
+	err := c.conn.QueryRow(ctx, stmt, contestID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error) {
 	stmt := `
   	SELECT user_id FROM contests_users WHERE contest_id = $1 ORDER BY score LIMIT $2 OFFSET $3
@@ -109,5 +123,4 @@ func (c *ContestsUsersRepoImp) AddUserScore(ctx context.Context, userID, contest
 		err = pkg.ErrNotFound
 	}
 	return err
-
 }

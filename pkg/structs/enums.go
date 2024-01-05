@@ -58,3 +58,11 @@ func VerdictFromString(s string) Verdict {
 	pkg.Log.Error("unknown verdict", s)
 	return -1
 }
+
+type RegistrationStatus int
+
+const (
+	Owner RegistrationStatus = 1 + iota
+	Registered
+	NonRegistered
+)
