@@ -33,13 +33,13 @@ type AuthHandlerImp struct {
 	smtpSender smtp.Sender
 	configs    *configs.OContestConf
 	aesHandler aes.AESHandler
-	otpStorage otp.OTPStorage
+	otpStorage otp.OTPHandler
 }
 
 func NewAuthHandler(
 	authRepo db.UsersRepo, jwtHandler jwt.TokenGenerator,
 	smtpSender smtp.Sender, config *configs.OContestConf,
-	aesHandler aes.AESHandler, otpStorage otp.OTPStorage) AuthHandler {
+	aesHandler aes.AESHandler, otpStorage otp.OTPHandler) AuthHandler {
 	return &AuthHandlerImp{
 		authRepo:   authRepo,
 		jwtHandler: jwtHandler,
@@ -81,7 +81,8 @@ func (p *AuthHandlerImp) RegisterUser(ctx context.Context, reqData structs.Regis
 		user.ID = userID
 	}
 
-	otpCode, err := p.otpStorage.GenRegisterOTP(fmt.Sprintf("%d", user.ID))
+	userIDStr := fmt.Sprintf("%d", user.ID)
+	otpCode, err := p.otpStorage.GenOTP(userIDStr, "register")
 	if err != nil {
 		logger.Error("error on generating otp", err)
 		status = 503
@@ -110,7 +111,7 @@ func (p *AuthHandlerImp) VerifyEmail(ctx context.Context, userID int64, token st
 
 	logger := pkg.Log.WithField("method", "VerifyEmail")
 	userIDStr := fmt.Sprintf("%d", userID)
-	if err := p.otpStorage.CheckRegisterOTP(userIDStr, token); err != nil {
+	if err := p.otpStorage.CheckOTP(userIDStr, "register", token); err != nil {
 		if errors.Is(err, pkg.ErrForbidden) {
 			return http.StatusForbidden
 		}
@@ -213,7 +214,9 @@ func (p *AuthHandlerImp) RequestLoginWithOTP(ctx context.Context, email string) 
 		return http.StatusInternalServerError
 	}
 	status = http.StatusInternalServerError
-	otpCode, err := p.otpStorage.GenLoginOTP(fmt.Sprintf("%d", user.ID))
+	userIDStr := fmt.Sprintf("%d", user.ID)
+	otpCode, err := p.otpStorage.GenOTP("login", userIDStr)
+
 	if err != nil {
 		logger.Error("error on generating otp", err)
 		return
@@ -241,7 +244,7 @@ func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, email, otpCode string
 		return
 	}
 	userIDStr := fmt.Sprintf("%d", user.ID)
-	if err := p.otpStorage.CheckLoginOTP(userIDStr, otpCode); err != nil {
+	if err := p.otpStorage.CheckOTP(userIDStr, "login", otpCode); err != nil {
 		if errors.Is(err, pkg.ErrForbidden) || errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusForbidden
 			return
