@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/ocontest/backend/internal/db"
@@ -218,6 +219,7 @@ func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, da
 		"module": "Problems",
 	})
 
+	fmt.Println("ASD", len(data))
 	testCases, err := unzip(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		logger.Error("error on unzip file: ", err)

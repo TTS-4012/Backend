@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 	"strconv"
@@ -146,17 +145,22 @@ func (h *handlers) AddTestCase(c *gin.Context) {
 		return
 	}
 
-	body := c.Request.Body
-	buff := bytes.NewBuffer([]byte{})
-	_, err = io.Copy(buff, body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		logger.Error("error on create io ReaderAt")
+		logger.Error("error on read body")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "something went wrong",
 		})
 		return
 	}
+	if len(body) == 0 {
+		logger.Warn("empty request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "request body is empty",
+		})
+		return
+	}
 
-	status := h.problemsHandler.AddTestcase(c, problemID, buff.Bytes())
+	status := h.problemsHandler.AddTestcase(c, problemID, body)
 	c.Status(status)
 }
