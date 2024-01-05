@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
@@ -62,7 +63,7 @@ func (c *ContestsUsersRepoImp) Delete(ctx context.Context, contestID, userID int
 
 func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error) {
 	stmt := `
-  	SELECT user_id FROM contests_users WHERE contest_id = $1 AND ORDER BY score LIMIT $2 OFFSET $3
+  	SELECT user_id FROM contests_users WHERE contest_id = $1 ORDER BY score LIMIT $2 OFFSET $3
   	`
 
 	rows, err := c.conn.Query(ctx, stmt, contestID, limit, offset)
