@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -266,15 +265,7 @@ func (h *handlers) GetContestScoreboard(c *gin.Context) {
 	resp, status := h.contestsHandler.GetContestScoreboard(c, reqData)
 
 	if status == http.StatusOK {
-		respData, err := json.Marshal(resp)
-		if err != nil {
-			logger.Error(err)
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		logger.Info(string(respData))
-		c.Writer.Write(respData)
-		c.Status(status)
+		c.JSON(status, resp)
 	} else {
 		c.Status(status)
 	}

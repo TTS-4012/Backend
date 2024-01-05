@@ -374,6 +374,7 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 			return
 		}
 	}
+	status = http.StatusOK
 	return
 }
 
