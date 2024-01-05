@@ -157,7 +157,20 @@ func (c ContestsHandlerImp) UpdateContest(ctx context.Context, contestID int64, 
 		"module": "Contests",
 	})
 
-	err := c.contestsRepo.UpdateContests(ctx, contestID, reqData)
+	contest, err := c.contestsRepo.GetContest(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest from repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+	if contest.CreatedBy != ctx.Value("user_id").(int64) {
+		return http.StatusForbidden
+	}
+
+	err = c.contestsRepo.UpdateContests(ctx, contestID, reqData)
 	if err != nil {
 		logger.Error("error on updating contest in repo: ", err)
 		status := http.StatusInternalServerError
@@ -176,7 +189,20 @@ func (c ContestsHandlerImp) DeleteContest(ctx context.Context, contestID int64) 
 		"module": "Contests",
 	})
 
-	err := c.contestsRepo.DeleteContest(ctx, contestID)
+	contest, err := c.contestsRepo.GetContest(ctx, contestID)
+	if err != nil {
+		logger.Error("error on getting contest from repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		return status
+	}
+	if contest.CreatedBy != ctx.Value("user_id").(int64) {
+		return http.StatusForbidden
+	}
+
+	err = c.contestsRepo.DeleteContest(ctx, contestID)
 	if err != nil {
 		logger.Error("error on deleting contest from repo: ", err)
 		status := http.StatusInternalServerError
