@@ -146,7 +146,10 @@ func (c ContestsHandlerImp) ListContests(ctx context.Context, req structs.Reques
 	res := make([]structs.ResponseListContestsItem, 0)
 	for _, contest := range contests {
 		var status structs.RegistrationStatus
-		if !req.MyContest {
+		// TODO: actually do this right!!!
+		if req.MyContest {
+			status = structs.Registered
+		} else {
 			if contest.CreatedBy == req.UserID {
 				status = structs.Owner
 			} else {

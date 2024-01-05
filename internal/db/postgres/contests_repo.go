@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"time"
 )
 
 type ContestsMetadataRepoImp struct {
@@ -140,9 +141,9 @@ func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending
 
 	now := time.Now().Unix()
 	if started {
-		stmt = fmt.Sprintf("%s WHERE start_time <= %d", stmt, now)
+		stmt = fmt.Sprintf("%s AND start_time <= %d", stmt, now)
 	} else {
-		stmt = fmt.Sprintf("%s WHERE start_time > %d", stmt, now)
+		stmt = fmt.Sprintf("%s AND start_time > %d", stmt, now)
 	}
 
 	stmt += " ORDER BY id "
