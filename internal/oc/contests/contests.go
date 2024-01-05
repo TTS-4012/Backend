@@ -225,7 +225,6 @@ func (c ContestsHandlerImp) GetScoreboardProblem(ctx context.Context, contestID 
 	return ans, nil
 }
 
-// GetContestScoreboard TODO: when I have time I should do it in a way like I care a shit about pagination performance
 func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req structs.RequestGetScoreboard) (ans structs.ResponseGetContestScoreboard, status int) {
 	logger := pkg.Log.WithField("method", "get_contest_scoreboard")
 
