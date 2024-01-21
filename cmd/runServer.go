@@ -6,8 +6,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/ocontest/backend/pkg/kvstorages"
 	"log"
+
+	"github.com/ocontest/backend/pkg/kvstorages"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/api"
@@ -65,10 +66,15 @@ func RunServer() {
 
 	aesHandler, err := aes.NewAesHandler([]byte(c.AESKey))
 	if err != nil {
-		log.Fatal("error on creating aes handler", err)
+		log.Fatal("error on creating aes handler: ", err)
 	}
 
-	otpStorage := otp.NewOTPHandler(kvstorages.NewInMemoryStorage())
+	resdisStorage, err := kvstorages.NewRedisStorage(c.Redis)
+	if err != nil {
+		log.Fatal("coudn't connect to redis:  ", err)
+	}
+
+	otpStorage := otp.NewOTPHandler(resdisStorage)
 
 	dbConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
 	if err != nil {

@@ -2,9 +2,10 @@ package kvstorages
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/configs"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -12,21 +13,24 @@ type RedisStorage struct {
 	conn *redis.Client
 }
 
-func NewRedisStorage() KVStorage {
+func NewRedisStorage(c configs.SectionRedis) (KVStorage, error) {
+	fmt.Println(c, "redis config")
 	client := redis.NewClient(&redis.Options{
-		Addr:            "localhost:6379",
-		DB:              0,
-		WriteTimeout:    time.Second,
-		ReadTimeout:     time.Second,
-		PoolSize:        10,
-		PoolTimeout:     time.Second,
-		ConnMaxLifetime: time.Minute * 30,
-		ConnMaxIdleTime: time.Minute,
+		Addr:         c.Address,
+		DB:           c.DB,
+		WriteTimeout: c.Timeout,
+		ReadTimeout:  c.Timeout,
+		PoolSize:     10,
+		PoolTimeout:  c.Timeout,
 	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	defer cancel()
+	err := client.Ping(ctx).Err()
 
 	return RedisStorage{
 		conn: client,
-	}
+	}, err
 }
 func (r RedisStorage) Save(ctx context.Context, key, value string) error {
 	return r.conn.Set(ctx, key, value, 0).Err()
