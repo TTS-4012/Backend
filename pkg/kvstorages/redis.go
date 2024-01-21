@@ -13,7 +13,7 @@ type RedisStorage struct {
 	conn *redis.Client
 }
 
-func NewRedisStorage(c configs.SectionRedis) (KVStorage, error) {
+func newRedisStorage(c configs.SectionRedis) (KVStorage, error) {
 	fmt.Println(c, "redis config")
 	client := redis.NewClient(&redis.Options{
 		Addr:         c.Address,

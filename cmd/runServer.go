@@ -69,12 +69,12 @@ func RunServer() {
 		log.Fatal("error on creating aes handler: ", err)
 	}
 
-	resdisStorage, err := kvstorages.NewRedisStorage(c.Redis)
+	kvStore, err := kvstorages.NewKVStorage(c.KVStore)
 	if err != nil {
-		log.Fatal("coudn't connect to redis:  ", err)
+		log.Fatal("coudn't initialize kvstore:  ", err)
 	}
 
-	otpStorage := otp.NewOTPHandler(resdisStorage)
+	otpHandler := otp.NewOTPHandler(kvStore)
 
 	dbConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
 	if err != nil {
@@ -137,7 +137,7 @@ func RunServer() {
 	if err != nil {
 		log.Fatal("error on creating judge handler", err)
 	}
-	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpStorage)
+	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpHandler)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
 	contestHandler := contests.NewContestsHandler(

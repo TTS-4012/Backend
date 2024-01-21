@@ -10,7 +10,7 @@ type InMemoryStorage struct {
 	mainStorage map[string]string
 }
 
-func NewInMemoryStorage() KVStorage {
+func newInMemoryStorage() KVStorage {
 	return InMemoryStorage{
 		mainStorage: make(map[string]string),
 	}
