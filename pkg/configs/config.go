@@ -14,6 +14,7 @@ var (
 
 type OContestConf struct {
 	Postgres SectionPostgres `yaml:"postgres"`
+	Redis    SectionRedis    `yaml:"redis"`
 	Mongo    SectionMongo    `yaml:"mongo"`
 	JWT      SectionJWT      `yaml:"jwt"`
 	SMTP     SectionSMTP     `yaml:"smtp"`
@@ -36,6 +37,12 @@ type SectionPostgres struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
+}
+
+type SectionRedis struct {
+	Address         string        `yaml:"address"`
+	DB              int           `yaml:"db"`
+	Timeout         time.Duration `yaml:"timeout"`
 }
 
 type SectionMongo struct {
