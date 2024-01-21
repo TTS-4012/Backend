@@ -21,7 +21,7 @@ type ProblemsMetadataRepo interface {
 	GetProblem(ctx context.Context, id int64) (structs.Problem, error)
 	GetProblemTitle(ctx context.Context, id int64) (string, error)
 	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error)
-	UpdateProblem(ctx context.Context, id int64, title string) error
+	UpdateProblem(ctx context.Context, id int64, title string, hardness int64) error
 	DeleteProblem(ctx context.Context, id int64) (string, error)
 }
 

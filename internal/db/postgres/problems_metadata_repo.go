@@ -138,12 +138,33 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	return ans, total_count, err
 }
 
-func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string) error {
+// TODO: suitable query builder yada yada
+func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string, hardness int64) error {
 	stmt := `
-	UPDATE problems SET title = $1 WHERE id = $2
+	UPDATE problems SET
 	`
 
-	_, err := a.conn.Exec(ctx, stmt, title, id)
+	args := make([]interface{}, 0)
+
+	if title != "" {
+		args = append(args, title)
+		stmt = fmt.Sprintf("%s title = $%d", stmt, len(args))
+	}
+	if hardness != 0 {
+		if len(args) > 0 {
+			stmt += ","
+		}
+		args = append(args, hardness)
+		stmt = fmt.Sprintf("%s hardness = $%d", stmt, len(args))
+	}
+	if len(args) == 0 {
+		return nil
+	}
+
+	args = append(args, id)
+	stmt = fmt.Sprintf("%s WHERE id = $%d", stmt, len(args))
+
+	_, err := a.conn.Exec(ctx, stmt, args...)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}

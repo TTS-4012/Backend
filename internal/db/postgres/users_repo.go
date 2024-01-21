@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg/structs"
@@ -88,6 +89,7 @@ func (a *UsersRepoImp) GetByEmail(ctx context.Context, email string) (structs.Us
 }
 
 // TODO: find a suitable query builder to do this shit. sorry for this shitty code you are gonna see, I had no other idea.
+// if you change this also change UpdateProblem since i just copied this :).
 func (a *UsersRepoImp) UpdateUser(ctx context.Context, user structs.User) error {
 	args := make([]interface{}, 0)
 	args = append(args, user.ID)

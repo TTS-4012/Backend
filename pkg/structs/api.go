@@ -90,6 +90,7 @@ type RequestUpdateProblem struct {
 	Id          int64
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	Hardness    int64  `json:"hardness"`
 }
 
 // SUBMISSIONS
