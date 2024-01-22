@@ -62,7 +62,7 @@ func createNewBucket(ctx context.Context, conf configs.SectionMinIO, minioClient
 	if err != nil {
 		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
 		if errBucketExists == nil && exists {
-			logger.Warn("We already own the bucket ", bucketName)
+			logger.Info("We already own the bucket ", bucketName)
 		} else {
 			return err
 		}
@@ -120,3 +120,4 @@ func (f MinioHandlerImp) DownloadFile(ctx context.Context, objectName string) ([
 func (f MinioHandlerImp) GenCodeObjectname(userID, problemID, submissionID int64) string {
 	return fmt.Sprintf("%d/%d/%d", problemID, userID, submissionID)
 }
+

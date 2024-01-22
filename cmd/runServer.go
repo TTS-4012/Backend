@@ -7,6 +7,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ocontest/backend/pkg/kvstorages"
 
@@ -35,7 +40,33 @@ var runServerCmd = &cobra.Command{
 	Use:   "runServer",
 	Short: "will run server according to it's given config",
 	Run: func(cmd *cobra.Command, args []string) {
-		RunServer()
+		srv, shutdown := getServer()
+
+		go func() {
+			pkg.Log.Info("running server on ", srv.Addr)
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("listen: %s\n", err)
+			}
+		}()
+
+		quit := make(chan os.Signal)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+		<-quit
+
+		log.Println("Shutdown Server ...")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := shutdown(ctx); err != nil {
+			log.Fatal("Dependencies Shutdown:", err)
+		}
+		// catching ctx.Done(). timeout of 5 seconds.
+		select {
+		case <-ctx.Done():
+			log.Println("timeout of 5 seconds.")
+		}
+		log.Println("Server exiting")
 	},
 }
 
@@ -43,7 +74,7 @@ func init() {
 	rootCmd.AddCommand(runServerCmd)
 }
 
-func RunServer() {
+func getServer() (*http.Server, func(context.Context) error) {
 	configs.InitConf()
 	c := configs.Conf
 	pkg.InitLog(c.Log)
@@ -56,7 +87,6 @@ func RunServer() {
 	}
 
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
 
 	ctx := context.Background()
 	// connecting to dependencies
@@ -76,9 +106,14 @@ func RunServer() {
 
 	otpHandler := otp.NewOTPHandler(kvStore)
 
-	dbConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
+	pgConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
 	if err != nil {
-		log.Fatal("error on connecting to db", err)
+		log.Fatal("error on connecting to postgres", err)
+	}
+
+	mongoConn, err := mongodb.NewConn(ctx, c.Mongo)
+	if err != nil {
+		log.Fatal("error on connecting to mongo", err)
 	}
 
 	minioClient, err := minio.NewMinioHandler(ctx, c.MinIO)
@@ -87,12 +122,12 @@ func RunServer() {
 	}
 
 	// make repo
-	authRepo, err := postgres.NewAuthRepo(ctx, dbConn)
+	authRepo, err := postgres.NewAuthRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating auth repo: ", err)
 	}
 
-	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, dbConn)
+	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating problems metadata repo: ", err)
 	}
@@ -102,32 +137,32 @@ func RunServer() {
 		log.Fatal("error on creating problem description repo: ", err)
 	}
 
-	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, dbConn)
+	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating submission metadata repo: ", err)
 	}
 
-	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, dbConn)
+	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating testcase repo: ", err)
 	}
 
-	judgeRepo, err := mongodb.NewJudgeRepo(c.Mongo)
+	judgeRepo, err := mongodb.NewJudgeRepo(mongoConn, c.Mongo.Database)
 	if err != nil {
 		log.Fatal("error on creating judge repo")
 	}
 
-	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, dbConn)
+	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating contest repo", err)
 	}
 
-	contestsProblemsRepo, err := postgres.NewContestsProblemsMetadataRepo(ctx, dbConn)
+	contestsProblemsRepo, err := postgres.NewContestsProblemsMetadataRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating contest problems repo: ", err)
 	}
 
-	contestsUsersRepo, err := postgres.NewContestsUsersRepo(ctx, dbConn)
+	contestsUsersRepo, err := postgres.NewContestsUsersRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating contest users repo: ", err)
 	}
@@ -144,13 +179,25 @@ func RunServer() {
 		contestRepo, contestsProblemsRepo, problemsMetadataRepo,
 		submissionsRepo, authRepo, contestsUsersRepo, judgeHandler)
 
+	r := gin.Default()
 	// starting http server
 	api.AddRoutes(r, authHandler, problemsHandler, submissionsHandler, contestHandler)
 
-	addr := fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
-	pkg.Log.Info("Running on address: ", addr)
-	if err := r.Run(addr); err != nil {
-		panic(err)
-
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port),
+		Handler: r,
 	}
+
+	shutdown := func(ctx context.Context) error {
+		pkg.Log.Info("shutting down")
+		pgConn.Close()
+		kvStore.Close()
+		if err := mongoConn.Disconnect(ctx); err != nil {
+			pkg.Log.WithError(err).Error("coudn't disconnect from mongo")
+		}
+
+		return srv.Shutdown(ctx)
+	}
+
+	return srv, shutdown
 }
