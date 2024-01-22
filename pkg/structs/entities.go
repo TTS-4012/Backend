@@ -38,17 +38,15 @@ type SubmissionMetadata struct {
 }
 
 type Testcase struct {
-	ProblemID int64 `json:"problem_id"`
-	ID        int64 `json:"id"`
-
+	ProblemID      int64  `json:"problem_id"`
+	ID             int64  `json:"id"`
 	Input          string `json:"input,omitempty"`
-	ExpectedOutput string `json:"expected_output,omitempty"`
+	ExpectedOutput string `json:"output,omitempty"`
 }
 
 type TestResult struct {
-	SubmissionID int64 `json:"submission_id"`
-	TestcaseID   int64 `json:"id"`
-
+	SubmissionID int64  `json:"submission_id"`
+	TestcaseID   int64  `json:"id"`
 	RunnerOutput string `json:"runner_output"`
 	RunnerError  string `json:"runner_error"`
 	Verdict

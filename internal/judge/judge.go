@@ -2,6 +2,7 @@ package judge
 
 import (
 	"context"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/internal/minio"
 	"github.com/ocontest/backend/pkg"
@@ -83,7 +84,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 
 	currentScore := j.CalcScore(resp.TestResults)
 	lastSub, err := j.submissionMetadataRepo.GetFinalSubmission(ctx, submission.UserID, submission.ProblemID)
-	if err != nil {
+	if err != nil && !errors.Is(err, pkg.ErrNotFound) {
 		return errors.Wrap(err, "coudn't get last submission")
 	}
 

@@ -220,3 +220,9 @@ type ResponseGetContestScoreboard struct {
 	Users    []ScoreboardUserStanding `json:"users"`
 	Problems []ScoreboardProblem      `json:"problems"`
 }
+
+type ResponseGetTestcase struct {
+	ID     int64  `json:"id"`
+	Input  string `json:"input"`
+	Output string `json:"output"`
+}

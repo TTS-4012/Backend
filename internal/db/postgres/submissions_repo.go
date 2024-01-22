@@ -154,7 +154,7 @@ func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, u
 	}
 
 	stmt = `
-	UPDATE submissions SET status='processed', score=$1 judge_result_id = $2, is_final = $3 where id = $4
+	UPDATE submissions SET status='processed', score=$1, judge_result_id = $2, is_final = $3 where id = $4
 	`
 	_, err = s.conn.Exec(ctx, stmt, score, docID, isFinal, submissionID)
 	return err

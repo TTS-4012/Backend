@@ -48,6 +48,8 @@ func (r RunnerSchedulerImp) StartListen() {
 			pkg.Log.Error("error on getting message from queue: ", err)
 			continue
 		}
+
+		pkg.Log.Debug("got msg from nats")
 		r.ProcessCode(msg)
 	}
 }
