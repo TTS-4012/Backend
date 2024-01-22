@@ -125,7 +125,7 @@ func (j JudgeImp) CalcScore(t []structs.TestResult) int {
 		}
 	}
 
-	return 100 * correct / 100
+	return 100 * correct / total
 }
 
 func (j JudgeImp) GetScore(ctx context.Context, id string) (int, error) {

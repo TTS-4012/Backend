@@ -11,9 +11,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/ocontest/backend/pkg/kvstorages"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/api"
@@ -55,16 +55,8 @@ var runServerCmd = &cobra.Command{
 
 		log.Println("Shutdown Server ...")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		if err := shutdown(ctx); err != nil {
+		if err := shutdown(); err != nil {
 			log.Fatal("Dependencies Shutdown:", err)
-		}
-		// catching ctx.Done(). timeout of 5 seconds.
-		select {
-		case <-ctx.Done():
-			log.Println("timeout of 5 seconds.")
 		}
 		log.Println("Server exiting")
 	},
@@ -74,7 +66,7 @@ func init() {
 	rootCmd.AddCommand(runServerCmd)
 }
 
-func getServer() (*http.Server, func(context.Context) error) {
+func getServer() (*http.Server, func() error) {
 	configs.InitConf()
 	c := configs.Conf
 	pkg.InitLog(c.Log)
@@ -188,15 +180,43 @@ func getServer() (*http.Server, func(context.Context) error) {
 		Handler: r,
 	}
 
-	shutdown := func(ctx context.Context) error {
+	shutdown := func() error {
+
 		pkg.Log.Info("shutting down")
-		pgConn.Close()
-		kvStore.Close()
-		if err := mongoConn.Disconnect(ctx); err != nil {
-			pkg.Log.WithError(err).Error("coudn't disconnect from mongo")
+
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, c.Server.GracefulShutdownPeriod)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			return err
 		}
 
-		return srv.Shutdown(ctx)
+		tasks := []func() error{
+			func() error {
+				pgConn.Close()
+				pkg.Log.Info("pg conn closed")
+				return nil
+			},
+			func() error {
+				err := kvStore.Close()
+				pkg.Log.WithError(err).Info("kv store closed")
+				return err
+			},
+			func() error {
+				err := mongoConn.Disconnect(ctx)
+				pkg.Log.WithError(err).Info("mongo conn closed")
+				return err
+			},
+		}
+
+		errGroup := &errgroup.Group{}
+
+		for _, t := range tasks {
+			errGroup.Go(t)
+		}
+
+		return errGroup.Wait()
 	}
 
 	return srv, shutdown
