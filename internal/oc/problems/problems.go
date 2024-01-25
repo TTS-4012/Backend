@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/ocontest/backend/internal/db"
@@ -20,6 +19,7 @@ type ProblemsHandler interface {
 	ListProblem(ctx context.Context, req structs.RequestListProblems) (structs.ResponseListProblems, int)
 	DeleteProblem(ctx context.Context, problemId int64) int
 	AddTestcase(ctx context.Context, problemID int64, data []byte) int
+	GetTestcase(ctx context.Context, problemID int64) ([]structs.ResponseGetTestcase, int)
 	UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int
 }
 
@@ -219,7 +219,6 @@ func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, da
 		"module": "Problems",
 	})
 
-	fmt.Println("ASD", len(data))
 	testCases, err := unzip(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		logger.Error("error on unzip file: ", err)
@@ -235,4 +234,28 @@ func (p ProblemsHandlerImp) AddTestcase(ctx context.Context, problemID int64, da
 		}
 	}
 	return http.StatusOK
+}
+func (p ProblemsHandlerImp) GetTestcase(ctx context.Context, problemID int64) ([]structs.ResponseGetTestcase, int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetTestcase",
+		"module": "Problems",
+	})
+
+	testCases, err := p.testcaseRepo.GetAllTestsOfProblem(ctx, problemID)
+
+	if err != nil {
+		logger.WithError(err).Error("error on get testcases from db")
+		return nil, http.StatusInternalServerError
+	}
+
+	ans := make([]structs.ResponseGetTestcase, len(testCases))
+	for i, t := range testCases {
+		ans[i] = structs.ResponseGetTestcase{
+			ID:     t.ID,
+			Input:  t.Input,
+			Output: t.ExpectedOutput,
+		}
+	}
+
+	return ans, http.StatusOK
 }

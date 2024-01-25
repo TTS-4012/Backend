@@ -27,3 +27,7 @@ func (i InMemoryStorage) Get(ctx context.Context, key string) (string, error) {
 	}
 	return val, nil
 }
+
+func (i InMemoryStorage) Close() error{
+	return nil
+}

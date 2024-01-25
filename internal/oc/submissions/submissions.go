@@ -3,12 +3,13 @@ package submissions
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/internal/judge"
 	"github.com/ocontest/backend/internal/minio"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
 
 	"github.com/sirupsen/logrus"
 )
@@ -125,7 +126,7 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 
 	if submission.Status != "processed" {
 		ans.Verdicts = nil
-		ans.Message = "not judged yet!"
+		ans.ServiceMessage = "not judged yet!"
 		status = http.StatusTooEarly
 		return
 	}
@@ -140,30 +141,30 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 
 	if judgeResult.ServerError != "" {
 		return structs.ResponseGetSubmissionResults{
-			Verdicts: nil,
-			Message:  "Something Went Wrong!, please try again later...",
+			Verdicts:       nil,
+			ServiceMessage: "Something Went Wrong!, please try again later...",
 		}, http.StatusInternalServerError
 	}
-	message := `All tests ran successfully`
-	verdicts := make([]structs.Verdict, 0)
+	ans = structs.ResponseGetSubmissionResults{
+		Verdicts:       make([]structs.Verdict, 0),
+		ServiceMessage: `All tests ran successfully`,
+	}
+	isFailed := false
+
 	for _, t := range judgeResult.TestResults {
-		if t.RunnerError != "" {
-			message = fmt.Sprintf("Error: %v", t.RunnerError)
+		if !isFailed && t.Verdict != structs.VerdictOK {
+			ans.ServiceMessage = fmt.Sprintf("Failed on testcase with id %d, verdict status: %v", t.TestcaseID, t.Verdict.String())
+			ans.ErrorMessage = t.RunnerError
+			isFailed = true
 		}
-		if t.Verdict != structs.VerdictOK {
-			message = "Failed, verdict: " + t.Verdict.String()
-		}
-		verdicts = append(verdicts, t.Verdict)
+		ans.Verdicts = append(ans.Verdicts, t.Verdict)
 	}
-	if len(verdicts) == 0 {
-		message = "There wasn't any test!"
+	if len(ans.Verdicts) == 0 {
+		ans.ServiceMessage = "There wasn't any test!"
 	}
 
-	return structs.ResponseGetSubmissionResults{
-		Verdicts: verdicts,
-		Message:  message,
-	}, http.StatusOK
-
+	status = http.StatusOK
+	return
 }
 
 func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions, getAll bool) (structs.ResponseListSubmissions, int) {
@@ -172,66 +173,39 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 		"module": "submissions",
 	})
 
-	submissions, total_count, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
 		logger.Error("error on listing problems: ", err)
 		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
 	}
 
-	ans := make([]structs.ResponseListSubmissionsItem, 0)
+	ans := structs.ResponseListSubmissions{
+		Submissions: make([]structs.ResponseListSubmissionsItem, 0),
+	}
+
 	for _, sub := range submissions {
-		var uID int64 = 0
-		if getAll {
-			uID = sub.UserID
+
+		results, status := s.GetResults(ctx, sub.ID)
+		if err != nil {
+			logger.WithError(err).Error("coudn't get submission result")
+			return structs.ResponseListSubmissions{}, status
 		}
 
-		metadata := structs.SubmissionListMetadata{
+		meta := structs.SubmissionListMetadata{
 			ID:        sub.ID,
-			UserID:    uID,
+			UserID:    sub.UserID,
 			Language:  sub.Language,
 			CreatedAt: sub.CreatedAT,
 			FileName:  sub.FileName,
-		}
-		results := structs.ResponseGetSubmissionResults{}
-
-		testResultID := sub.JudgeResultID
-		judgeResult, err := s.judge.GetTestResults(ctx, testResultID)
-		if err != nil {
-			logger.Error("error on getting test results from judge: ", err)
+			Score:     sub.Score,
 		}
 
-		if judgeResult.ServerError != "" && err != nil {
-			results = structs.ResponseGetSubmissionResults{
-				Verdicts: nil,
-				Message:  "Something Went Wrong!, please try again later...",
-			}
-		} else {
-			message := `All tests ran successfully`
-			verdicts := make([]structs.Verdict, 0)
-			for _, t := range judgeResult.TestResults {
-				if t.RunnerError != "" {
-					message = fmt.Sprintf("Error: %v", t.RunnerError)
-				}
-				if t.Verdict != structs.VerdictOK {
-					message = "Failed"
-				}
-				verdicts = append(verdicts, t.Verdict)
-			}
-
-			results = structs.ResponseGetSubmissionResults{
-				Verdicts: verdicts,
-				Message:  message,
-			}
-		}
-
-		ans = append(ans, structs.ResponseListSubmissionsItem{
-			Metadata: metadata,
+		ans.Submissions = append(ans.Submissions, structs.ResponseListSubmissionsItem{
+			Metadata: meta,
 			Results:  results,
 		})
 	}
 
-	return structs.ResponseListSubmissions{
-		TotalCount:  total_count,
-		Submissions: ans,
-	}, http.StatusOK
+	ans.TotalCount = totalCount
+	return ans, totalCount
 }

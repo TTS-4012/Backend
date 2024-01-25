@@ -48,7 +48,7 @@ func (t *TestCaseRepoImp) Insert(ctx context.Context, testCase structs.Testcase)
 	return id, nil
 }
 
-// Get not sure if we need it
+// not sure if we need it
 func (t *TestCaseRepoImp) GetByID(ctx context.Context, id int64) (ans structs.Testcase, err error) {
 	stmt := `
 	SELECT id, problem_id, input, output FROM testcases WHERE id = $1

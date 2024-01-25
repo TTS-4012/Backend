@@ -109,8 +109,10 @@ type ResponseGetSubmission struct {
 }
 
 type ResponseGetSubmissionResults struct {
-	Verdicts []Verdict `json:"verdicts"`
-	Message  string    `json:"message"`
+	Verdicts       []Verdict `json:"verdicts"`
+	ServiceMessage string    `json:"service_message"`
+	TestCaseID     int64     `json:"testcase_id"`
+	ErrorMessage   string    `json:"error_message"`
 }
 
 type RequestListSubmissions struct {
@@ -133,6 +135,7 @@ type SubmissionListMetadata struct {
 	Language  string `json:"language"`
 	CreatedAt string `json:"created_at"`
 	FileName  string `json:"file_name"`
+	Score     int    `json:"int"`
 }
 
 type ResponseListSubmissionsItem struct {
@@ -219,4 +222,10 @@ type ResponseGetContestScoreboard struct {
 	Count    int                      `json:"count,omitempty"`
 	Users    []ScoreboardUserStanding `json:"users"`
 	Problems []ScoreboardProblem      `json:"problems"`
+}
+
+type ResponseGetTestcase struct {
+	ID     int64  `json:"id"`
+	Input  string `json:"input"`
+	Output string `json:"output"`
 }

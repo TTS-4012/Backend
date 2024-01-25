@@ -164,3 +164,19 @@ func (h *handlers) AddTestCase(c *gin.Context) {
 	status := h.problemsHandler.AddTestcase(c, problemID, body)
 	c.Status(status)
 }
+
+func (h *handlers) GetTestCase(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "addTestcase")
+
+	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Warn("Failed to parse id", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id, id should be an integer",
+		})
+		return
+	}
+
+	ans, status := h.problemsHandler.GetTestcase(c, problemID)
+	c.JSON(status, ans)
+}

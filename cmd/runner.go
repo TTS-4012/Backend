@@ -48,7 +48,7 @@ func init() {
 func RunRunnerTaskHandler(c *configs.OContestConf) {
 	runnerHandler, err := runner.NewRunnerScheduler(c.Judge.Nats)
 	if err != nil {
-		log.Fatal("error on creating runner scheduler", err)
+		log.Fatal("error on creating runner scheduler: ", err)
 	}
 	runnerHandler.StartListen()
 }

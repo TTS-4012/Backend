@@ -83,8 +83,9 @@ type SectionAuthDuration struct {
 }
 
 type SectionServer struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Host                   string        `yaml:"host"`
+	Port                   string        `yaml:"port"`
+	GracefulShutdownPeriod time.Duration `yaml:"graceful_shutdown_period"`
 }
 
 type SectionMinIO struct {
@@ -141,6 +142,7 @@ func AddVariablesWithUnderscore(c *OContestConf) {
 	c.Auth.Duration.AccessToken = viper.GetDuration("auth.duration.access_token")
 	c.Auth.Duration.RefreshToken = viper.GetDuration("auth.duration.refresh_token")
 	c.Auth.Duration.VerifyEmail = viper.GetDuration("auth.duration.verify_email")
+	c.Server.GracefulShutdownPeriod = viper.GetDuration("server.graceful_shutdown_period")
 }
 
 // Loads the config

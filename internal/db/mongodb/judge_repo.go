@@ -2,35 +2,26 @@ package mongodb
 
 import (
 	"context"
+
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type JudgeRepoImp struct {
 	collection *mongo.Collection
 }
 
-func NewJudgeRepo(config configs.SectionMongo) (db.JudgeRepo, error) {
+func NewJudgeRepo(client *mongo.Client, db string) (db.JudgeRepo, error) {
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(config.Address).SetServerAPIOptions(serverAPI)
-
-	client, err := mongo.Connect(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
 	return &JudgeRepoImp{
-		collection: client.Database(config.Database).Collection("judge"),
+		collection: client.Database(db).Collection("judge"),
 	}, client.Ping(ctx, nil)
 }
 
