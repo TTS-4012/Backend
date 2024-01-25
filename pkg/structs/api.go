@@ -135,6 +135,7 @@ type SubmissionListMetadata struct {
 	Language  string `json:"language"`
 	CreatedAt string `json:"created_at"`
 	FileName  string `json:"file_name"`
+	Score     int    `json:"int"`
 }
 
 type ResponseListSubmissionsItem struct {

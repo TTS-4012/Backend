@@ -197,6 +197,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 			Language:  sub.Language,
 			CreatedAt: sub.CreatedAT,
 			FileName:  sub.FileName,
+			Score:     sub.Score,
 		}
 
 		ans.Submissions = append(ans.Submissions, structs.ResponseListSubmissionsItem{
