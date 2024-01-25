@@ -109,8 +109,10 @@ type ResponseGetSubmission struct {
 }
 
 type ResponseGetSubmissionResults struct {
-	Verdicts []Verdict `json:"verdicts"`
-	Message  string    `json:"message"`
+	Verdicts       []Verdict `json:"verdicts"`
+	ServiceMessage string    `json:"service_message"`
+	TestCaseID     int64     `json:"testcase_id"`
+	ErrorMessage   string    `json:"error_message"`
 }
 
 type RequestListSubmissions struct {
