@@ -1,10 +1,11 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
 )
 
 func (h *handlers) registerUser(c *gin.Context) {
@@ -121,6 +122,16 @@ func (h *handlers) editUser(c *gin.Context) {
 		})
 		return
 	}
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	reqData.UserID = userID.(int64)
 
 	status := h.authHandler.EditUser(c, reqData)
 	c.Status(status)
