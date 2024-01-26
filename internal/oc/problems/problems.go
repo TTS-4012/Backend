@@ -146,6 +146,9 @@ func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.Reque
 	if err != nil {
 		logger.Error("error on updating problem on problem metadata repo: ", err)
 		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
+		}
 		return status
 	}
 
