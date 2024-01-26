@@ -136,3 +136,11 @@ func (h *handlers) editUser(c *gin.Context) {
 	status := h.authHandler.EditUser(c, reqData)
 	c.Status(status)
 }
+
+func (h *handlers) getOwnUser(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}
+
+func (h *handlers) getUser(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}

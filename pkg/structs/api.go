@@ -44,6 +44,11 @@ type RequestEditUser struct {
 	Email    string `json:"email"`
 }
 
+type ReponeGetUser struct {
+	Username string `json:"username"`
+	Email    string `json:"email,omitempty"`
+}
+
 // PROBLEMS
 type RequestCreateProblem struct {
 	Title       string `json:"title"`
