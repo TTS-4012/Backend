@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
@@ -154,5 +155,17 @@ func (h *handlers) getOwnUser(c *gin.Context) {
 }
 
 func (h *handlers) getUser(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "getUser")
+
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting user_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid user_id, user_id should be an integer",
+		})
+		return
+	}
+
+	resp, status := h.authHandler.GetUser(c, userID, false)
+	c.JSON(status, resp)
 }
