@@ -299,6 +299,24 @@ func (a *AuthHandlerImp) ParseAuthToken(_ context.Context, token string) (int64,
 	return a.jwtHandler.ParseToken(token)
 }
 
-func (a *AuthHandlerImp) GetUser(ctx context.Context, userID int64, getPrivate bool) (structs.ReponeGetUser, int) {
-	panic("not implemented!")
+func (a *AuthHandlerImp) GetUser(ctx context.Context, userID int64, getPrivate bool) (ans structs.ReponeGetUser, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetUser",
+		"module": "auth",
+	})
+
+	user, err := a.authRepo.GetByID(ctx, userID)
+	if err != nil {
+		logger.Error("error on getting user: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	ans.Username = user.Username
+	if getPrivate {
+		ans.Email = user.Email
+	}
+
+	status = http.StatusOK
+	return
 }
