@@ -138,7 +138,19 @@ func (h *handlers) editUser(c *gin.Context) {
 }
 
 func (h *handlers) getOwnUser(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "getOwnUser")
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	resp, status := h.authHandler.GetUser(c, userID.(int64), true)
+	c.JSON(status, resp)
 }
 
 func (h *handlers) getUser(c *gin.Context) {
