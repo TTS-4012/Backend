@@ -1,10 +1,12 @@
 package api
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-	"net/http"
 )
 
 func (h *handlers) registerUser(c *gin.Context) {
@@ -122,6 +124,48 @@ func (h *handlers) editUser(c *gin.Context) {
 		return
 	}
 
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+	reqData.UserID = userID.(int64)
+
 	status := h.authHandler.EditUser(c, reqData)
 	c.Status(status)
+}
+
+func (h *handlers) getOwnUser(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "getOwnUser")
+
+	userID, exists := c.Get(UserIDKey)
+	if !exists {
+		logger.Error("error on getting user_id from context")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": pkg.ErrInternalServerError.Error(),
+		})
+		return
+	}
+
+	resp, status := h.authHandler.GetUser(c, userID.(int64), true)
+	c.JSON(status, resp)
+}
+
+func (h *handlers) getUser(c *gin.Context) {
+	logger := pkg.Log.WithField("handler", "getUser")
+
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting user_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid user_id, user_id should be an integer",
+		})
+		return
+	}
+
+	resp, status := h.authHandler.GetUser(c, userID, false)
+	c.JSON(status, resp)
 }

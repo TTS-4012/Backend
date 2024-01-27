@@ -26,6 +26,7 @@ type AuthHandler interface {
 	LoginWithOTP(ctx context.Context, email, otpCode string) (structs.AuthenticateResponse, int)
 	EditUser(ctx context.Context, request structs.RequestEditUser) int
 	ParseAuthToken(ctx context.Context, token string) (int64, string, error)
+	GetUser(ctx context.Context, userID int64, getPrivate bool) (structs.ReponeGetUser, int)
 }
 
 type AuthHandlerImp struct {
@@ -296,4 +297,26 @@ func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEd
 
 func (a *AuthHandlerImp) ParseAuthToken(_ context.Context, token string) (int64, string, error) {
 	return a.jwtHandler.ParseToken(token)
+}
+
+func (a *AuthHandlerImp) GetUser(ctx context.Context, userID int64, getPrivate bool) (ans structs.ReponeGetUser, status int) {
+	logger := pkg.Log.WithFields(logrus.Fields{
+		"method": "GetUser",
+		"module": "auth",
+	})
+
+	user, err := a.authRepo.GetByID(ctx, userID)
+	if err != nil {
+		logger.Error("error on getting user: ", err)
+		status = http.StatusInternalServerError
+		return
+	}
+
+	ans.Username = user.Username
+	if getPrivate {
+		ans.Email = user.Email
+	}
+
+	status = http.StatusOK
+	return
 }
