@@ -142,28 +142,17 @@ func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.Reque
 		return http.StatusForbidden
 	}
 
-	if req.Title != "" {
-		err := p.problemMetadataRepo.UpdateProblem(ctx, req.Id, req.Title)
-		if err != nil {
-			logger.Error("error on updating problem on problem metadata repo: ", err)
-			status := http.StatusInternalServerError
-			if errors.Is(err, pkg.ErrNotFound) {
-				status = http.StatusNotFound
-			}
-			return status
+	err = p.problemMetadataRepo.UpdateProblem(ctx, req.Id, req.Title, req.Hardness)
+	if err != nil {
+		logger.Error("error on updating problem on problem metadata repo: ", err)
+		status := http.StatusInternalServerError
+		if errors.Is(err, pkg.ErrNotFound) {
+			status = http.StatusNotFound
 		}
+		return status
 	}
 
 	if req.Description != "" {
-		problem, err := p.problemMetadataRepo.GetProblem(ctx, req.Id)
-		if err != nil {
-			logger.Error("error on getting problem from problem metadata repo: ", err)
-			status := http.StatusInternalServerError
-			if errors.Is(err, pkg.ErrNotFound) {
-				status = http.StatusNotFound
-			}
-			return status
-		}
 		err = p.problemsDescriptionRepo.Update(problem.DocumentID, req.Description)
 		if err != nil {
 			logger.Error("error on updating problem description: ", err)
