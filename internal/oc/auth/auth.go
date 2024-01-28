@@ -279,13 +279,19 @@ func (p *AuthHandlerImp) LoginWithOTP(ctx context.Context, email, otpCode string
 }
 
 func (a *AuthHandlerImp) EditUser(ctx context.Context, request structs.RequestEditUser) int {
-
 	logger := pkg.Log.WithField("method", "EditUser")
+
+	encryptedPassword, err := a.aesHandler.Encrypt(request.Password)
+	if err != nil {
+		logger.Error("error on encrypting password: ", err)
+		return http.StatusInternalServerError
+	}
+
 	user := structs.User{
 		ID:                request.UserID,
 		Username:          request.Username,
 		Email:             request.Email,
-		EncryptedPassword: request.Password,
+		EncryptedPassword: encryptedPassword,
 	}
 	if err := a.authRepo.UpdateUser(ctx, user); err != nil {
 		logger.Error("error on update user in pg: ", err)
