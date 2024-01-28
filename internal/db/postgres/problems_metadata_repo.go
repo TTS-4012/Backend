@@ -176,7 +176,7 @@ func (a *ProblemsMetadataRepoImp) DeleteProblem(ctx context.Context, id int64) (
 	DELETE FROM problems WHERE id = $1 RETURNING document_id
 	`
 	var documentId string
-	err := a.conn.QueryRow(ctx, stmt, id).Scan(documentId)
+	err := a.conn.QueryRow(ctx, stmt, id).Scan(&documentId)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}

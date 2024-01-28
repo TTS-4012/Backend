@@ -185,7 +185,7 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 
 	documentID, err := p.problemMetadataRepo.DeleteProblem(ctx, problemID)
 	if err != nil {
-		logger.Error("error on getting problem from problem metadata repo: ", err)
+		logger.Error("error on deleting problem from problem metadata repo: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -195,7 +195,7 @@ func (p ProblemsHandlerImp) DeleteProblem(ctx context.Context, problemID int64) 
 
 	err = p.problemsDescriptionRepo.Delete(documentID)
 	if err != nil {
-		logger.Error("error on getting problem from problem decription repo: ", err)
+		logger.Error("error on deleting problem from problem decription repo: ", err)
 		return http.StatusInternalServerError
 	}
 
