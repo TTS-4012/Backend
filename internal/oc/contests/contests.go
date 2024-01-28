@@ -336,7 +336,7 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		return
 	}
 
-	userIDs, err := c.contestsUsersRepo.ListUsersByScore(ctx, req.ContestID, req.Limit, req.Offset) // TODO: handle cases where limit/offset has not been set
+	users, err := c.contestsUsersRepo.ListUsersByScore(ctx, req.ContestID, req.Limit, req.Offset)
 	if err != nil {
 		logger.Error("coudn't get contest users: ", err)
 		status = http.StatusInternalServerError
@@ -344,11 +344,11 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 	}
 
 	ans.Users = make([]structs.ScoreboardUserStanding, 0)
-	for i := range userIDs {
+	for i := range users {
 		var user structs.ScoreboardUserStanding
 		user.Scores = make([]int, len(ans.Problems))
 		for problemIndex, p := range ans.Problems {
-			s, err := c.submissionsRepo.GetFinalSubmission(ctx, userIDs[i], p.ID)
+			s, err := c.submissionsRepo.GetFinalSubmission(ctx, users[i].ID, p.ID)
 			if err != nil && !errors.Is(err, pkg.ErrNotFound) {
 				logger.Error("coudn't get submission from db: ", err)
 			}
@@ -363,6 +363,8 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 			}
 			user.Scores[problemIndex] = score
 		}
+		user.UserID = users[i].ID
+		user.Username = users[i].Username
 		ans.Users = append(ans.Users, user)
 	}
 
