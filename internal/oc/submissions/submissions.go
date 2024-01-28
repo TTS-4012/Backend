@@ -175,7 +175,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 
 	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
-		logger.Error("error on listing problems: ", err)
+		logger.Error("error on listing submissions: ", err)
 		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
 	}
 
@@ -185,11 +185,7 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 
 	for _, sub := range submissions {
 
-		results, status := s.GetResults(ctx, sub.ID)
-		if err != nil {
-			logger.WithError(err).Error("coudn't get submission result")
-			return structs.ResponseListSubmissions{}, status
-		}
+		results, _ := s.GetResults(ctx, sub.ID)
 
 		meta := structs.SubmissionListMetadata{
 			ID:        sub.ID,
@@ -207,5 +203,5 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 	}
 
 	ans.TotalCount = totalCount
-	return ans, totalCount
+	return ans, http.StatusOK
 }
