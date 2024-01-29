@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"github.com/ocontest/backend/internal/db/repos"
 	"net/http"
 
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
 
@@ -124,9 +123,6 @@ func (p ProblemsHandlerImp) ListProblem(ctx context.Context, req structs.Request
 	}, http.StatusOK
 }
 
-func foo() {
-	fmt.Println("S")
-}
 func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.RequestUpdateProblem) int {
 
 	logger := pkg.Log.WithFields(logrus.Fields{
@@ -156,28 +152,8 @@ func (p ProblemsHandlerImp) UpdateProblem(ctx context.Context, req structs.Reque
 		}
 		return status
 	}
-	if req.Title != "" {
-		err := p.problemMetadataRepo.UpdateProblem(ctx, req.Id, req.Title, 0)
-		if err != nil {
-			logger.Error("error on updating problem on problem metadata repos: ", err)
-			status := http.StatusInternalServerError
-			if errors.Is(err, pkg.ErrNotFound) {
-				status = http.StatusNotFound
-			}
-			return status
-		}
-	}
 
 	if req.Description != "" {
-		problem, err := p.problemMetadataRepo.GetProblem(ctx, req.Id)
-		if err != nil {
-			logger.Error("error on getting problem from problem metadata repos: ", err)
-			status := http.StatusInternalServerError
-			if errors.Is(err, pkg.ErrNotFound) {
-				status = http.StatusNotFound
-			}
-			return status
-		}
 		err = p.problemsDescriptionRepo.Update(problem.DocumentID, req.Description)
 		if err != nil {
 			logger.Error("error on updating problem description: ", err)
