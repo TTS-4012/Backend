@@ -200,17 +200,32 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 	}
 	stmt = fmt.Sprintf("%s FROM submissions", stmt)
 
-	args = append(args, problemID)
-	stmt = fmt.Sprintf("%s WHERE problem_id = $%d", stmt, len(args))
+	var cond string
+	if problemID != 0 {
+		args = append(args, problemID)
+		cond = fmt.Sprintf("%s problem_id = $%d", cond, len(args))
+	}
 	if userID != 0 {
+		if len(args) != 0 {
+			cond += " AND"
+		}
 		args = append(args, userID)
-		stmt = fmt.Sprintf("%s AND user_id = $%d", stmt, len(args))
+		cond = fmt.Sprintf("%s user_id = $%d", cond, len(args))
 	}
 	if contestID != 0 {
+		if len(args) != 0 {
+			cond += " AND"
+		}
 		args = append(args, contestID)
-		stmt = fmt.Sprintf("%s AND contest_id = $%d", stmt, len(args))
+		cond = fmt.Sprintf("%s contest_id = $%d", cond, len(args))
 	} else {
-		stmt = fmt.Sprintf("%s AND contest_id IS NULL", stmt)
+		if len(args) != 0 {
+			cond += " AND"
+		}
+		cond = fmt.Sprintf("%s contest_id IS NULL", cond)
+	}
+	if len(args) != 0 {
+		stmt = fmt.Sprintf("%s WHERE%s", stmt, cond)
 	}
 
 	stmt = fmt.Sprintf("%s ORDER BY created_at", stmt)
