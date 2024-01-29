@@ -57,9 +57,21 @@ services:
     ports:
       - "4222:4222"
 
+  redis:
+    image: hub.hamdocker.ir/redis:7.0.5
+    container_name: ocontest_redis
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - type: volume
+        source: ocontest_redis_data
+        target: /data
+
 volumes:
   ocontest_postgres_data:
   ocontest_mongodb_data:
   ocontest_nats:
   ocontest_minio:
+  ocontest_redis_data:
 

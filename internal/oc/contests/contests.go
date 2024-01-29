@@ -3,9 +3,9 @@ package contests
 import (
 	"context"
 	"errors"
-	"net/http"
-
 	"github.com/ocontest/backend/internal/judge"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/internal/db"
@@ -128,6 +128,10 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64
 		} else {
 			status = structs.NonRegistered
 		}
+	}
+
+	if status != structs.Owner && contest.StartTime > time.Now().Unix() {
+		problems = nil
 	}
 
 	return structs.ResponseGetContest{
