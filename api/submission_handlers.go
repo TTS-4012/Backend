@@ -152,6 +152,20 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 	}
 	reqData.ProblemID = problemID
 
+	var contestID int64
+	contestIDStr := c.Query("contest_id")
+	if contestIDStr == "" {
+		contestID = 0
+	} else {
+		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid contest_id, contest_id should be an integer",
+			})
+		}
+	}
+	reqData.ContestID = contestID
+
 	reqData.Descending = c.Query("descending") == "true"
 
 	reqData.GetCount = c.Query("get_count") == "true"
@@ -173,7 +187,7 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.submissionsHandler.ListSubmission(c, reqData, false)
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {
@@ -197,6 +211,20 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 	}
 	reqData.ProblemID = problemID
 
+	var contestID int64
+	contestIDStr := c.Query("contest_id")
+	if contestIDStr == "" {
+		contestID = 0
+	} else {
+		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid contest_id, contest_id should be an integer",
+			})
+		}
+	}
+	reqData.ContestID = contestID
+
 	reqData.Descending = c.Query("descending") == "true"
 
 	reqData.GetCount = c.Query("get_count") == "true"
@@ -218,7 +246,7 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 		return
 	}
 
-	resp, status := h.submissionsHandler.ListSubmission(c, reqData, true)
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
 	if status == http.StatusOK {
 		c.JSON(status, resp)
 	} else {

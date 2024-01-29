@@ -18,7 +18,7 @@ type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
-	ListSubmission(ctx context.Context, req structs.RequestListSubmissions, getAll bool) (structs.ResponseListSubmissions, int)
+	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
@@ -48,6 +48,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 		ProblemID: request.ProblemID,
 		FileName:  request.FileName,
 		Language:  request.Language,
+		ContestID: request.ContestID,
 	}
 
 	submissionID, err := s.submissionMetadataRepo.Insert(ctx, submission)
@@ -167,13 +168,13 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 	return
 }
 
-func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions, getAll bool) (structs.ResponseListSubmissions, int) {
+func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListSubmission",
 		"module": "submissions",
 	})
 
-	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.ContestID, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
 		logger.Error("error on listing submissions: ", err)
 		return structs.ResponseListSubmissions{}, http.StatusInternalServerError
