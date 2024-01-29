@@ -3,7 +3,7 @@ package judge
 import (
 	"context"
 
-	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/internal/minio"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
@@ -20,15 +20,15 @@ type Judge interface {
 
 type JudgeImp struct {
 	queue                  JudgeQueue
-	contestUsersRepo       db.ContestsUsersRepo
-	submissionMetadataRepo db.SubmissionMetadataRepo
+	contestUsersRepo       repos.ContestsUsersRepo
+	submissionMetadataRepo repos.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
-	testcaseRepo           db.TestCaseRepo
-	judgeRepo              db.JudgeRepo
+	testcaseRepo           repos.TestCaseRepo
+	judgeRepo              repos.JudgeRepo
 }
 
-func NewJudge(c configs.SectionJudge, submissionMetadataRepo db.SubmissionMetadataRepo,
-	minioHandler minio.MinioHandler, testcaseRepo db.TestCaseRepo, contestUsersRepo db.ContestsUsersRepo, judgeRepo db.JudgeRepo) (Judge, error) {
+func NewJudge(c configs.SectionJudge, submissionMetadataRepo repos.SubmissionMetadataRepo,
+	minioHandler minio.MinioHandler, testcaseRepo repos.TestCaseRepo, contestUsersRepo repos.ContestsUsersRepo, judgeRepo repos.JudgeRepo) (Judge, error) {
 	queue, err := NewJudgeQueue(c.Nats)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create judge queue for judge")
@@ -79,7 +79,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 
 	docID, err := j.judgeRepo.Insert(ctx, resp)
 	if err != nil {
-		return errors.Wrap(err, "couldn't insert judge result to judge repo")
+		return errors.Wrap(err, "couldn't insert judge result to judge repos")
 	}
 
 	currentScore := j.CalcScore(resp.TestResults)
@@ -95,7 +95,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 
 	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submission.ContestID, submissionID, docID, currentScore, isFinal)
 	if err != nil {
-		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
+		return errors.Wrap(err, "couldn't update judge result in submission metadata repos")
 	}
 
 	if isFinal && contestID != 0 {

@@ -4,11 +4,14 @@ go 1.21.3
 
 require (
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/jackc/pgx/v5 v5.4.3
+	github.com/mattn/go-sqlite3 v1.14.20
 	github.com/minio/minio-go/v7 v7.0.63
 	github.com/nats-io/nats.go v1.31.0
 	github.com/pkg/errors v0.9.1
+	github.com/redis/go-redis/v9 v9.3.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
@@ -51,7 +54,6 @@ require (
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
-	github.com/redis/go-redis/v9 v9.3.1 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

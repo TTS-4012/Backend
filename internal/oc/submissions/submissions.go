@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/internal/judge"
 	"github.com/ocontest/backend/internal/minio"
 	"github.com/ocontest/backend/pkg"
@@ -22,15 +22,15 @@ type Handler interface {
 }
 
 type SubmissionsHandlerImp struct {
-	submissionMetadataRepo db.SubmissionMetadataRepo
+	submissionMetadataRepo repos.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	judge                  judge.Judge
-	contestsUsersRepo      db.ContestsUsersRepo
-	contestsMetadataRepo   db.ContestsMetadataRepo
-	contestsProblemsRepo   db.ContestsProblemsRepo
+	contestsUsersRepo      repos.ContestsUsersRepo
+	contestsMetadataRepo   repos.ContestsMetadataRepo
+	contestsProblemsRepo   repos.ContestsProblemsRepo
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge, contestRepo db.ContestsMetadataRepo, contestsUsersRepo db.ContestsUsersRepo, contestsProblemsRepo db.ContestsProblemsRepo) Handler {
+func NewSubmissionsHandler(submissionRepo repos.SubmissionMetadataRepo, contestRepo repos.ContestsMetadataRepo, contestsProblemsRepo repos.ContestsProblemsRepo, contestsUsersRepo repos.ContestsUsersRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
@@ -94,7 +94,7 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 
 	submissionID, err := s.submissionMetadataRepo.Insert(ctx, submission)
 	if err != nil {
-		logger.Error("error on insert to submission repo: ", err)
+		logger.Error("error on insert to submission repos: ", err)
 		return
 	}
 

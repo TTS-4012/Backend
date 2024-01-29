@@ -2,8 +2,7 @@ package mongodb
 
 import (
 	"context"
-
-	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
@@ -16,8 +15,7 @@ type JudgeRepoImp struct {
 	collection *mongo.Collection
 }
 
-func NewJudgeRepo(client *mongo.Client, db string) (db.JudgeRepo, error) {
-
+func NewJudgeRepo(client *mongo.Client, db string) (repos.JudgeRepo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return &JudgeRepoImp{
@@ -58,6 +56,5 @@ func (j JudgeRepoImp) GetResults(ctx context.Context, id string) (structs.JudgeR
 		}
 		return ans, err
 	}
-	pkg.Log.Debug(ans, id)
 	return ans, nil
 }
