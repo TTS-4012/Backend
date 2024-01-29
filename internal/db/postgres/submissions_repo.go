@@ -63,7 +63,7 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 	stmt := `
 	INSERT INTO submissions(problem_id, user_id, file_name, language
 	`
-	if submission.ContestID != -1 {
+	if submission.ContestID != 0 {
 		stmt += ", contest_id) VALUES ($1, $2, $3, $4, $5)"
 	} else {
 		stmt += ") VALUES ($1, $2, $3, $4)"
@@ -72,7 +72,7 @@ func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.Submi
 
 	var id int64
 	var err error
-	if submission.ContestID != -1 {
+	if submission.ContestID != 0 {
 		err = s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language, submission.ContestID).Scan(&id)
 	} else {
 		err = s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language).Scan(&id)

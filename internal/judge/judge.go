@@ -98,7 +98,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
 	}
 
-	if isFinal && contestID != -1 {
+	if isFinal && contestID != 0 {
 		err = j.contestUsersRepo.AddUserScore(ctx, submission.UserID, contestID, currentScore-lastSub.Score)
 		if err != nil {
 			return errors.Wrap(err, "couldn't update contest score")

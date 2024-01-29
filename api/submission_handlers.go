@@ -48,7 +48,7 @@ func (h *handlers) Submit(c *gin.Context) {
 	var contestID int64
 	contestIDStr := c.Query("contest_id")
 	if contestIDStr == "" {
-		contestID = -1
+		contestID = 0
 	} else {
 		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
 
