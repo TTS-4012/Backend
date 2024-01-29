@@ -13,22 +13,28 @@ var (
 )
 
 type OContestConf struct {
-	Postgres SectionPostgres `yaml:"postgres"`
-	KVStore  SectionKVStore  `yaml:"kvstore"`
-	Mongo    SectionMongo    `yaml:"mongo"`
-	JWT      SectionJWT      `yaml:"jwt"`
-	SMTP     SectionSMTP     `yaml:"smtp"`
-	Log      SectionLog      `yaml:"log"`
-	Server   SectionServer   `yaml:"server"`
-	AESKey   string          `yaml:"AESKey"`
-	Auth     SectionAuth     `yaml:"auth"`
-	MinIO    SectionMinIO    `yaml:"minio"`
-	Judge    SectionJudge    `yaml:"judge"`
+	SQLDB   SectionSQLDB   `yaml:"sql_db"`
+	KVStore SectionKVStore `yaml:"kvstore"`
+	Mongo   SectionMongo   `yaml:"mongo"`
+	JWT     SectionJWT     `yaml:"jwt"`
+	SMTP    SectionSMTP    `yaml:"smtp"`
+	Log     SectionLog     `yaml:"log"`
+	Server  SectionServer  `yaml:"server"`
+	AESKey  string         `yaml:"AESKey"`
+	Auth    SectionAuth    `yaml:"auth"`
+	MinIO   SectionMinIO   `yaml:"minio"`
+	Judge   SectionJudge   `yaml:"judge"`
 }
 
 type SectionLog struct {
 	Level        string `yaml:"level"`
 	ReportCaller bool   `yaml:"report_caller"`
+}
+
+type SectionSQLDB struct {
+	DBType   string          `yaml:"type"`
+	ConnUrl  string          `yaml:"conn_url"`
+	Postgres SectionPostgres `yaml:"postgres"`
 }
 
 type SectionPostgres struct {
@@ -143,6 +149,13 @@ func AddVariablesWithUnderscore(c *OContestConf) {
 	c.Auth.Duration.RefreshToken = viper.GetDuration("auth.duration.refresh_token")
 	c.Auth.Duration.VerifyEmail = viper.GetDuration("auth.duration.verify_email")
 	c.Server.GracefulShutdownPeriod = viper.GetDuration("server.graceful_shutdown_period")
+	c.SQLDB.DBType = viper.GetString("sql_db.type")
+	c.SQLDB.ConnUrl = viper.GetString("sql_db.conn_url")
+	c.SQLDB.Postgres.Host = viper.GetString("sql_db.postgres.host")
+	c.SQLDB.Postgres.Port = viper.GetInt("sql_db.postgres.port")
+	c.SQLDB.Postgres.Username = viper.GetString("sql_db.postgres.username")
+	c.SQLDB.Postgres.Password = viper.GetString("sql_db.postgres.password")
+	c.SQLDB.Postgres.Database = viper.GetString("sql_db.postgres.database")
 }
 
 // Loads the config

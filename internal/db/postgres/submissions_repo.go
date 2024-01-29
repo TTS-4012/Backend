@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
 
@@ -19,7 +19,7 @@ type SubmissionRepoImp struct {
 	conn *pgxpool.Pool
 }
 
-func NewSubmissionRepo(ctx context.Context, conn *pgxpool.Pool) (db.SubmissionMetadataRepo, error) {
+func NewSubmissionRepo(ctx context.Context, conn *pgxpool.Pool) (repos.SubmissionMetadataRepo, error) {
 	ans := &SubmissionRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }

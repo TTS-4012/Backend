@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ocontest/backend/internal/db/repos"
 	"net/http"
 
-	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/internal/jwt"
 	"github.com/ocontest/backend/internal/otp"
 	"github.com/ocontest/backend/pkg"
@@ -30,7 +30,7 @@ type AuthHandler interface {
 }
 
 type AuthHandlerImp struct {
-	authRepo   db.UsersRepo
+	authRepo   repos.UsersRepo
 	jwtHandler jwt.TokenGenerator
 	smtpSender smtp.Sender
 	configs    *configs.OContestConf
@@ -39,7 +39,7 @@ type AuthHandlerImp struct {
 }
 
 func NewAuthHandler(
-	authRepo db.UsersRepo, jwtHandler jwt.TokenGenerator,
+	authRepo repos.UsersRepo, jwtHandler jwt.TokenGenerator,
 	smtpSender smtp.Sender, config *configs.OContestConf,
 	aesHandler aes.AESHandler, otpStorage otp.OTPHandler) AuthHandler {
 	return &AuthHandlerImp{

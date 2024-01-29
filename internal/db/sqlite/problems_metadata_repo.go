@@ -1,56 +1,53 @@
-package postgres
+package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/ocontest/backend/internal/db/repos"
 
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ProblemsMetadataRepoImp struct {
-	conn *pgxpool.Pool
+	conn *sql.DB
 }
 
-// NOTE: there should probable be an index for searchable columns
 var SearchableColumns = map[string]string{
 	"solve_count": "solve_count",
 	"hardness":    "hardness",
 	"problem_id":  "id",
 }
 
-func NewProblemsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (repos.ProblemsMetadataRepo, error) {
+func NewProblemsMetadataRepo(ctx context.Context, conn *sql.DB) (repos.ProblemsMetadataRepo, error) {
 	ans := &ProblemsMetadataRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }
 
 func (a *ProblemsMetadataRepoImp) Migrate(ctx context.Context) (err error) {
-	stmt := `
+	stmt := []string{`
 	CREATE TABLE IF NOT EXISTS problems(
-	    id SERIAL PRIMARY KEY ,
+	    id INTEGER PRIMARY KEY AUTOINCREMENT,
 	    created_by int NOT NULL ,
 		title varchar(70) NOT NULL ,
 	    document_id varchar(70) NOT NULL ,
 	    solve_count int DEFAULT 0,
 		hardness int DEFAULT NULL,
-	    created_at TIMESTAMP DEFAULT NOW(),
-	    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id)
+	    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	is_private BOOL NOT NULL DEFAULT FALSE,
+	   FOREIGN KEY(created_by) REFERENCES users(id)
 	)
-	`
-	_, err = a.conn.Exec(ctx, stmt)
+	`}
+	for _, s := range stmt {
+		_, err = a.conn.ExecContext(ctx, s)
+		if err != nil {
+			return err
+		}
+	}
 
-	stmt = `
-	ALTER TABLE problems
-	ADD COLUMN IF NOT EXISTS is_private BOOL NOT NULL DEFAULT FALSE;
-	`
-	_, err = a.conn.Exec(ctx, stmt)
-
-	return err
+	return nil
 }
 
 func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem structs.Problem) (int64, error) {
@@ -58,21 +55,21 @@ func (a *ProblemsMetadataRepoImp) InsertProblem(ctx context.Context, problem str
 	stmt := `
 	INSERT INTO problems(
 		created_by, title, document_id, hardness, is_private) 
-		VALUES($1, $2, $3, $4, $5) RETURNING id
+		VALUES($, $, $, $, $) RETURNING id
 	`
 	var id int64
-	err := a.conn.QueryRow(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID, problem.Hardness, problem.IsPrivate).Scan(&id)
+	err := a.conn.QueryRowContext(ctx, stmt, problem.CreatedBy, problem.Title, problem.DocumentID, problem.Hardness, problem.IsPrivate).Scan(&id)
 	return id, err
 }
 
 func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (structs.Problem, error) {
 	stmt := `
-	SELECT created_by, title, document_id, solve_count, coalesce(hardness, -1) FROM problems WHERE id = $1
+	SELECT created_by, title, document_id, solve_count, coalesce(hardness, -1) FROM problems WHERE id = $
 	`
 	var problem structs.Problem
-	err := a.conn.QueryRow(ctx, stmt, id).Scan(
+	err := a.conn.QueryRowContext(ctx, stmt, id).Scan(
 		&problem.CreatedBy, &problem.Title, &problem.DocumentID, &problem.SolvedCount, &problem.Hardness)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return problem, err
@@ -80,11 +77,11 @@ func (a *ProblemsMetadataRepoImp) GetProblem(ctx context.Context, id int64) (str
 
 func (a *ProblemsMetadataRepoImp) GetProblemTitle(ctx context.Context, id int64) (string, error) {
 	stmt := `
-	SELECT title FROM problems WHERE id = $1
+	SELECT title FROM problems WHERE id = $
 	`
 	var ans string
-	err := a.conn.QueryRow(ctx, stmt, id).Scan(&ans)
-	if errors.Is(err, pgx.ErrNoRows) {
+	err := a.conn.QueryRowContext(ctx, stmt, id).Scan(&ans)
+	if errors.Is(err, sql.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return ans, err
@@ -115,7 +112,7 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
 	}
 
-	rows, err := a.conn.Query(ctx, stmt)
+	rows, err := a.conn.QueryContext(ctx, stmt)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -138,34 +135,13 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	return ans, total_count, err
 }
 
-// TODO: suitable query builder yada yada
-func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string, hardness int64) error {
+func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string) error {
 	stmt := `
-	UPDATE problems SET
+	UPDATE problems SET title = $ WHERE id = $
 	`
 
-	args := make([]interface{}, 0)
-
-	if title != "" {
-		args = append(args, title)
-		stmt = fmt.Sprintf("%s title = $%d", stmt, len(args))
-	}
-	if hardness != 0 {
-		if len(args) > 0 {
-			stmt += ","
-		}
-		args = append(args, hardness)
-		stmt = fmt.Sprintf("%s hardness = $%d", stmt, len(args))
-	}
-	if len(args) == 0 {
-		return nil
-	}
-
-	args = append(args, id)
-	stmt = fmt.Sprintf("%s WHERE id = $%d", stmt, len(args))
-
-	_, err := a.conn.Exec(ctx, stmt, args...)
-	if errors.Is(err, pgx.ErrNoRows) {
+	_, err := a.conn.ExecContext(ctx, stmt, title, id)
+	if errors.Is(err, sql.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return err
@@ -173,11 +149,11 @@ func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, t
 
 func (a *ProblemsMetadataRepoImp) DeleteProblem(ctx context.Context, id int64) (string, error) {
 	stmt := `
-	DELETE FROM problems WHERE id = $1 RETURNING document_id
+	DELETE FROM problems WHERE id = $ RETURNING document_id
 	`
 	var documentId string
-	err := a.conn.QueryRow(ctx, stmt, id).Scan(&documentId)
-	if errors.Is(err, pgx.ErrNoRows) {
+	err := a.conn.QueryRowContext(ctx, stmt, id).Scan(documentId)
+	if errors.Is(err, sql.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return documentId, err

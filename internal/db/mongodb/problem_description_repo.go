@@ -2,7 +2,7 @@ package mongodb
 
 import (
 	"context"
-	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/structs"
@@ -21,7 +21,7 @@ type ProblemDescriptionRepoImp struct {
 	collection *mongo.Collection
 }
 
-func NewProblemDescriptionRepo(config configs.SectionMongo) (db.ProblemDescriptionsRepo, error) {
+func NewProblemDescriptionRepo(config configs.SectionMongo) (repos.ProblemDescriptionsRepo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

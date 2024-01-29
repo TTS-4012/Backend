@@ -3,13 +3,13 @@ package contests
 import (
 	"context"
 	"errors"
+	"github.com/ocontest/backend/internal/db/repos"
 	"net/http"
 	"time"
 
 	"github.com/ocontest/backend/internal/judge"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
@@ -31,20 +31,20 @@ type ContestsHandler interface {
 }
 
 type ContestsHandlerImp struct {
-	usersRepo          db.UsersRepo
-	problemsRepo       db.ProblemsMetadataRepo
-	submissionsRepo    db.SubmissionMetadataRepo
-	contestsRepo       db.ContestsMetadataRepo
-	contestProblemRepo db.ContestsProblemsRepo
-	contestsUsersRepo  db.ContestsUsersRepo
+	usersRepo          repos.UsersRepo
+	problemsRepo       repos.ProblemsMetadataRepo
+	submissionsRepo    repos.SubmissionMetadataRepo
+	contestsRepo       repos.ContestsMetadataRepo
+	contestProblemRepo repos.ContestsProblemsRepo
+	contestsUsersRepo  repos.ContestsUsersRepo
 
 	judge judge.Judge
 }
 
 func NewContestsHandler(
-	contestsRepo db.ContestsMetadataRepo, contestProblemRepo db.ContestsProblemsRepo,
-	problemsRepo db.ProblemsMetadataRepo, submissionsRepo db.SubmissionMetadataRepo,
-	authRepo db.UsersRepo, contestUsersRepo db.ContestsUsersRepo,
+	contestsRepo repos.ContestsMetadataRepo, contestProblemRepo repos.ContestsProblemsRepo,
+	problemsRepo repos.ProblemsMetadataRepo, submissionsRepo repos.SubmissionMetadataRepo,
+	authRepo repos.UsersRepo, contestUsersRepo repos.ContestsUsersRepo,
 	judge judge.Judge,
 ) ContestsHandler {
 	return &ContestsHandlerImp{
@@ -85,7 +85,7 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64
 
 	contest, err := c.contestsRepo.GetContest(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest from repo: ", err)
+		logger.Error("error on getting contest from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -95,7 +95,7 @@ func (c ContestsHandlerImp) GetContest(ctx *gin.Context, contestID, userID int64
 
 	problemIDs, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest problems from repo: ", err)
+		logger.Error("error on getting contest problems from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -204,7 +204,7 @@ func (c ContestsHandlerImp) UpdateContest(ctx context.Context, contestID int64, 
 
 	contest, err := c.contestsRepo.GetContest(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest from repo: ", err)
+		logger.Error("error on getting contest from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -217,7 +217,7 @@ func (c ContestsHandlerImp) UpdateContest(ctx context.Context, contestID int64, 
 
 	err = c.contestsRepo.UpdateContests(ctx, contestID, reqData)
 	if err != nil {
-		logger.Error("error on updating contest in repo: ", err)
+		logger.Error("error on updating contest in repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -236,7 +236,7 @@ func (c ContestsHandlerImp) DeleteContest(ctx context.Context, contestID int64) 
 
 	contest, err := c.contestsRepo.GetContest(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest from repo: ", err)
+		logger.Error("error on getting contest from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -249,7 +249,7 @@ func (c ContestsHandlerImp) DeleteContest(ctx context.Context, contestID int64) 
 
 	err = c.contestsRepo.DeleteContest(ctx, contestID)
 	if err != nil {
-		logger.Error("error on deleting contest from repo: ", err)
+		logger.Error("error on deleting contest from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -283,7 +283,7 @@ func (c ContestsHandlerImp) GetContestProblems(ctx *gin.Context, contestID int64
 
 	problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest problems from repo: ", err)
+		logger.Error("error on getting contest problems from repos: ", err)
 		status := http.StatusInternalServerError
 		if errors.Is(err, pkg.ErrNotFound) {
 			status = http.StatusNotFound
@@ -313,7 +313,7 @@ func (c ContestsHandlerImp) GetScoreboardProblem(ctx context.Context, contestID 
 
 	problems, err := c.contestProblemRepo.GetContestProblems(ctx, contestID)
 	if err != nil {
-		logger.Error("error on get problems from ContestProblem repo: ", err)
+		logger.Error("error on get problems from ContestProblem repos: ", err)
 		return nil, err
 	}
 
@@ -393,7 +393,7 @@ func (c ContestsHandlerImp) IsContestOwner(ctx context.Context, contestID, userI
 
 	contest, err := c.contestsRepo.GetContest(ctx, contestID)
 	if err != nil {
-		logger.Error("error on getting contest from repo: ", err)
+		logger.Error("error on getting contest from repos: ", err)
 		return false, err
 	}
 	return (contest.CreatedBy == userID), nil

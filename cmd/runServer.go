@@ -6,6 +6,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/ocontest/backend/internal/db"
+	"github.com/ocontest/backend/internal/db/repos"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +20,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/api"
 	"github.com/ocontest/backend/internal/db/mongodb"
-	"github.com/ocontest/backend/internal/db/postgres"
 	"github.com/ocontest/backend/internal/judge"
 	"github.com/ocontest/backend/internal/jwt"
 	"github.com/ocontest/backend/internal/minio"
@@ -98,11 +99,6 @@ func getServer() (*http.Server, func() error) {
 
 	otpHandler := otp.NewOTPHandler(kvStore)
 
-	pgConn, err := postgres.NewConnectionPool(ctx, c.Postgres)
-	if err != nil {
-		log.Fatal("error on connecting to postgres", err)
-	}
-
 	mongoConn, err := mongodb.NewConn(ctx, c.Mongo)
 	if err != nil {
 		log.Fatal("error on connecting to mongo", err)
@@ -113,50 +109,61 @@ func getServer() (*http.Server, func() error) {
 		log.Fatal("error on getting new minio client", err)
 	}
 
-	// make repo
-	authRepo, err := postgres.NewAuthRepo(ctx, pgConn)
+	repoWrapper, err := db.NewRepoWrapper(ctx, c.SQLDB)
 	if err != nil {
-		log.Fatal("error on creating auth repo: ", err)
+		log.Fatal("couldn't connect to db error: ", err)
+	}
+	// make repos
+	var authRepo repos.UsersRepo
+	err = repoWrapper(ctx, &authRepo)
+	if err != nil {
+		log.Fatal("error on creating auth repos: ", err)
 	}
 
-	problemsMetadataRepo, err := postgres.NewProblemsMetadataRepo(ctx, pgConn)
+	var problemsMetadataRepo repos.ProblemsMetadataRepo
+	err = repoWrapper(ctx, &problemsMetadataRepo)
 	if err != nil {
-		log.Fatal("error on creating problems metadata repo: ", err)
+		log.Fatal("error on creating problems metadata repos: ", err)
 	}
 
 	problemsDescriptionRepo, err := mongodb.NewProblemDescriptionRepo(c.Mongo)
 	if err != nil {
-		log.Fatal("error on creating problem description repo: ", err)
+		log.Fatal("error on creating problem description repos: ", err)
 	}
 
-	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, pgConn)
+	var submissionsRepo repos.SubmissionMetadataRepo
+	err = repoWrapper(ctx, &submissionsRepo)
 	if err != nil {
-		log.Fatal("error on creating testcase repo: ", err)
+		log.Fatal("error on creating submission metadata repos: ", err)
+	}
+
+	var testcaseRepo repos.TestCaseRepo
+	err = repoWrapper(ctx, &testcaseRepo)
+	if err != nil {
+		log.Fatal("error on creating testcase repos: ", err)
 	}
 
 	judgeRepo, err := mongodb.NewJudgeRepo(mongoConn, c.Mongo.Database)
 	if err != nil {
-		log.Fatal("error on creating judge repo")
+		log.Fatal("error on creating judge repos")
 	}
 
-	contestRepo, err := postgres.NewContestsMetadataRepo(ctx, pgConn)
+	var contestRepo repos.ContestsMetadataRepo
+	err = repoWrapper(ctx, &contestRepo)
 	if err != nil {
-		log.Fatal("error on creating contest repo", err)
+		log.Fatal("error on creating contest repos", err)
 	}
 
-	contestsProblemsRepo, err := postgres.NewContestsProblemsMetadataRepo(ctx, pgConn)
+	var contestsProblemsRepo repos.ContestsProblemsRepo
+	err = repoWrapper(ctx, &contestsProblemsRepo)
 	if err != nil {
-		log.Fatal("error on creating contest problems repo: ", err)
+		log.Fatal("error on creating contest problems repos: ", err)
 	}
 
-	contestsUsersRepo, err := postgres.NewContestsUsersRepo(ctx, pgConn)
+	var contestsUsersRepo repos.ContestsUsersRepo
+	err = repoWrapper(ctx, &contestsUsersRepo)
 	if err != nil {
-		log.Fatal("error on creating contest users repo: ", err)
-	}
-
-	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
-	if err != nil {
-		log.Fatal("error on creating submission metadata repo: ", err)
+		log.Fatal("error on creating contest users repos: ", err)
 	}
 
 	// initiating module handlers
@@ -195,11 +202,6 @@ func getServer() (*http.Server, func() error) {
 		}
 
 		tasks := []func() error{
-			func() error {
-				pgConn.Close()
-				pkg.Log.Info("pg conn closed")
-				return nil
-			},
 			func() error {
 				err := kvStore.Close()
 				pkg.Log.WithError(err).Info("kv store closed")
