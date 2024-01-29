@@ -59,7 +59,7 @@ type SubmissionMetadataRepo interface {
 	GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error)
 	GetFinalSubmission(ctx context.Context, userID, problemID int64) (structs.SubmissionMetadata, error)
 	UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, judgeResultID string, score int, isFinal bool) error
-	ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
+	ListSubmissions(ctx context.Context, problemID, userID, contestID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
 }
 
 type JudgeRepo interface {

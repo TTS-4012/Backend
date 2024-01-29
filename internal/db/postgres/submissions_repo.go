@@ -173,18 +173,28 @@ func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, u
 	return err
 }
 
-func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
+func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, userID, contestID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error) {
+	args := make([]interface{}, 0)
+
 	stmt := `
-	SELECT id, problem_id, user_id, file_name, score, judge_result_id, status, language, public, created_at
+	SELECT id, problem_id, user_id, coalesce(contest_id, 0), file_name, score, coalesce(judge_result_id, ''), status, language, public, created_at
 	`
 	if getCount {
 		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
 	}
 	stmt = fmt.Sprintf("%s FROM submissions", stmt)
 
-	stmt = fmt.Sprintf("%s WHERE problem_id = $1", stmt)
+	args = append(args, problemID)
+	stmt = fmt.Sprintf("%s WHERE problem_id = $%d", stmt, len(args))
 	if userID != 0 {
-		stmt = fmt.Sprintf("%s AND user_id = $2", stmt)
+		args = append(args, userID)
+		stmt = fmt.Sprintf("%s AND user_id = $%d", stmt, len(args))
+	}
+	if contestID != 0 {
+		args = append(args, contestID)
+		stmt = fmt.Sprintf("%s AND contest_id = $%d", stmt, len(args))
+	} else {
+		stmt = fmt.Sprintf("%s AND contest_id IS NULL", stmt)
 	}
 
 	stmt = fmt.Sprintf("%s ORDER BY created_at", stmt)
@@ -192,19 +202,16 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 		stmt += " DESC"
 	}
 	if limit != 0 {
-		stmt = fmt.Sprintf("%s LIMIT %d", stmt, limit)
+		args = append(args, limit)
+		stmt = fmt.Sprintf("%s LIMIT $%d", stmt, len(args))
 	}
 	if offset != 0 {
-		stmt = fmt.Sprintf("%s OFFSET %d", stmt, offset)
+		args = append(args, offset)
+		stmt = fmt.Sprintf("%s OFFSET $%d", stmt, len(args))
 	}
 
-	var rows pgx.Rows
-	var err error
-	if userID != 0 {
-		rows, err = s.conn.Query(ctx, stmt, problemID, userID)
-	} else {
-		rows, err = s.conn.Query(ctx, stmt, problemID)
-	}
+	rows, err := s.conn.Query(ctx, stmt, args...)
+
 	if err != nil {
 		return nil, 0, err
 	}
@@ -215,9 +222,9 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 		var submission structs.SubmissionMetadata
 		var t time.Time
 		if getCount {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
 		} else {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
 		}
 		if err != nil {
 			return nil, 0, err
