@@ -3,8 +3,9 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/ocontest/backend/internal/db"
 	"github.com/ocontest/backend/pkg"
@@ -31,9 +32,10 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS submissions(
 			id SERIAL,
 			problem_id bigint not null,
-			user_id bigint not null ,
+			user_id bigint not null,
+			contest_id bigint,
 			file_name varchar(50),
-			judge_result_id varchar(70) default '',
+			judge_result_id varchar(70) DEFAULT '',
 			score int DEFAULT 0,
 			status submission_status DEFAULT 'unprocessed',
 			language submission_language,
@@ -45,7 +47,8 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 			primary key (id, problem_id, user_id),
 
 			CONSTRAINT fk_problem_id FOREIGN KEY(problem_id) REFERENCES problems(id),
-			CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id)
+			CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id),
+			CONSTRAINT fk_contest_id FOREIGN KEY(contest_id) REFERENCES contests(id)
 	)`}
 
 	var err error
@@ -58,13 +61,23 @@ func (a *SubmissionRepoImp) Migrate(ctx context.Context) error {
 
 func (s *SubmissionRepoImp) Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error) {
 	stmt := `
-	INSERT INTO submissions(
-		problem_id, user_id, file_name, language) 
-		VALUES($1, $2, $3, $4) RETURNING id
+	INSERT INTO submissions(problem_id, user_id, file_name, language
 	`
+	if submission.ContestID != -1 {
+		stmt += ", contest_id) VALUES ($1, $2, $3, $4, $5)"
+	} else {
+		stmt += ") VALUES ($1, $2, $3, $4)"
+	}
+	stmt += " RETURNING id"
 
 	var id int64
-	err := s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language).Scan(&id)
+	var err error
+	if submission.ContestID != -1 {
+		err = s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language, submission.ContestID).Scan(&id)
+	} else {
+		err = s.conn.QueryRow(ctx, stmt, submission.ProblemID, submission.UserID, submission.FileName, submission.Language).Scan(&id)
+	}
+
 	pkg.Log.Debug(err)
 	return id, err
 }

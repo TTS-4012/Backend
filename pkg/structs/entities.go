@@ -27,6 +27,7 @@ type SubmissionMetadata struct {
 	ID            int64  `json:"id"`
 	ProblemID     int64  `json:"problem_id"`
 	UserID        int64  `json:"user_id"`
+	ContestID     int64  `json:"contest_id,omitempty"`
 	FileName      string `json:"file_name"`
 	JudgeResultID string `json:"judge_result_id"`
 	Score         int    `json:"score"`
