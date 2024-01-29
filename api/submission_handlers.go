@@ -132,74 +132,18 @@ func (h *handlers) ListSubmissions(c *gin.Context) {
 	logger := pkg.Log.WithField("handler", "ListSubmissions")
 	var reqData structs.RequestListSubmissions
 
-	userID, exists := c.Get(UserIDKey)
-	if !exists {
-		logger.Error("error on getting user_id from context")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": pkg.ErrInternalServerError.Error(),
-		})
-		return
-	}
-	reqData.UserID = userID.(int64)
-
-	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		logger.Error("error on getting problem_id from url: ", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid problem_id, problem_id should be an integer",
-		})
-		return
-	}
-	reqData.ProblemID = problemID
-
-	var contestID int64
-	contestIDStr := c.Query("contest_id")
-	if contestIDStr == "" {
-		contestID = 0
-	} else {
-		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid contest_id, contest_id should be an integer",
-			})
-		}
-	}
-	reqData.ContestID = contestID
-
-	reqData.Descending = c.Query("descending") == "true"
-
-	reqData.GetCount = c.Query("get_count") == "true"
-
-	limitStr := c.Query("limit")
-	offsetStr := c.Query("offset")
-	var errLimit, errOffset error
-	if limitStr != "" {
-		reqData.Limit, errLimit = strconv.Atoi(limitStr)
-	}
-	if offsetStr != "" {
-		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
-	}
-	if errLimit != nil || errOffset != nil {
-		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid limit or offset, limit and offset should be integers",
-		})
-		return
-	}
-
-	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
-	if status == http.StatusOK {
-		c.JSON(status, resp)
-	} else {
-		c.Status(status)
-	}
-}
-
-func (h *handlers) ListAllSubmissions(c *gin.Context) {
-	logger := pkg.Log.WithField("handler", "ListAllSubmissions")
-
-	var reqData structs.RequestListSubmissions
 	reqData.UserID = 0
+	if c.Query("get_all") != "true" {
+		userID, exists := c.Get(UserIDKey)
+		if !exists {
+			logger.Error("error on getting user_id from context")
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": pkg.ErrInternalServerError.Error(),
+			})
+			return
+		}
+		reqData.UserID = userID.(int64)
+	}
 
 	problemID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -211,19 +155,7 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 	}
 	reqData.ProblemID = problemID
 
-	var contestID int64
-	contestIDStr := c.Query("contest_id")
-	if contestIDStr == "" {
-		contestID = 0
-	} else {
-		contestID, err = strconv.ParseInt(contestIDStr, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid contest_id, contest_id should be an integer",
-			})
-		}
-	}
-	reqData.ContestID = contestID
+	reqData.ContestID = 0
 
 	reqData.Descending = c.Query("descending") == "true"
 
@@ -255,9 +187,125 @@ func (h *handlers) ListAllSubmissions(c *gin.Context) {
 }
 
 func (h *handlers) ListContestSubmissions(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "ListContestSubmissions")
+	var reqData structs.RequestListSubmissions
+
+	reqData.UserID = 0
+	if c.Query("get_all") != "true" {
+		userID, exists := c.Get(UserIDKey)
+		if !exists {
+			logger.Error("error on getting user_id from context")
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": pkg.ErrInternalServerError.Error(),
+			})
+			return
+		}
+		reqData.UserID = userID.(int64)
+	}
+
+	reqData.ProblemID = 0
+
+	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting contest_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid contest_id, contest_id should be an integer",
+		})
+		return
+	}
+	reqData.ContestID = contestID
+
+	reqData.Descending = c.Query("descending") == "true"
+
+	reqData.GetCount = c.Query("get_count") == "true"
+
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+	var errLimit, errOffset error
+	if limitStr != "" {
+		reqData.Limit, errLimit = strconv.Atoi(limitStr)
+	}
+	if offsetStr != "" {
+		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
+	}
+	if errLimit != nil || errOffset != nil {
+		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid limit or offset, limit and offset should be integers",
+		})
+		return
+	}
+
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
 }
 
 func (h *handlers) ListContestProblemSubmissions(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	logger := pkg.Log.WithField("handler", "ListContestProblemSubmissions")
+	var reqData structs.RequestListSubmissions
+
+	reqData.UserID = 0
+	if c.Query("get_all") != "true" {
+		userID, exists := c.Get(UserIDKey)
+		if !exists {
+			logger.Error("error on getting user_id from context")
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": pkg.ErrInternalServerError.Error(),
+			})
+			return
+		}
+		reqData.UserID = userID.(int64)
+	}
+
+	problemID, err := strconv.ParseInt(c.Param("problem_id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting problem_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid problem_id, problem_id should be an integer",
+		})
+		return
+	}
+	reqData.ProblemID = problemID
+
+	contestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		logger.Error("error on getting contest_id from url: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid contest_id, contest_id should be an integer",
+		})
+		return
+	}
+	reqData.ContestID = contestID
+
+	reqData.Descending = c.Query("descending") == "true"
+
+	reqData.GetCount = c.Query("get_count") == "true"
+
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
+	var errLimit, errOffset error
+	if limitStr != "" {
+		reqData.Limit, errLimit = strconv.Atoi(limitStr)
+	}
+	if offsetStr != "" {
+		reqData.Offset, errOffset = strconv.Atoi(offsetStr)
+	}
+	if errLimit != nil || errOffset != nil {
+		logger.Warningf("invalid limit and/or offset, limit: %v offset: %v", limitStr, offsetStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid limit or offset, limit and offset should be integers",
+		})
+		return
+	}
+
+	resp, status := h.submissionsHandler.ListSubmission(c, reqData)
+	if status == http.StatusOK {
+		c.JSON(status, resp)
+	} else {
+		c.Status(status)
+	}
 }
