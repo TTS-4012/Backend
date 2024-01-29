@@ -129,11 +129,6 @@ func getServer() (*http.Server, func() error) {
 		log.Fatal("error on creating problem description repo: ", err)
 	}
 
-	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
-	if err != nil {
-		log.Fatal("error on creating submission metadata repo: ", err)
-	}
-
 	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating testcase repo: ", err)
@@ -157,6 +152,11 @@ func getServer() (*http.Server, func() error) {
 	contestsUsersRepo, err := postgres.NewContestsUsersRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating contest users repo: ", err)
+	}
+
+	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
+	if err != nil {
+		log.Fatal("error on creating submission metadata repo: ", err)
 	}
 
 	// initiating module handlers
