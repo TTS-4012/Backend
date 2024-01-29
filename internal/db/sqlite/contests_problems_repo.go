@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/ocontest/backend/internal/db/repos"
 
 	"database/sql"
@@ -85,4 +86,21 @@ func (c *ContestsProblemsMetadataRepoImp) RemoveProblemFromContest(ctx context.C
 		err = pkg.ErrNotFound
 	}
 	return err
+}
+
+func (c *ContestsProblemsMetadataRepoImp) HasProblem(ctx context.Context, contestID, problemID int64) (bool, error) {
+	stmt := `
+	SELECT EXISTS(
+		SELECT contest_id FROM contest_problems
+		WHERE contest_id = $ AND problem_id = $)
+	`
+
+	var ans bool
+	if err := c.conn.QueryRowContext(ctx, stmt, contestID, problemID).Scan(&ans); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = pkg.ErrNotFound
+		}
+		return false, err
+	}
+	return ans, nil
 }

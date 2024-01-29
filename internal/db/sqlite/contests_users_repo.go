@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/ocontest/backend/internal/db/repos"
+	"github.com/ocontest/backend/pkg/structs"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/ocontest/backend/pkg"
@@ -74,30 +75,40 @@ func (c *ContestsUsersRepoImp) IsRegistered(ctx context.Context, contestID, user
 
 	return exists, nil
 }
+func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]structs.User, error) {
+	args := make([]interface{}, 0)
+	args = append(args, contestID)
 
-func (c *ContestsUsersRepoImp) ListUsersByScore(ctx context.Context, contestID int64, limit, offset int) ([]int64, error) {
 	stmt := `
-  	SELECT user_id FROM contests_users WHERE contest_id = $ ORDER BY score LIMIT $ OFFSET $
-  	`
+  	SELECT user_id, users.username FROM contests_users JOIN users ON contests_users.user_id = users.id WHERE contest_id = $1 ORDER BY score
+  `
 
-	rows, err := c.conn.QueryContext(ctx, stmt, contestID, limit, offset)
+	if limit != 0 {
+		args = append(args, limit)
+		stmt += " LIMIT $"
+	}
+	if offset != 0 {
+		args = append(args, offset)
+		stmt += " OFFSET $"
+	}
+
+	rows, err := c.conn.QueryContext(ctx, stmt, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "coudn't run query stmt")
 	}
-	defer rows.Close()
 
-	ids := make([]int64, 0)
+	users := make([]structs.User, 0)
 	for rows.Next() {
-		var id int64
+		var user structs.User
 
-		err = rows.Scan(&id)
+		err = rows.Scan(&user.ID, &user.Username)
 		if err != nil {
-			return ids, errors.Wrap(err, "error on scan")
+			return users, errors.Wrap(err, "error on scan")
 		}
 
-		ids = append(ids, id)
+		users = append(users, user)
 	}
-	return ids, nil
+	return users, nil
 }
 
 func (c *ContestsUsersRepoImp) GetContestUsersCount(ctx context.Context, contestID int64) (int, error) {

@@ -174,8 +174,8 @@ func getServer() (*http.Server, func() error) {
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpHandler)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
 	submissionsHandler := submissions.NewSubmissionsHandler(
-		submissionsRepo, minioClient, judgeHandler,
-		contestRepo, contestsUsersRepo, contestsProblemsRepo)
+		submissionsRepo,
+		contestRepo, contestsProblemsRepo, contestsUsersRepo, minioClient, judgeHandler)
 	contestHandler := contests.NewContestsHandler(
 		contestRepo, contestsProblemsRepo, problemsMetadataRepo,
 		submissionsRepo, authRepo, contestsUsersRepo, judgeHandler)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/ocontest/backend/internal/db/repos"
 
 	"github.com/ocontest/backend/pkg"
@@ -135,13 +136,34 @@ func (a *ProblemsMetadataRepoImp) ListProblems(ctx context.Context, searchColumn
 	return ans, total_count, err
 }
 
-func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string) error {
+// TODO: suitable query builder yada yada
+func (a *ProblemsMetadataRepoImp) UpdateProblem(ctx context.Context, id int64, title string, hardness int64) error {
 	stmt := `
-	UPDATE problems SET title = $ WHERE id = $
+	UPDATE problems SET
 	`
 
-	_, err := a.conn.ExecContext(ctx, stmt, title, id)
-	if errors.Is(err, sql.ErrNoRows) {
+	args := make([]interface{}, 0)
+
+	if title != "" {
+		args = append(args, title)
+		stmt += " title = $"
+	}
+	if hardness != 0 {
+		if len(args) > 0 {
+			stmt += ","
+		}
+		args = append(args, hardness)
+		stmt += " hardness = $"
+	}
+	if len(args) == 0 {
+		return nil
+	}
+
+	args = append(args, id)
+	stmt = fmt.Sprintf("%s WHERE id = $%d", stmt, len(args))
+
+	_, err := a.conn.ExecContext(ctx, stmt, args...)
+	if errors.Is(err, pgx.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return err
