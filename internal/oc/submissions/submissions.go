@@ -49,6 +49,41 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 
 	status = http.StatusInternalServerError
 
+	if request.ContestID != 0 {
+		isReg, err := s.contestsUsersRepo.IsRegistered(ctx, request.ContestID, request.UserID)
+		if err != nil {
+			logger.Error("error on check to contests users repo: ", err)
+			return
+		}
+		if !isReg {
+			logger.Warningf("forbidden contest submit, user id: %v, contest id: %v", request.UserID, request.ContestID)
+			status = http.StatusForbidden
+			return
+		}
+
+		started, err := s.contestsMetadataRepo.HasStarted(ctx, request.ContestID)
+		if err != nil {
+			logger.Error("error on check to contests metadata repo: ", err)
+			return
+		}
+		if !started {
+			logger.Warningf("early contest submit, user id: %v, contest id: %v", request.UserID, request.ContestID)
+			status = http.StatusForbidden
+			return
+		}
+
+		validProblem, err := s.contestsProblemsRepo.HasProblem(ctx, request.ContestID, request.ProblemID)
+		if err != nil {
+			logger.Error("error on check to contests problems repo: ", err)
+			return
+		}
+		if !validProblem {
+			logger.Warningf("not valid contest problem submit, user id: %v, problem id: %v, contest id: %v", request.UserID, request.ProblemID, request.ContestID)
+			status = http.StatusNotFound
+			return
+		}
+	}
+
 	submission := structs.SubmissionMetadata{
 		UserID:    request.UserID,
 		ProblemID: request.ProblemID,
