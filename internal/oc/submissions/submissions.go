@@ -25,13 +25,19 @@ type SubmissionsHandlerImp struct {
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	judge                  judge.Judge
+	contestsUsersRepo      db.ContestsUsersRepo
+	contestsMetadataRepo   db.ContestsMetadataRepo
+	contestsProblemsRepo   db.ContestsProblemsRepo
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge, contestRepo db.ContestsMetadataRepo, contestsUsersRepo db.ContestsUsersRepo, contestsProblemsRepo db.ContestsProblemsRepo) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
 		judge:                  judgeHandler,
+		contestsUsersRepo:      contestsUsersRepo,
+		contestsMetadataRepo:   contestRepo,
+		contestsProblemsRepo:   contestsProblemsRepo,
 	}
 }
 

@@ -70,9 +70,13 @@ func (h *handlers) Submit(c *gin.Context) {
 	}
 
 	submissionID, status := h.submissionsHandler.Submit(c, reqData)
-	c.JSON(status, gin.H{
-		"submission_id": submissionID,
-	})
+	if status == http.StatusOK {
+		c.JSON(status, gin.H{
+			"submission_id": submissionID,
+		})
+	} else {
+		c.Status(status)
+	}
 }
 
 func (h *handlers) GetSubmission(c *gin.Context) {

@@ -32,6 +32,7 @@ type ContestsMetadataRepo interface {
 	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, getCount bool) ([]structs.Contest, int, error)
 	UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error
 	DeleteContest(ctx context.Context, id int64) error
+	HasStarted(ctx context.Context, id int64) (bool, error)
 }
 
 type ProblemDescriptionsRepo interface {
@@ -45,6 +46,7 @@ type ContestsProblemsRepo interface {
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) error
 	GetContestProblems(ctx context.Context, id int64) ([]int64, error)
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) error
+	HasProblem(ctx context.Context, contestID, problemID int64) (bool, error)
 }
 
 type TestCaseRepo interface {
