@@ -134,17 +134,25 @@ func (s *SubmissionRepoImp) GetByProblem(ctx context.Context, problemID int64) (
 	return ans, nil
 }
 
-func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, problemID int64) (structs.SubmissionMetadata, error) {
+func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, problemID, userID, contestID int64) (structs.SubmissionMetadata, error) {
 	stmt := `
 	SELECT 
 		id, problem_id, user_id, coalesce(contest_id, 0), file_name, score, coalesce(judge_result_id, ''),
 			status, language, is_final, public, created_at 
-		FROM submissions WHERE user_id = $1 and problem_id = $2 and is_final = true
+		FROM submissions WHERE is_final = true AND problem_id = $1 AND user_id = $2
 	`
+	if contestID != 0 {
+		stmt += " AND contest_id = $3"
+	}
 
 	var ans structs.SubmissionMetadata
 	var t time.Time
-	err := s.conn.QueryRow(ctx, stmt, userID, problemID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.ContestID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	var err error
+	if contestID != 0 {
+		err = s.conn.QueryRow(ctx, stmt, problemID, userID, contestID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.ContestID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	} else {
+		err = s.conn.QueryRow(ctx, stmt, problemID, userID).Scan(&ans.ID, &ans.ProblemID, &ans.UserID, &ans.ContestID, &ans.FileName, &ans.Score, &ans.JudgeResultID, &ans.Status, &ans.Language, &ans.IsFinal, &ans.Public, &t)
+	}
 	ans.CreatedAT = t.Format(time.RFC3339)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ans, pkg.ErrNotFound
@@ -153,21 +161,29 @@ func (s *SubmissionRepoImp) GetFinalSubmission(ctx context.Context, userID, prob
 }
 
 // UpdateJudgeResults will add judge_result_id, update status, and change is final
-func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, docID string, score int, isFinal bool) error {
+func (s *SubmissionRepoImp) UpdateJudgeResults(ctx context.Context, problemID, userID, contestID, submissionID int64, docID string, score int, isFinal bool) error {
 
 	stmt := `
-	UPDATE submissions SET is_final = false WHERE problem_id = $1 and user_id = $2 
+	UPDATE submissions SET is_final = false WHERE problem_id = $1 AND user_id = $2
 	`
+	if contestID != 0 {
+		stmt += " AND contest_id = $3"
+	}
+
 	var err error
 	if isFinal {
-		_, err = s.conn.Exec(ctx, stmt, problemID, userID)
+		if contestID != 0 {
+			_, err = s.conn.Exec(ctx, stmt, problemID, userID, contestID)
+		} else {
+			_, err = s.conn.Exec(ctx, stmt, problemID, userID)
+		}
 		if err != nil {
 			return err
 		}
 	}
 
 	stmt = `
-	UPDATE submissions SET status='processed', score=$1, judge_result_id = $2, is_final = $3 where id = $4
+	UPDATE submissions SET status = 'processed', score = $1, judge_result_id = $2, is_final = $3 WHERE id = $4
 	`
 	_, err = s.conn.Exec(ctx, stmt, score, docID, isFinal, submissionID)
 	return err

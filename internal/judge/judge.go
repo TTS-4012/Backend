@@ -83,7 +83,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 	}
 
 	currentScore := j.CalcScore(resp.TestResults)
-	lastSub, err := j.submissionMetadataRepo.GetFinalSubmission(ctx, submission.UserID, submission.ProblemID)
+	lastSub, err := j.submissionMetadataRepo.GetFinalSubmission(ctx, submission.ProblemID, submission.UserID, contestID)
 	if err != nil && !errors.Is(err, pkg.ErrNotFound) {
 		return errors.Wrap(err, "coudn't get last submission")
 	}
@@ -93,7 +93,7 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 		isFinal = false
 	}
 
-	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submissionID, docID, currentScore, isFinal)
+	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submission.ContestID, submissionID, docID, currentScore, isFinal)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repo")
 	}
