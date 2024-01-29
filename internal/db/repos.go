@@ -32,6 +32,7 @@ type ContestsMetadataRepo interface {
 	ListMyContests(ctx context.Context, descending bool, limit, offset int, started bool, userID int64, getCount bool) ([]structs.Contest, int, error)
 	UpdateContests(ctx context.Context, id int64, newContest structs.RequestUpdateContest) error
 	DeleteContest(ctx context.Context, id int64) error
+	HasStarted(ctx context.Context, id int64) (bool, error)
 }
 
 type ProblemDescriptionsRepo interface {
@@ -45,6 +46,7 @@ type ContestsProblemsRepo interface {
 	AddProblemToContest(ctx context.Context, contestID, problemID int64) error
 	GetContestProblems(ctx context.Context, id int64) ([]int64, error)
 	RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) error
+	HasProblem(ctx context.Context, contestID, problemID int64) (bool, error)
 }
 
 type TestCaseRepo interface {
@@ -57,9 +59,9 @@ type SubmissionMetadataRepo interface {
 	Insert(ctx context.Context, submission structs.SubmissionMetadata) (int64, error)
 	Get(ctx context.Context, id int64) (structs.SubmissionMetadata, error)
 	GetByProblem(ctx context.Context, problemID int64) ([]structs.SubmissionMetadata, error)
-	GetFinalSubmission(ctx context.Context, userID, problemID int64) (structs.SubmissionMetadata, error)
-	UpdateJudgeResults(ctx context.Context, problemID, userID, submissionID int64, judgeResultID string, score int, isFinal bool) error
-	ListSubmissions(ctx context.Context, problemID, userID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
+	GetFinalSubmission(ctx context.Context, problemID, userID, contestID int64) (structs.SubmissionMetadata, error)
+	UpdateJudgeResults(ctx context.Context, problemID, userID, contestID, submissionID int64, judgeResultID string, score int, isFinal bool) error
+	ListSubmissions(ctx context.Context, problemID, userID, contestID int64, descending bool, limit, offset int, getCount bool) ([]structs.SubmissionMetadata, int, error)
 }
 
 type JudgeRepo interface {

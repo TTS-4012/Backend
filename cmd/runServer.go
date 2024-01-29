@@ -129,11 +129,6 @@ func getServer() (*http.Server, func() error) {
 		log.Fatal("error on creating problem description repo: ", err)
 	}
 
-	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
-	if err != nil {
-		log.Fatal("error on creating submission metadata repo: ", err)
-	}
-
 	testcaseRepo, err := postgres.NewTestCaseRepo(ctx, pgConn)
 	if err != nil {
 		log.Fatal("error on creating testcase repo: ", err)
@@ -159,6 +154,11 @@ func getServer() (*http.Server, func() error) {
 		log.Fatal("error on creating contest users repo: ", err)
 	}
 
+	submissionsRepo, err := postgres.NewSubmissionRepo(ctx, pgConn)
+	if err != nil {
+		log.Fatal("error on creating submission metadata repo: ", err)
+	}
+
 	// initiating module handlers
 	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, contestsUsersRepo, judgeRepo)
 	if err != nil {
@@ -166,7 +166,9 @@ func getServer() (*http.Server, func() error) {
 	}
 	authHandler := auth.NewAuthHandler(authRepo, jwtHandler, smtpHandler, c, aesHandler, otpHandler)
 	problemsHandler := problems.NewProblemsHandler(problemsMetadataRepo, problemsDescriptionRepo, testcaseRepo)
-	submissionsHandler := submissions.NewSubmissionsHandler(submissionsRepo, minioClient, judgeHandler)
+	submissionsHandler := submissions.NewSubmissionsHandler(
+		submissionsRepo, minioClient, judgeHandler,
+		contestRepo, contestsUsersRepo, contestsProblemsRepo)
 	contestHandler := contests.NewContestsHandler(
 		contestRepo, contestsProblemsRepo, problemsMetadataRepo,
 		submissionsRepo, authRepo, contestsUsersRepo, judgeHandler)

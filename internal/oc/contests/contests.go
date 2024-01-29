@@ -3,9 +3,10 @@ package contests
 import (
 	"context"
 	"errors"
-	"github.com/ocontest/backend/internal/judge"
 	"net/http"
 	"time"
+
+	"github.com/ocontest/backend/internal/judge"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ocontest/backend/internal/db"
@@ -352,7 +353,7 @@ func (c ContestsHandlerImp) GetContestScoreboard(ctx context.Context, req struct
 		var user structs.ScoreboardUserStanding
 		user.Scores = make([]int, len(ans.Problems))
 		for problemIndex, p := range ans.Problems {
-			s, err := c.submissionsRepo.GetFinalSubmission(ctx, users[i].ID, p.ID)
+			s, err := c.submissionsRepo.GetFinalSubmission(ctx, p.ID, users[i].ID, req.ContestID)
 			if err != nil && !errors.Is(err, pkg.ErrNotFound) {
 				logger.Error("coudn't get submission from db: ", err)
 			}

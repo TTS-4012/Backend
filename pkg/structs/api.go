@@ -124,6 +124,7 @@ type ResponseGetSubmissionResults struct {
 type RequestListSubmissions struct {
 	ProblemID  int64 `json:"problem_id"`
 	UserID     int64 `json:"user_id"`
+	ContestID  int64 `json:"contest_id,omitempty"`
 	Descending bool  `json:"descending"`
 	Limit      int   `json:"limit"`
 	Offset     int   `json:"offset"`

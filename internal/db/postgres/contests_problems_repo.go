@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ocontest/backend/internal/db"
@@ -84,4 +85,21 @@ func (c *ContestsProblemsMetadataRepoImp) RemoveProblemFromContest(ctx context.C
 		err = pkg.ErrNotFound
 	}
 	return err
+}
+
+func (c *ContestsProblemsMetadataRepoImp) HasProblem(ctx context.Context, contestID, problemID int64) (bool, error) {
+	stmt := `
+	SELECT EXISTS(
+		SELECT contest_id FROM contest_problems
+		WHERE contest_id = $1 AND problem_id = $2)
+	`
+
+	var ans bool
+	if err := c.conn.QueryRow(ctx, stmt, contestID, problemID).Scan(&ans); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = pkg.ErrNotFound
+		}
+		return false, err
+	}
+	return ans, nil
 }

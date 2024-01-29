@@ -18,20 +18,26 @@ type Handler interface {
 	Submit(ctx context.Context, request structs.RequestSubmit) (submissionID int64, status int)
 	Get(ctx context.Context, userID, submissionID int64) (structs.ResponseGetSubmission, string, int)
 	GetResults(ctx context.Context, submissionID int64) (structs.ResponseGetSubmissionResults, int)
-	ListSubmission(ctx context.Context, req structs.RequestListSubmissions, getAll bool) (structs.ResponseListSubmissions, int)
+	ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int)
 }
 
 type SubmissionsHandlerImp struct {
 	submissionMetadataRepo db.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	judge                  judge.Judge
+	contestsUsersRepo      db.ContestsUsersRepo
+	contestsMetadataRepo   db.ContestsMetadataRepo
+	contestsProblemsRepo   db.ContestsProblemsRepo
 }
 
-func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge) Handler {
+func NewSubmissionsHandler(submissionRepo db.SubmissionMetadataRepo, minioHandler minio.MinioHandler, judgeHandler judge.Judge, contestRepo db.ContestsMetadataRepo, contestsUsersRepo db.ContestsUsersRepo, contestsProblemsRepo db.ContestsProblemsRepo) Handler {
 	return &SubmissionsHandlerImp{
 		submissionMetadataRepo: submissionRepo,
 		minioHandler:           minioHandler,
 		judge:                  judgeHandler,
+		contestsUsersRepo:      contestsUsersRepo,
+		contestsMetadataRepo:   contestRepo,
+		contestsProblemsRepo:   contestsProblemsRepo,
 	}
 }
 
@@ -43,11 +49,47 @@ func (s *SubmissionsHandlerImp) Submit(ctx context.Context, request structs.Requ
 
 	status = http.StatusInternalServerError
 
+	if request.ContestID != 0 {
+		isReg, err := s.contestsUsersRepo.IsRegistered(ctx, request.ContestID, request.UserID)
+		if err != nil {
+			logger.Error("error on check to contests users repo: ", err)
+			return
+		}
+		if !isReg {
+			logger.Warningf("forbidden contest submit, user id: %v, contest id: %v", request.UserID, request.ContestID)
+			status = http.StatusForbidden
+			return
+		}
+
+		started, err := s.contestsMetadataRepo.HasStarted(ctx, request.ContestID)
+		if err != nil {
+			logger.Error("error on check to contests metadata repo: ", err)
+			return
+		}
+		if !started {
+			logger.Warningf("early contest submit, user id: %v, contest id: %v", request.UserID, request.ContestID)
+			status = http.StatusForbidden
+			return
+		}
+
+		validProblem, err := s.contestsProblemsRepo.HasProblem(ctx, request.ContestID, request.ProblemID)
+		if err != nil {
+			logger.Error("error on check to contests problems repo: ", err)
+			return
+		}
+		if !validProblem {
+			logger.Warningf("not valid contest problem submit, user id: %v, problem id: %v, contest id: %v", request.UserID, request.ProblemID, request.ContestID)
+			status = http.StatusNotFound
+			return
+		}
+	}
+
 	submission := structs.SubmissionMetadata{
 		UserID:    request.UserID,
 		ProblemID: request.ProblemID,
 		FileName:  request.FileName,
 		Language:  request.Language,
+		ContestID: request.ContestID,
 	}
 
 	submissionID, err := s.submissionMetadataRepo.Insert(ctx, submission)
@@ -167,13 +209,13 @@ func (s *SubmissionsHandlerImp) GetResults(ctx context.Context, submissionID int
 	return
 }
 
-func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions, getAll bool) (structs.ResponseListSubmissions, int) {
+func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.RequestListSubmissions) (structs.ResponseListSubmissions, int) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"method": "ListSubmission",
 		"module": "submissions",
 	})
 
-	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.Descending, req.Limit, req.Offset, req.GetCount)
+	submissions, totalCount, err := s.submissionMetadataRepo.ListSubmissions(ctx, req.ProblemID, req.UserID, req.ContestID, req.Descending, req.Limit, req.Offset, req.GetCount)
 	if err != nil {
 		logger.Error("error on listing submissions: ", err)
 		return structs.ResponseListSubmissions{}, http.StatusInternalServerError

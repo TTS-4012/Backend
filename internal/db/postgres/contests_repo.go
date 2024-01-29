@@ -271,3 +271,18 @@ func (c *ContestsMetadataRepoImp) ListMyContests(ctx context.Context, descending
 	}
 	return ans, total_count, err
 }
+
+func (c *ContestsMetadataRepoImp) HasStarted(ctx context.Context, id int64) (bool, error) {
+	now := time.Now().Unix()
+	stmt := fmt.Sprintf(
+		"SELECT EXISTS(SELECT id FROM contests WHERE id = $1 AND start_time <= %d)", now)
+
+	var ans bool
+	if err := c.conn.QueryRow(ctx, stmt, id).Scan(&ans); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = pkg.ErrNotFound
+		}
+		return false, err
+	}
+	return ans, nil
+}
