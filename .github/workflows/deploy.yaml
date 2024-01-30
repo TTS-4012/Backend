@@ -14,8 +14,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  deploy:
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
 
@@ -24,10 +23,6 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.0.3
         with:
