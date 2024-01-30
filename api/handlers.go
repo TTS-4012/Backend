@@ -30,7 +30,7 @@ func AddRoutes(r *gin.Engine, authHandler auth.AuthHandler, problemHandler probl
 	r.Use(h.corsHandler)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
+			"message": "pong2",
 		})
 	})
 
