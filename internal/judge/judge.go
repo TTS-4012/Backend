@@ -21,6 +21,7 @@ type Judge interface {
 type JudgeImp struct {
 	queue                  JudgeQueue
 	contestUsersRepo       repos.ContestsUsersRepo
+	problemsRepo           repos.ProblemsMetadataRepo
 	submissionMetadataRepo repos.SubmissionMetadataRepo
 	minioHandler           minio.MinioHandler
 	testcaseRepo           repos.TestCaseRepo
@@ -28,7 +29,7 @@ type JudgeImp struct {
 }
 
 func NewJudge(c configs.SectionJudge, submissionMetadataRepo repos.SubmissionMetadataRepo,
-	minioHandler minio.MinioHandler, testcaseRepo repos.TestCaseRepo, contestUsersRepo repos.ContestsUsersRepo, judgeRepo repos.JudgeRepo) (Judge, error) {
+	minioHandler minio.MinioHandler, testcaseRepo repos.TestCaseRepo, contestUsersRepo repos.ContestsUsersRepo, judgeRepo repos.JudgeRepo, problemsRepo repos.ProblemsMetadataRepo) (Judge, error) {
 	queue, err := NewJudgeQueue(c.Nats)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create judge queue for judge")
@@ -36,6 +37,7 @@ func NewJudge(c configs.SectionJudge, submissionMetadataRepo repos.SubmissionMet
 
 	return JudgeImp{
 		queue:                  queue,
+		problemsRepo:           problemsRepo,
 		submissionMetadataRepo: submissionMetadataRepo,
 		minioHandler:           minioHandler,
 		judgeRepo:              judgeRepo,
@@ -96,6 +98,10 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 	err = j.submissionMetadataRepo.UpdateJudgeResults(ctx, submission.ProblemID, submission.UserID, submission.ContestID, submissionID, docID, currentScore, isFinal)
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repos")
+	}
+	err = j.problemsRepo.AddSolve(ctx, submission.ProblemID)
+	if err != nil{
+		return errors.Wrap(err, "coudn't update solve count")
 	}
 
 	if isFinal && contestID != 0 {

@@ -182,3 +182,13 @@ func (a *ProblemsMetadataRepoImp) DeleteProblem(ctx context.Context, id int64) (
 	}
 	return documentId, err
 }
+func (a *ProblemsMetadataRepoImp) AddSolve(ctx context.Context, id int64) error {
+	stmt := `
+	UPDATE problems SET solve_count = solve_count + 1 WHERE id = $1
+	`
+	_, err := a.conn.Exec(ctx, stmt, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = pkg.ErrNotFound
+	}
+	return err
+}

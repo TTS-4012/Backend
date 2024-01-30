@@ -23,6 +23,7 @@ type ProblemsMetadataRepo interface {
 	ListProblems(ctx context.Context, searchCol string, descending bool, limit, offset int, getCount bool) ([]structs.Problem, int, error)
 	UpdateProblem(ctx context.Context, id int64, title string, hardness int64) error
 	DeleteProblem(ctx context.Context, id int64) (string, error)
+	AddSolve(ctx context.Context, id int64) error
 }
 
 type ContestsMetadataRepo interface {

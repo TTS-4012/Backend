@@ -167,7 +167,7 @@ func getServer() (*http.Server, func() error) {
 	}
 
 	// initiating module handlers
-	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, contestsUsersRepo, judgeRepo)
+	judgeHandler, err := judge.NewJudge(c.Judge, submissionsRepo, minioClient, testcaseRepo, contestsUsersRepo, judgeRepo, problemsMetadataRepo)
 	if err != nil {
 		log.Fatal("error on creating judge handler", err)
 	}
