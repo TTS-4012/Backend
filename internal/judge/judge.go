@@ -99,9 +99,11 @@ func (j JudgeImp) Dispatch(ctx context.Context, submissionID, contestID int64) (
 	if err != nil {
 		return errors.Wrap(err, "couldn't update judge result in submission metadata repos")
 	}
-	err = j.problemsRepo.AddSolve(ctx, submission.ProblemID)
-	if err != nil{
-		return errors.Wrap(err, "coudn't update solve count")
+	if lastSub.Score != 100 && currentScore == 100 {
+		err = j.problemsRepo.AddSolve(ctx, submission.ProblemID)
+		if err != nil {
+			return errors.Wrap(err, "coudn't update solve count")
+		}
 	}
 
 	if isFinal && contestID != 0 {
