@@ -193,42 +193,44 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 	args := make([]interface{}, 0)
 
 	stmt := `
-	SELECT id, problem_id, user_id, coalesce(contest_id, 0), file_name, score, coalesce(judge_result_id, ''), status, language, public, created_at
+	SELECT submissions.id, submissions.problem_id, submissions.user_id, coalesce(submissions.contest_id, 0),
+	 submissions.file_name, submissions.score, coalesce(submissions.judge_result_id, ''),
+	 submissions.status, submissions.language, submissions.public, submissions.created_at, problems.title
 	`
 	if getCount {
 		stmt = fmt.Sprintf("%s, COUNT(*) OVER() AS total_count", stmt)
 	}
-	stmt = fmt.Sprintf("%s FROM submissions", stmt)
+	stmt += " FROM submissions JOIN problems ON submissions.problem_id = problems.id"
 
 	var cond string
 	if problemID != 0 {
 		args = append(args, problemID)
-		cond = fmt.Sprintf("%s problem_id = $%d", cond, len(args))
+		cond = fmt.Sprintf("%s submissions.problem_id = $%d", cond, len(args))
 	}
 	if userID != 0 {
 		if len(args) != 0 {
 			cond += " AND"
 		}
 		args = append(args, userID)
-		cond = fmt.Sprintf("%s user_id = $%d", cond, len(args))
+		cond = fmt.Sprintf("%s submissions.user_id = $%d", cond, len(args))
 	}
 	if contestID != 0 {
 		if len(args) != 0 {
 			cond += " AND"
 		}
 		args = append(args, contestID)
-		cond = fmt.Sprintf("%s contest_id = $%d", cond, len(args))
+		cond = fmt.Sprintf("%s submissions.contest_id = $%d", cond, len(args))
 	} else {
 		if len(args) != 0 {
 			cond += " AND"
 		}
-		cond = fmt.Sprintf("%s contest_id IS NULL", cond)
+		cond = fmt.Sprintf("%s submissions.contest_id IS NULL", cond)
 	}
 	if len(args) != 0 {
 		stmt = fmt.Sprintf("%s WHERE%s", stmt, cond)
 	}
 
-	stmt = fmt.Sprintf("%s ORDER BY created_at", stmt)
+	stmt = fmt.Sprintf("%s ORDER BY submissions.created_at", stmt)
 	if descending {
 		stmt += " DESC"
 	}
@@ -253,9 +255,13 @@ func (s *SubmissionRepoImp) ListSubmissions(ctx context.Context, problemID, user
 		var submission structs.SubmissionMetadata
 		var t time.Time
 		if getCount {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t, &total_count)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID,
+				&submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status,
+				&submission.Language, &submission.Public, &t, &submission.ProblemTitle, &total_count)
 		} else {
-			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID, &submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status, &submission.Language, &submission.Public, &t)
+			err = rows.Scan(&submission.ID, &submission.ProblemID, &submission.UserID, &submission.ContestID,
+				&submission.FileName, &submission.Score, &submission.JudgeResultID, &submission.Status,
+				&submission.Language, &submission.Public, &t, &submission.ProblemTitle)
 		}
 		if err != nil {
 			return nil, 0, err

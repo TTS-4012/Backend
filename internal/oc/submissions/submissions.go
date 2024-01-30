@@ -230,12 +230,14 @@ func (s *SubmissionsHandlerImp) ListSubmission(ctx context.Context, req structs.
 		results, _ := s.GetResults(ctx, sub.ID)
 
 		meta := structs.SubmissionListMetadata{
-			ID:        sub.ID,
-			UserID:    sub.UserID,
-			Language:  sub.Language,
-			CreatedAt: sub.CreatedAT,
-			FileName:  sub.FileName,
-			Score:     sub.Score,
+			ID:           sub.ID,
+			UserID:       sub.UserID,
+			Language:     sub.Language,
+			CreatedAt:    sub.CreatedAT,
+			FileName:     sub.FileName,
+			Score:        sub.Score,
+			ProblemTitle: sub.ProblemTitle,
+			ProblemID:    sub.ProblemID,
 		}
 
 		ans.Submissions = append(ans.Submissions, structs.ResponseListSubmissionsItem{

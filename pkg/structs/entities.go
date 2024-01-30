@@ -36,6 +36,7 @@ type SubmissionMetadata struct {
 	IsFinal       bool   `json:"is_final"`
 	Public        bool   `json:"public"`
 	CreatedAT     string `json:"created_at"`
+	ProblemTitle  string `json:"problem_title"`
 }
 
 type Testcase struct {
