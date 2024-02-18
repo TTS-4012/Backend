@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/ocontest/backend/internal/pkg/kvstorages"
 	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/kvstorages"
 )
 
 type OTPHandler interface {

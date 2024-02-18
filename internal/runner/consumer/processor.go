@@ -1,60 +1,19 @@
-package runner
+package consumer
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/nats-io/nats.go"
-	"github.com/ocontest/backend/internal/judge"
-	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/configs"
-	"github.com/ocontest/backend/pkg/structs"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"log"
 	"strings"
+
+	"github.com/nats-io/nats.go"
+	"github.com/ocontest/backend/internal/runner"
+	taskRunner "github.com/ocontest/backend/internal/runner/task-runner"
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
+	"github.com/sirupsen/logrus"
 )
 
-type RunnerScheduler interface {
-	StartListen()
-	ProcessCode(msg *nats.Msg)
-}
-
-type RunnerSchedulerImp struct {
-	queue judge.JudgeQueue
-}
-
-func NewRunnerScheduler(natsConfig configs.SectionNats) (RunnerScheduler, error) {
-	queue, err := judge.NewJudgeQueue(natsConfig)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return RunnerSchedulerImp{
-		queue: queue,
-	}, nil
-}
-
-func (r RunnerSchedulerImp) StartListen() {
-	sub, err := r.queue.Subscribe()
-	if err != nil {
-		log.Fatal("couldn't subscribe", err)
-	}
-
-	for {
-		msg, err := sub.NextMsg(NatsTimeout)
-		if errors.Is(err, nats.ErrTimeout) {
-			continue
-		}
-		if err != nil {
-			pkg.Log.Error("error on getting message from queue: ", err)
-			continue
-		}
-
-		pkg.Log.Debug("got msg from nats")
-		r.ProcessCode(msg)
-	}
-}
-
-func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
+func (r RunnerConsumerImp) ProcessCode(msg *nats.Msg) {
 	logger := pkg.Log.WithFields(logrus.Fields{
 		"module":  "runner",
 		"subject": msg.Subject,
@@ -77,7 +36,7 @@ func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 
 		input := bytes.NewReader([]byte(testCase.Input))
 		var output, stderr bytes.Buffer
-		verdict, err := RunTask(TimeLimit, MemoryLimit, task.Code, input, &output, &stderr)
+		verdict, err := taskRunner.RunTask(runner.TimeLimit, runner.MemoryLimit, task.Code, input, &output, &stderr)
 		if err != nil {
 			logger.Error("error on running code: ", err)
 			verdict = structs.VerdictUnknown
@@ -117,7 +76,7 @@ func (r RunnerSchedulerImp) ProcessCode(msg *nats.Msg) {
 
 }
 
-func (r RunnerSchedulerImp) checkOutput(actual, expected string) bool {
+func (r RunnerConsumerImp) checkOutput(actual, expected string) bool {
 	actual = strings.TrimSpace(actual)
 	expected = strings.TrimSpace(expected)
 	return actual == expected

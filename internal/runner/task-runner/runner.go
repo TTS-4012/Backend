@@ -1,18 +1,18 @@
 // base code in this file is from https://github.com/mraron/njudge. give them a star if you like.
-package runner
+package task_runner
 
 import (
 	"bytes"
-	"github.com/ocontest/backend/pkg"
-	"github.com/ocontest/backend/pkg/structs"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ocontest/backend/pkg"
+	"github.com/ocontest/backend/pkg/structs"
 )
 
 type Runner interface {
@@ -71,7 +71,7 @@ func (s *Dummy) CreateFile(filename string, r io.Reader) error {
 }
 
 func (s *Dummy) GetFile(name string) (io.Reader, error) {
-	f, err := ioutil.ReadFile(filepath.Join(s.Pwd(), name))
+	f, err := os.ReadFile(filepath.Join(s.Pwd(), name))
 	if err != nil {
 		return nil, err
 	}

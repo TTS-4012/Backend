@@ -3,7 +3,8 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"github.com/ocontest/backend/internal/db/repos"
+
+	"github.com/ocontest/backend/internal/pkg/db/repos"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

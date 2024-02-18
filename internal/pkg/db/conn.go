@@ -2,9 +2,9 @@ package db
 
 import (
 	"context"
-	"github.com/ocontest/backend/internal/db/postgres"
-	"github.com/ocontest/backend/internal/db/repos"
-	"github.com/ocontest/backend/internal/db/sqlite"
+	"github.com/ocontest/backend/internal/pkg/db/postgres"
+	"github.com/ocontest/backend/internal/pkg/db/repos"
+	"github.com/ocontest/backend/internal/pkg/db/sqlite"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/pkg/errors"

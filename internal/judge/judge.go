@@ -3,8 +3,8 @@ package judge
 import (
 	"context"
 
-	"github.com/ocontest/backend/internal/db/repos"
-	"github.com/ocontest/backend/internal/minio"
+	"github.com/ocontest/backend/internal/pkg/db/repos"
+	"github.com/ocontest/backend/internal/pkg/minio"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/structs"

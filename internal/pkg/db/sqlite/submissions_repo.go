@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/ocontest/backend/internal/db/repos"
 	"time"
+
+	"github.com/ocontest/backend/internal/pkg/db/repos"
 
 	"github.com/pkg/errors"
 

@@ -1,17 +1,19 @@
-package postgres
+package sqlite
 
 import (
 	"context"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ocontest/backend/internal/db/repos"
+	"github.com/ocontest/backend/internal/pkg/db/repos"
+
+	"database/sql"
+
 	"github.com/ocontest/backend/pkg"
 )
 
 type ContestsProblemsMetadataRepoImp struct {
-	conn *pgxpool.Pool
+	conn *sql.DB
 }
 
 func (c *ContestsProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
@@ -25,11 +27,11 @@ func (c *ContestsProblemsMetadataRepoImp) Migrate(ctx context.Context) error {
 	)
 	`
 
-	_, err := c.conn.Exec(ctx, stmt)
+	_, err := c.conn.ExecContext(ctx, stmt)
 	return err
 }
 
-func NewContestsProblemsMetadataRepo(ctx context.Context, conn *pgxpool.Pool) (repos.ContestsProblemsRepo, error) {
+func NewContestsProblemsMetadataRepo(ctx context.Context, conn *sql.DB) (repos.ContestsProblemsRepo, error) {
 	ans := &ContestsProblemsMetadataRepoImp{conn: conn}
 	return ans, ans.Migrate(ctx)
 }
@@ -38,10 +40,10 @@ func (c *ContestsProblemsMetadataRepoImp) AddProblemToContest(ctx context.Contex
 	insertContestProblemsStmt := `
 		INSERT INTO contest_problems(
 			contest_id, problem_id) 
-		VALUES($1, $2)
+		VALUES($, $)
 	`
 
-	_, err := c.conn.Exec(ctx, insertContestProblemsStmt, contestID, problemID)
+	_, err := c.conn.ExecContext(ctx, insertContestProblemsStmt, contestID, problemID)
 	if err != nil {
 		return err
 	}
@@ -51,10 +53,10 @@ func (c *ContestsProblemsMetadataRepoImp) AddProblemToContest(ctx context.Contex
 
 func (c *ContestsProblemsMetadataRepoImp) GetContestProblems(ctx context.Context, id int64) ([]int64, error) {
 	selectContestProblemsStmt := `
-		SELECT problem_id FROM contest_problems WHERE contest_id = $1
+		SELECT problem_id FROM contest_problems WHERE contest_id = $
 	`
 
-	rows, err := c.conn.Query(ctx, selectContestProblemsStmt, id)
+	rows, err := c.conn.QueryContext(ctx, selectContestProblemsStmt, id)
 	if err != nil {
 		return make([]int64, 0), err
 	}
@@ -78,10 +80,10 @@ func (c *ContestsProblemsMetadataRepoImp) GetContestProblems(ctx context.Context
 func (c *ContestsProblemsMetadataRepoImp) RemoveProblemFromContest(ctx context.Context, contestID, problemID int64) error {
 	stmt := `
   DELETE FROM contest_problems
-  WHERE contest_id = $1 AND problem_id = $2
+  WHERE contest_id = $ AND problem_id = $
   `
-	_, err := c.conn.Exec(ctx, stmt, contestID, problemID)
-	if errors.Is(err, pgx.ErrNoRows) {
+	_, err := c.conn.ExecContext(ctx, stmt, contestID, problemID)
+	if errors.Is(err, sql.ErrNoRows) {
 		err = pkg.ErrNotFound
 	}
 	return err
@@ -91,11 +93,11 @@ func (c *ContestsProblemsMetadataRepoImp) HasProblem(ctx context.Context, contes
 	stmt := `
 	SELECT EXISTS(
 		SELECT contest_id FROM contest_problems
-		WHERE contest_id = $1 AND problem_id = $2)
+		WHERE contest_id = $ AND problem_id = $)
 	`
 
 	var ans bool
-	if err := c.conn.QueryRow(ctx, stmt, contestID, problemID).Scan(&ans); err != nil {
+	if err := c.conn.QueryRowContext(ctx, stmt, contestID, problemID).Scan(&ans); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = pkg.ErrNotFound
 		}

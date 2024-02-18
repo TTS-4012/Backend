@@ -2,7 +2,9 @@ package mongodb
 
 import (
 	"context"
-	"github.com/ocontest/backend/internal/db/repos"
+	"time"
+
+	"github.com/ocontest/backend/internal/pkg/db/repos"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
 	"github.com/ocontest/backend/pkg/structs"
@@ -11,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 // Replace the placeholder with your Atlas connection string

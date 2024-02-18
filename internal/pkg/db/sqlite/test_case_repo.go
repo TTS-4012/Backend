@@ -3,7 +3,8 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"github.com/ocontest/backend/internal/db/repos"
+
+	"github.com/ocontest/backend/internal/pkg/db/repos"
 
 	"github.com/ocontest/backend/pkg/structs"
 	"github.com/pkg/errors"
