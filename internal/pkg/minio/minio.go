@@ -120,4 +120,3 @@ func (f MinioHandlerImp) DownloadFile(ctx context.Context, objectName string) ([
 func (f MinioHandlerImp) GenCodeObjectname(userID, problemID, submissionID int64) string {
 	return fmt.Sprintf("%d/%d/%d", problemID, userID, submissionID)
 }
-

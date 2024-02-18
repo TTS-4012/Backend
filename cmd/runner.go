@@ -4,9 +4,9 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/ocontest/backend/internal/runner/consumer"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
-	"github.com/ocontest/backend/internal/runner/consumer"
 	"github.com/spf13/cobra"
 	"log"
 )

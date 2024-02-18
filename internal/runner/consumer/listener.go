@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/nats-io/nats.go"
-	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/internal/runner"
+	"github.com/ocontest/backend/pkg"
 	"github.com/pkg/errors"
 )
 
