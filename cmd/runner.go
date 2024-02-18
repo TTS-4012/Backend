@@ -4,9 +4,9 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/ocontest/backend/internal/runner/consumer"
 	"github.com/ocontest/backend/pkg"
 	"github.com/ocontest/backend/pkg/configs"
-	"github.com/ocontest/backend/runner"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -46,7 +46,7 @@ func init() {
 }
 
 func RunRunnerTaskHandler(c *configs.OContestConf) {
-	runnerHandler, err := runner.NewRunnerScheduler(c.Judge.Nats)
+	runnerHandler, err := consumer.NewRunnerScheduler(c.Judge.Nats)
 	if err != nil {
 		log.Fatal("error on creating runner scheduler: ", err)
 	}

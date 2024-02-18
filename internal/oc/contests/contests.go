@@ -3,7 +3,7 @@ package contests
 import (
 	"context"
 	"errors"
-	"github.com/ocontest/backend/internal/db/repos"
+	"github.com/ocontest/backend/internal/pkg/db/repos"
 	"net/http"
 	"time"
 
